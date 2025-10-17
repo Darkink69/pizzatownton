@@ -1,12 +1,23 @@
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Footer from "./components/Footer";
+import Home from "./pages/Home";
+import Tasks from "./pages/Tasks";
+import Bank from "./pages/Bank";
+import Friends from "./pages/Friends";
+
 function App() {
   return (
-    <>
-      <div className="text-3xl">pizzatownton!</div>
-      <img
-        src="https://s3.twcstorage.ru/c6bae09a-a5938890-9b68-453c-9c54-76c439a70d3e/Pizzatownton/pizza_big_logo.png"
-        alt=""
-      />
-    </>
+    <Router>
+      <div className="app-container">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/tasks" element={<Tasks />} />
+          <Route path="/friends" element={<Friends />} />
+          <Route path="/bank" element={<Bank />} />
+        </Routes>
+        <Footer />
+      </div>
+    </Router>
   );
 }
 
