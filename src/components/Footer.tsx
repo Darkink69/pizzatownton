@@ -1,9 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
+import store from "../store/store";
 
 const Footer = () => {
   const location = useLocation();
-  const imgUrl =
-    "https://s3.twcstorage.ru/c6bae09a-a5938890-9b68-453c-9c54-76c439a70d3e/Pizzatownton/";
+  const imgUrl = store.imgUrl;
 
   const footerButtons = [
     {
@@ -41,7 +41,7 @@ const Footer = () => {
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-50">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 w-full md:w-1/2">
         <div className="flex justify-between items-center py-3">
           {footerButtons.map((button) => (
             <Link
