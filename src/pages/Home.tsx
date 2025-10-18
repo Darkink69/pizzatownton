@@ -200,8 +200,6 @@ function Home() {
               />
             </div>
             
-            {/* Пустое место для балансировки */}
-            {/* <div className="w-0 sm:w-0"></div> */}
           </div>
         </button>
       </div>

@@ -21,11 +21,10 @@ function Bank() {
           />
         </div>
 
-        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-20">
+        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-20">
           <img
-            src={`${store.imgUrl}pizza_logo.png`}
-            alt="Pizza Logo"
-            className="w-70 sm:w-100"
+            src={`${store.imgUrl}img_bank.png`}
+            alt="bank"
           />
         </div>
 
