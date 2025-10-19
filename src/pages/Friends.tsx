@@ -41,7 +41,7 @@ function Friends() {
             <div className="absolute inset-0 flex flex-col p-6 sm:p-8 md:p-10">
               
               {/* Заголовок ВАША ССЫЛКА */}
-              <div className="text-center text-xl sm:text-2xl mb-1 sm:mb-2 text-amber-800 shantell leading-tight tracking-wide">
+              <div className="text-center text-lg sm:text-2xl mb-1 sm:mb-2 text-amber-800 shantell leading-tight tracking-wide">
                 ВАША ССЫЛКА
               </div>
 
@@ -83,7 +83,7 @@ function Friends() {
               </div>
 
               {/* Заголовок ПАРТНЕРСКАЯ СТАТИСТИКА */}
-              <div className="text-center font-bold text-xl sm:text-2xl mb-4 sm:mb-6 text-amber-800 shantell leading-tight tracking-wide">
+              <div className="text-center font-bold text-lg sm:text-2xl mb-4 sm:mb-6 text-amber-800 shantell leading-tight tracking-wide">
                 ПАРТНЕРСКАЯ СТАТИСТИКА
               </div>
 

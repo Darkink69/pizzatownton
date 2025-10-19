@@ -192,7 +192,7 @@ function Home() {
                 className="w-8 h-auto sm:w-10"
                
               />
-              <span className="text-white text-sm sm:text-base font-bold">625</span>
+              <span className="text-white text-sm sm:text-base shantell font-bold">625</span>
               <img 
                 src={`${store.imgUrl}icon_arrow.png`} 
                 alt="arrow" 
