@@ -180,7 +180,7 @@ function Home() {
       className="w-full h-auto"
     />
     
-    <div className="absolute inset-0 flex items-center justify-between p-3 sm:p-4">
+    <div className="absolute inset-0 flex items-center justify-between ">
       <div className="text-white text-sm sm:text-base shantell flex-1 text-center">
         Этаж 1 - Улучшить <br></br>до уровня 1
       </div>
