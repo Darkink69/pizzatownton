@@ -1,6 +1,53 @@
+import { useRef } from "react";
 import store from "../store/store";
 
 function Friends() {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const reffLink = "Https://Pizza_towerton/?";
+
+  function tryExecCommandCopy(text: string): boolean {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "true");
+      ta.style.position = "fixed";
+      ta.style.top = "-9999px";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async function tryClipboardCopy(text: string): Promise<boolean> {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch {}
+    return false;
+  }
+
+  const handleCopy = async () => {
+    if (!reffLink) return;
+
+    // 1) Синхронный фолбэк (лучше для Telegram WebView)
+    let ok = tryExecCommandCopy(reffLink);
+
+    // 2) Если не сработало — пробуем Clipboard API
+    if (!ok) {
+      ok = await tryClipboardCopy(reffLink);
+    }
+  };
+  
   return (
     <>
       <div className="relative min-h-screen w-full overflow-hidden">
@@ -39,19 +86,24 @@ function Friends() {
             />
             
             <div className="absolute inset-0 flex flex-col p-6 sm:p-8 md:p-10">
-              
-              {/* Заголовок ВАША ССЫЛКА */}
               <div className="text-center text-lg sm:text-2xl mb-1 sm:mb-2 text-amber-800 shantell leading-tight tracking-wide">
                 ВАША ССЫЛКА
               </div>
 
-              {/* Поле с ссылкой */}
-              <div className="bg-white rounded-xl px-4 py-1 mb-4 sm:mb-6 border-2 border-amber-800 shadow-inner text-center font-bold text-base sm:text-lg text-amber-800 shantell">
-                Https://Pizza_towerton/?
-              </div>
+              <input
+                ref={inputRef}
+                type="text"
+                value={reffLink}
+                readOnly
+                onFocus={(e) => e.currentTarget.select()}
+                className="bg-white rounded-xl px-4 py-1 mb-4 sm:mb-6 border-2 border-amber-800 shadow-inner text-center font-bold text-base sm:text-lg text-amber-800 shantell"
+              />
 
               {/* Кнопка Копировать */}
-              <button className="relative w-full flex justify-center mb-1 sm:mb-2 hover:opacity-90 transition-opacity">
+              <button className="relative w-full flex justify-center mb-1 sm:mb-2 hover:opacity-90 transition-opacity"
+                onClick={handleCopy}
+                disabled={!reffLink}
+              >
                 <img 
                   src={`${store.imgUrl}b_yellow.png`} 
                   alt="Копировать" 
