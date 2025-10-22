@@ -47,7 +47,7 @@ function Friends() {
       ok = await tryClipboardCopy(reffLink);
     }
   };
-  
+
   return (
     <>
       <div className="relative min-h-screen w-full overflow-hidden">
@@ -69,23 +69,19 @@ function Friends() {
         </div>
 
         <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-20">
-          <img
-            src={`${store.imgUrl}img_friends.png`}
-            alt="friends"
-          />
+          <img src={`${store.imgUrl}img_friends.png`} alt="friends" />
         </div>
-
 
         <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-11/12 max-w-md">
           <div className="relative">
             {/* Фон модального окна */}
-            <img 
-              src={`${store.imgUrl}img_window2.png`} 
-              alt="Modal background" 
+            <img
+              src={`${store.imgUrl}img_window2.png`}
+              alt="Modal background"
               className="w-full h-auto object-contain"
             />
-            
-            <div className="absolute inset-0 flex flex-col p-6 sm:p-8 md:p-10">
+
+            <div className="absolute inset-0 flex flex-col p-3 sm:p-4 md:p-5">
               <div className="text-center text-lg sm:text-2xl mb-1 sm:mb-2 text-amber-800 shantell leading-tight tracking-wide">
                 ВАША ССЫЛКА
               </div>
@@ -100,13 +96,14 @@ function Friends() {
               />
 
               {/* Кнопка Копировать */}
-              <button className="relative w-full flex justify-center mb-1 sm:mb-2 hover:opacity-90 transition-opacity"
+              <button
+                className="relative w-full flex justify-center mb-1 sm:mb-2 hover:opacity-90 transition-opacity"
                 onClick={handleCopy}
                 disabled={!reffLink}
               >
-                <img 
-                  src={`${store.imgUrl}b_yellow.png`} 
-                  alt="Копировать" 
+                <img
+                  src={`${store.imgUrl}b_yellow.png`}
+                  alt="Копировать"
                   className="w-1/2 h-auto"
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -118,17 +115,16 @@ function Friends() {
 
               {/* Текст с иконками */}
               <div className="text-center mb-4 sm:mb-5 text-amber-800 font-bold text-base sm:text-lg shantell leading-tight">
-                Получайте 7% 
-                <img 
-                  src={`${store.imgUrl}icon_dollar_coin.png`} 
-                  alt="dollar" 
+                Получайте 7%
+                <img
+                  src={`${store.imgUrl}icon_dollar_coin.png`}
+                  alt="dollar"
                   className="w-6 h-auto sm:w-8 inline-block mr-1 ml-1"
-                  
                 />
-                и 3% 
-                <img 
-                  src={`${store.imgUrl}icon_dollar.png`} 
-                  alt="dollar" 
+                и 3%
+                <img
+                  src={`${store.imgUrl}icon_dollar.png`}
+                  alt="dollar"
                   className="w-8 h-auto sm:w-10 inline-block mr-1 ml-1"
                 />
                 с каждого депозита вашего партнера
@@ -140,65 +136,68 @@ function Friends() {
               </div>
 
               {/* Статистика */}
-      {/* Статистика */}
-      <div className="flex justify-between gap-2 sm:gap-3">
-        {/* Первый блок статистики */}
-        <div className="relative flex-1">
-          <img 
-            src={`${store.imgUrl}b_white.png`} 
-            alt="Background" 
-            className="w-full h-auto"
-          />
-          <div className="absolute inset-0 flex items-center justify-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-2">
-            <img 
-                  src={`${store.imgUrl}icon_dollar.png`} 
-                  alt="dollar" 
-                  className="w-8 h-auto sm:w-10 inline-block mr-1 ml-1"
-              />
-            <span className="font-bold text-base sm:text-lg text-amber-800 shantell">+0</span>
-          </div>
-        </div>
+              {/* Статистика */}
+              <div className="flex justify-between gap-2 sm:gap-3">
+                {/* Первый блок статистики */}
+                <div className="relative flex-1">
+                  <img
+                    src={`${store.imgUrl}b_white.png`}
+                    alt="Background"
+                    className="w-full h-auto"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-2">
+                    <img
+                      src={`${store.imgUrl}icon_dollar.png`}
+                      alt="dollar"
+                      className="w-8 h-auto sm:w-10 inline-block mr-1 ml-1"
+                    />
+                    <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
+                      +0
+                    </span>
+                  </div>
+                </div>
 
-        {/* Второй блок статистики */}
-        <div className="relative flex-1">
-          <img 
-            src={`${store.imgUrl}b_white.png`} 
-            alt="Background" 
-            className="w-full h-auto"
-          />
-          <div className="absolute inset-0 flex items-center justify-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-2">
-            <img 
-              src={`${store.imgUrl}icon_dollar_coin.png`} 
-              alt="dollar" 
-              className="w-6 h-auto sm:w-8 inline-block mr-1 ml-1"
-              
-            />
-            <span className="font-bold text-base sm:text-lg text-amber-800 shantell">+0</span>
-          </div>
-        </div>
+                {/* Второй блок статистики */}
+                <div className="relative flex-1">
+                  <img
+                    src={`${store.imgUrl}b_white.png`}
+                    alt="Background"
+                    className="w-full h-auto"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-2">
+                    <img
+                      src={`${store.imgUrl}icon_dollar_coin.png`}
+                      alt="dollar"
+                      className="w-6 h-auto sm:w-8 inline-block mr-1 ml-1"
+                    />
+                    <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
+                      +0
+                    </span>
+                  </div>
+                </div>
 
-        {/* Третий блок статистики */}
-        <div className="relative flex-1">
-          <img 
-            src={`${store.imgUrl}b_white.png`} 
-            alt="Background" 
-            className="w-full h-auto"
-          />
-          <div className="absolute inset-0 flex items-center justify-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-2">
-            <img 
-                  src={`${store.imgUrl}icon_friends.png`} 
-                  alt="dollar" 
-                  className="w-6 h-auto sm:w-8 inline-block"
-              />
-            <span className="font-bold text-base sm:text-lg text-amber-800 shantell">+0</span>
-          </div>
-        </div>
+                {/* Третий блок статистики */}
+                <div className="relative flex-1">
+                  <img
+                    src={`${store.imgUrl}b_white.png`}
+                    alt="Background"
+                    className="w-full h-auto"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-2">
+                    <img
+                      src={`${store.imgUrl}icon_friends.png`}
+                      alt="dollar"
+                      className="w-6 h-auto sm:w-8 inline-block"
+                    />
+                    <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
+                      +0
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
-            </div>
           </div>
         </div>
-
-       
       </div>
     </>
   );

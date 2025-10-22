@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import store from "../store/store";
 
 function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [floors] = useState(6); // Количество этажей
+  const [floors] = useState(9); // Количество этажей
 
   const handleOpenModal = () => {
     setIsModalOpen(true);
@@ -21,156 +21,202 @@ function Home() {
     return "img_floor_dark.png"; // Остальные этажи
   };
 
+  const isEmptyFloor = (index: number) => {
+    return getFloorImage(index) === "img_floor_dark.png";
+  };
+
+  useEffect(() => {
+    // Прокрутка к самому низу страницы
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: "auto", // 'auto' для мгновенной прокрутки, 'smooth' для плавной
+    });
+  }, []); //
+
   return (
     <>
-      <div className="relative min-h-screen w-full overflow-hidden">
-        <div className="absolute inset-0 bg-[#FFBC6B]">
-          {/* Фоновая картинка */}
-          <div
-            className="
-            w-full h-full
-          bg-cover bg-center bg-no-repeat
-          /* Мобильная версия - обрезаем до 70% ширины */
-          sm:bg-auto sm:bg-center
-          md:bg-auto md:bg-center
-          lg:bg-contain lg:bg-center
-          "
-            style={{
-              backgroundImage: `url('${store.imgUrl}bg_house_people.jpg')`,
-            }}
-          />
-        </div>
-
-        {/* Grid этажей дома */}
-        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-10 w-[90%] sm:w-[50%]">
-          <div className="flex flex-col items-center relative">
-            {Array.from({ length: floors }, (_, index) => (
+      <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B]">
+        <div className="relative min-h-[160vh]">
+          {" "}
+          {/* Увеличиваем высоту для скролла */}
+          {/* Фоновая картинка - скроллится вместе с контентом */}
+          <div className="h-screen">
+            <div className="absolute inset-0 bottom-0 bg-[#FFBC6B]">
+              {/* Фоновая картинка */}
               <div
-                key={index}
-                className="w-full flex justify-center relative"
+                className="
+                  w-full h-full
+                  bg-cover bg-center bg-no-repeat
+                  sm:bg-auto sm:bg-center
+                  md:bg-auto md:bg-center
+                  lg:bg-contain lg:bg-center
+                  "
                 style={{
-                  marginBottom: index === floors - 1 ? "0" : "-2px",
+                  backgroundImage: `url('${store.imgUrl}bg_house_people.jpg')`,
                 }}
-              >
-                {/* Фон этажа */}
-                <img
-                  src={`${store.imgUrl}${getFloorImage(index)}`}
-                  alt={`Этаж ${floors - index}`}
-                  className="w-full max-w-md object-contain"
-                />
+              />
+            </div>
+          </div>
+          {/* Grid этажей дома - привязан к низу фоновой картинки */}
+          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-10 w-[90%] sm:w-[60%] md:w-[50%] lg:w-[40%] xl:w-[16%]">
+            <div className="flex flex-col items-center relative">
+              {Array.from({ length: floors }, (_, index) => (
+                <div
+                  key={index}
+                  className="w-full flex justify-center relative"
+                  style={{
+                    marginBottom: index === floors - 1 ? "0" : "-2px",
+                  }}
+                >
+                  {/* Фон этажа */}
+                  <img
+                    src={`${store.imgUrl}${getFloorImage(index)}`}
+                    alt={`Этаж ${floors - index}`}
+                    className="w-full max-w-md object-contain"
+                  />
 
-                {/* Видео chif.mp4 на этаже с img_floor_empty.png */}
-                {index === floors - 2 && (
-                  <>
-                    <div className="absolute inset-0 flex items-center justify-center -z-10">
-                      <video
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        className="w-3/4 max-w-80 h-[90%] object-cover -translate-y-[15px] -translate-x-[20px]"
-                      >
-                        <source
-                          src={`${store.imgUrl}chif.mp4`}
-                          type="video/mp4"
-                        />
-                        Your browser does not support the video tag.
-                      </video>
-                    </div>
-
-                    {/* Статистика этажа - только на этаже с видео */}
-                    <div className="absolute -top-10 left-1/3 transform -translate-x-1/2 translate-y-1/2 z-40 w-4/5 max-w-xs">
+                  {/* Блок "Открыть новый этаж" на всех пустых этажах */}
+                  {isEmptyFloor(index) && (
+                    <div className="absolute inset-0 flex items-center justify-center z-30">
                       <div className="flex items-center relative">
                         <img
-                          src={`${store.imgUrl}img_block_mini.png`}
-                          alt="Background"
-                          className="w-full h-auto object-contain"
+                          src={`${store.imgUrl}b_blue_small.png`}
+                          alt="Open new floor"
+                          className="w-4/5"
                         />
-
-                        {/* Контент поверх фона */}
-                        <div className="absolute inset-0 flex items-center p-2 sm:p-2">
-                          {/* Левая часть - название этажа и уровня */}
-                          <div className="flex-1 px-2 sm:px-4 text-xs sm:text-sm text-amber-800 shantell text-center leading-3">
-                            Этаж 1 - Уровень 1
+                        <div className="absolute inset-0 flex items-center px-2 sm:px-4">
+                          <div className="flex items-center gap-1">
+                            <img
+                              src={`${store.imgUrl}icon_dollar_coin.png`}
+                              alt="Coin"
+                              className="w-8 sm:w-10"
+                            />
+                            <span className="text-white text-sm sm:text-base shantell pr-4">
+                              1.8
+                            </span>
                           </div>
-
-                          {/* Звезды */}
-                          <div className="flex items-center gap-1 mr-2 sm:mr-4">
-                            <img
-                              src={`${store.imgUrl}icon_star.png`}
-                              alt="Star"
-                              className="w-4 h-4 sm:w-5 sm:h-5"
-                            />
-                            <img
-                              src={`${store.imgUrl}icon_star_empty.png`}
-                              alt="Empty star"
-                              className="w-4 h-4 sm:w-5 sm:h-5"
-                            />
-                            <img
-                              src={`${store.imgUrl}icon_star_empty.png`}
-                              alt="Empty star"
-                              className="w-4 h-4 sm:w-5 sm:h-5"
-                            />
-                            <img
-                              src={`${store.imgUrl}icon_star_empty.png`}
-                              alt="Empty star"
-                              className="w-4 h-4 sm:w-5 sm:h-5"
-                            />
-                            <img
-                              src={`${store.imgUrl}icon_star_empty.png`}
-                              alt="Empty star"
-                              className="w-4 h-4 sm:w-5 sm:h-5"
-                            />
-                          </div>
-
-                          {/* Правая часть - стоимость улучшения */}
-                          <div className="relative  translate-x-[40px]">
-                            <img
-                              src={`${store.imgUrl}b_red_mini.png`}
-                              alt="Upgrade"
-                              className="h-10 sm:h-12 w-auto"
-                            />
-                            <div className="absolute inset-0 flex items-center justify-center gap-0 px-1 sm:px-2">
-                              <img
-                                src={`${store.imgUrl}icon_dollar_coin.png`}
-                                alt="Coin"
-                                className="w-8 sm:w-10"
-                              />
-                              <span className="text-white text-md sm:text-lg shantell">
-                                625
-                              </span>
-                              <img
-                                src={`${store.imgUrl}icon_arrow.png`}
-                                alt="Upgrade"
-                                className="w-8 sm:w-12"
-                              />
-                            </div>
+                          <div className="text-blue-900 text-sm sm:text-md shantell font-bold whitespace-nowrap">
+                            ОТКРЫТЬ НОВЫЙ ЭТАЖ
                           </div>
                         </div>
                       </div>
                     </div>
-                  </>
-                )}
-              </div>
-            ))}
+                  )}
 
-            {/* Видео лифта - позиционируется относительно всего грида */}
-            <div className="absolute bottom-2 right-[20px] z-20">
-              <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-[60px] object-contain"
-              >
-                <source src={`${store.imgUrl}lift.mp4`} type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
+                  {/* Видео chif.mp4 на этаже с img_floor_empty.png */}
+                  {index === floors - 2 && (
+                    <>
+                      <div className="absolute inset-0 flex items-center justify-center -z-10">
+                        <video
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          className="w-3/4 max-w-80 h-[90%] object-cover -translate-y-[15px] -translate-x-[20px]"
+                        >
+                          <source
+                            src={`${store.imgUrl}chif.mp4`}
+                            type="video/mp4"
+                          />
+                          Your browser does not support the video tag.
+                        </video>
+                      </div>
+
+                      {/* Статистика этажа - только на этаже с видео */}
+                      <div className="absolute -top-10 left-1/3 transform -translate-x-1/2 translate-y-1/2 z-40 w-4/5 max-w-xs">
+                        <div className="flex items-center relative">
+                          <img
+                            src={`${store.imgUrl}img_block_mini.png`}
+                            alt="Background"
+                            className="w-full h-auto object-contain"
+                          />
+
+                          {/* Контент поверх фона */}
+                          <div className="absolute inset-0 flex items-center p-2 sm:p-2">
+                            {/* Левая часть - название этажа и уровня */}
+                            <div className="flex-1 px-2 sm:px-4 text-xs sm:text-sm text-amber-800 shantell text-center leading-3">
+                              Этаж 1 - Уровень 1
+                            </div>
+
+                            {/* Звезды */}
+                            <div className="flex items-center gap-1 mr-2 sm:mr-4">
+                              <img
+                                src={`${store.imgUrl}icon_star.png`}
+                                alt="Star"
+                                className="w-4 h-4 sm:w-5 sm:h-5"
+                              />
+                              <img
+                                src={`${store.imgUrl}icon_star_empty.png`}
+                                alt="Empty star"
+                                className="w-4 h-4 sm:w-5 sm:h-5"
+                              />
+                              <img
+                                src={`${store.imgUrl}icon_star_empty.png`}
+                                alt="Empty star"
+                                className="w-4 h-4 sm:w-5 sm:h-5"
+                              />
+                              <img
+                                src={`${store.imgUrl}icon_star_empty.png`}
+                                alt="Empty star"
+                                className="w-4 h-4 sm:w-5 sm:h-5"
+                              />
+                              <img
+                                src={`${store.imgUrl}icon_star_empty.png`}
+                                alt="Empty star"
+                                className="w-4 h-4 sm:w-5 sm:h-5"
+                              />
+                            </div>
+
+                            {/* Правая часть - стоимость улучшения */}
+                            <div className="relative  translate-x-[40px]">
+                              <img
+                                src={`${store.imgUrl}b_red_mini.png`}
+                                alt="Upgrade"
+                                className="h-10 sm:h-12 w-auto"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center gap-0 px-1 sm:px-2">
+                                <img
+                                  src={`${store.imgUrl}icon_dollar_coin.png`}
+                                  alt="Coin"
+                                  className="w-8 sm:w-10"
+                                />
+                                <span className="text-white text-md sm:text-lg shantell">
+                                  625
+                                </span>
+                                <img
+                                  src={`${store.imgUrl}icon_arrow.png`}
+                                  alt="Upgrade"
+                                  className="w-8 sm:w-12"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+
+              {/* Видео лифта - позиционируется относительно всего грида */}
+              <div className="absolute bottom-2 right-[20px] z-20">
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-[60px] object-contain"
+                >
+                  <source src={`${store.imgUrl}lift.mp4`} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-[600px] sm:max-w-[800px] md:max-w-[1000px] lg:max-w-[2000px] xl:max-w-[1550px]">
+        {/* Фиксированные элементы поверх скролла */}
+        <div className="fixed top-0 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-[600px] sm:max-w-[800px] md:max-w-[1000px] lg:max-w-[2000px] xl:max-w-[1550px]">
           <img
             src={`${store.imgUrl}testo.png`}
             alt="Testo"
@@ -178,13 +224,14 @@ function Home() {
           />
         </div>
 
-        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-20">
+        <div className="fixed top-2 left-1/2 transform -translate-x-1/2 z-20">
           <img
             src={`${store.imgUrl}pizza_logo.png`}
             alt="Pizza Logo"
             className="w-70 sm:w-100"
           />
         </div>
+
         <div className="fixed bottom-40 left-1/2 w-20 transform -translate-x-1/2 z-20 hover:opacity-90 transition-opacity">
           <img src={`${store.imgUrl}b_red_mini.png`} alt="red" />
           <div className="absolute inset-0 flex items-center justify-center text-md text-white shantell">
