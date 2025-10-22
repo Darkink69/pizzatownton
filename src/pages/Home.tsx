@@ -3,7 +3,7 @@ import store from "../store/store";
 
 function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [floors] = useState(7); // Количество этажей
+  const [floors] = useState(6); // Количество этажей
 
   const handleOpenModal = () => {
     setIsModalOpen(true);
