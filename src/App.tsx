@@ -15,6 +15,7 @@ import Bank from "./pages/Bank";
 import Friends from "./pages/Friends";
 import Preloader from "./components/Preloader";
 import store from "./store/store";
+import WebSocketComponent from "./components/websocket";
 
 function getStartParamFromUrlLike(): string | null {
   try {
@@ -130,6 +131,7 @@ export const App = observer(() => {
             <Route path="/bank" element={<Bank />} />
           </Routes>
           <Footer />
+          <WebSocketComponent />;
         </div>
       </Router>
     );
