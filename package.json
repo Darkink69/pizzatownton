@@ -12,8 +12,10 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.1.14",
     "@telegram-apps/sdk-react": "^3.3.9",
+    "buffer": "^6.0.3",
     "mobx": "^6.15.0",
     "mobx-react-lite": "^4.1.1",
+    "process": "^0.11.10",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.4",
@@ -21,7 +23,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
-    "@types/node": "^24.6.0",
+    "@types/node": "^24.9.1",
     "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.4",

@@ -8,7 +8,6 @@ import {
 } from "@telegram-apps/sdk-react";
 import { observer } from "mobx-react-lite";
 
-
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Tasks from "./pages/Tasks";
@@ -63,11 +62,11 @@ function extractStartParam(
   return lp ?? null;
 }
 
-
 export const App = observer(() => {
-    const [loading, setLoading] = useState(true);
-      const lp = useMemo(() => retrieveLaunchParams(), []);
+  const [loading, setLoading] = useState(true);
+  const lp = useMemo(() => retrieveLaunchParams(), []);
   const rawInitData = useSignal(_initDataRaw);
+
   const startedRef = useRef(false);
   const startParam = useMemo(
     () => extractStartParam(rawInitData, lp.startParam),
@@ -116,32 +115,25 @@ export const App = observer(() => {
     return () => clearTimeout(loadingTimer);
   }, [rawInitData, lp.startParam, startParam]);
 
-
   if (loading) {
     return <Preloader />;
   }
 
-
-    if (showLoading) {
-      return (
-    <Router>
-      <div className="app-container">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/tasks" element={<Tasks />} />
-          <Route path="/friends" element={<Friends />} />
-          <Route path="/bank" element={<Bank />} />
-        </Routes>
-        <Footer />
-      </div>
-    </Router>
-  );
+  if (!showLoading) {
+    return (
+      <Router>
+        <div className="app-container">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/tasks" element={<Tasks />} />
+            <Route path="/friends" element={<Friends />} />
+            <Route path="/bank" element={<Bank />} />
+          </Routes>
+          <Footer />
+        </div>
+      </Router>
+    );
   }
-
-})
+});
 
 export default App;
-
-
-
-

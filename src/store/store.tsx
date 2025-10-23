@@ -6,19 +6,17 @@ class Store {
 
   referrerId: string | null = null;
   startParam: string | null = null;
-  userData: any = {}
+  userData: any = {};
   isAuthenticating = false;
   authError: string | null = null;
-  userState: any = {}
-  user: any = {}
-
-
+  userState: any = {};
+  user: any = {};
 
   constructor() {
     makeAutoObservable(this);
   }
 
-setReferralContext(startParam: string | null, referrerId: string | null) {
+  setReferralContext(startParam: string | null, referrerId: string | null) {
     runInAction(() => {
       this.startParam = startParam;
       this.referrerId = referrerId;
@@ -29,71 +27,73 @@ setReferralContext(startParam: string | null, referrerId: string | null) {
     this.isAuthenticating = true;
     this.authError = null;
 
-    try {
-      const rc =
-        referralCode && /^\d+$/.test(referralCode) ? referralCode : null;
-      let url = `/api/v1/users/register`;
-      if (rc) url += `?referralCode=${encodeURIComponent(rc)}`;
+    console.log(initDataRaw);
+    console.log(referralCode);
 
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ initDataRaw }),
-      });
+    // try {
+    //   const rc =
+    //     referralCode && /^\d+$/.test(referralCode) ? referralCode : null;
+    //   let url = `/api/v1/users/register`;
+    //   if (rc) url += `?referralCode=${encodeURIComponent(rc)}`;
 
-      if (!res.ok) {
-        const errorText = await res.text().catch(() => "");
-        let message = `Auth failed: ${res.status}`;
-        try {
-          if (errorText) {
-            const errJson = JSON.parse(errorText);
-            message = errJson?.message || message;
-          }
-        } catch {
-          /* ignore */
-        }
-        throw new Error(message);
-      }
+    //   const res = await fetch(url, {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       Accept: "application/json",
+    //     },
+    //     body: JSON.stringify({ initDataRaw }),
+    //   });
 
-      const text = await res.text();
-      if (!text || !text.trim())
-        throw new Error("Пустой ответ от /users/register");
-      const userData = JSON.parse(text);
+    //   if (!res.ok) {
+    //     const errorText = await res.text().catch(() => "");
+    //     let message = `Auth failed: ${res.status}`;
+    //     try {
+    //       if (errorText) {
+    //         const errJson = JSON.parse(errorText);
+    //         message = errJson?.message || message;
+    //       }
+    //     } catch {
+    //       /* ignore */
+    //     }
+    //     throw new Error(message);
+    //   }
 
-      runInAction(() => {
-        this.setUserState(userData);
-        this.setUser(userData);
-      });
+    //   const text = await res.text();
+    //   if (!text || !text.trim())
+    //     throw new Error("Пустой ответ от /users/register");
+    //   const userData = JSON.parse(text);
 
-      if (userData?.id) {
-        void this.loadReferralInfo(userData.id);
-      }
-    } catch (e: any) {
-      console.error("Authentication process failed:", e);
-      runInAction(() => {
-        this.authError = e?.message || "Authentication failed";
-      });
-    } finally {
-      runInAction(() => {
-        this.isAuthenticating = false;
-      });
-    }
+    //   runInAction(() => {
+    //     this.setUserState(userData);
+    //     this.setUser(userData);
+    //   });
+
+    //   if (userData?.id) {
+    //     void this.loadReferralInfo(userData.id);
+    //   }
+    // } catch (e: any) {
+    //   console.error("Authentication process failed:", e);
+    //   runInAction(() => {
+    //     this.authError = e?.message || "Authentication failed";
+    //   });
+    // } finally {
+    //   runInAction(() => {
+    //     this.isAuthenticating = false;
+    //   });
+    // }
   }
+
   loadReferralInfo(_id: any) {
     throw new Error("Method not implemented.");
   }
 
-
-    setUser(user: any) {
+  setUser(user: any) {
     this.user = user;
   }
   setUserState(userState: any) {
     this.userState = userState;
   }
-
 }
 
 export default new Store();
