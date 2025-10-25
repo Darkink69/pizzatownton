@@ -1,34 +1,42 @@
+// src/main.tsx
 import { StrictMode } from "react";
-import "./index.css";
-import App from "./App.tsx";
-
 import ReactDOM from "react-dom/client";
+import App from "./App.tsx";
+import "./index.css";
 
 import { retrieveLaunchParams } from "@telegram-apps/sdk-react";
-
-// Mock the environment in case, we are outside Telegram.
 import "./mockEnv.ts";
-import { init } from "./init.ts";
 
 const root = ReactDOM.createRoot(document.getElementById("root")!);
 
-try {
-  const launchParams = retrieveLaunchParams();
-  const { tgWebAppPlatform: platform } = launchParams;
-  const debug =
-    (launchParams.tgWebAppStartParam || "").includes("platformer_debug") ||
-    import.meta.env.DEV;
+(async function bootstrap() {
+  let platform = "web";
+  let debug = import.meta.env.DEV;
 
-  // Configure all application dependencies.
-  await init({
-    debug,
-    eruda: debug && ["ios", "android"].includes(platform),
-    mockForMacOS: platform === "macos",
-  }).then(() => {
+  try {
+    const lp = retrieveLaunchParams();
+    platform = lp.tgWebAppPlatform || platform;
+    debug = debug || (lp.tgWebAppStartParam || "").includes("platformer_debug");
+  } catch (e) {
+    console.warn("⚠️ retrieveLaunchParams failed (outside Telegram?)", e);
+  }
+
+  try {
+    const { init } = await import("./init.ts");
+    await init({
+      debug,
+      eruda: debug && ["ios", "android"].includes(platform),
+      mockForMacOS: true,
+    });
+    console.log("✅ bridge init ok");
+  } catch (e) {
+    console.error("⚠️ init() failed, continue without Telegram:", e);
+  } finally {
+    // Всегда монтируем UI, чтобы не было черного экрана
     root.render(
-      <StrictMode>
-        <App />
-      </StrictMode>
+        <StrictMode>
+          <App />
+        </StrictMode>
     );
-  });
-} catch (e) {}
+  }
+})();

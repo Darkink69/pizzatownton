@@ -1,10 +1,11 @@
+// src/App.tsx
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  retrieveLaunchParams,
-  initDataRaw as _initDataRaw,
-  miniApp,
-  useSignal,
+    retrieveLaunchParams,
+    initDataRaw as _initDataRaw,
+    miniApp,
+    useSignal,
 } from "@telegram-apps/sdk-react";
 import { observer } from "mobx-react-lite";
 
@@ -18,124 +19,129 @@ import store from "./store/store";
 import WebSocketComponent from "./components/websocket";
 
 function getStartParamFromUrlLike(): string | null {
-  try {
-    const url = new URL(window.location.href);
-    const s1 =
-      url.searchParams.get("tgWebAppStartParam") ||
-      url.searchParams.get("startapp") ||
-      url.searchParams.get("start");
-    if (s1) return s1;
+    try {
+        const url = new URL(window.location.href);
+        const s1 =
+            url.searchParams.get("tgWebAppStartParam") ||
+            url.searchParams.get("startapp") ||
+            url.searchParams.get("start");
+        if (s1) return s1;
 
-    if (url.hash?.includes("?")) {
-      const hashQuery = url.hash.substring(url.hash.indexOf("?") + 1);
-      const hsp = new URLSearchParams(hashQuery);
-      const s2 =
-        hsp.get("tgWebAppStartParam") ||
-        hsp.get("startapp") ||
-        hsp.get("start");
-      if (s2) return s2;
-    }
-  } catch {}
-  return null;
+        if (url.hash?.includes("?")) {
+            const hashQuery = url.hash.substring(url.hash.indexOf("?") + 1);
+            const hsp = new URLSearchParams(hashQuery);
+            const s2 =
+                hsp.get("tgWebAppStartParam") ||
+                hsp.get("startapp") ||
+                hsp.get("start");
+            if (s2) return s2;
+        }
+    } catch {}
+    return null;
 }
 
 function extractStartParam(
-  rawInitData: unknown,
-  lpStartParam?: unknown
+    rawInitData?: string,
+    lpStartParam?: unknown
 ): string | null {
-  const raw = typeof rawInitData === "string" ? rawInitData : null;
-  const lp = typeof lpStartParam === "string" ? lpStartParam : null;
+    const raw = typeof rawInitData === "string" ? rawInitData : null;
+    const lp = typeof lpStartParam === "string" ? lpStartParam : null;
 
-  if (raw) {
-    try {
-      const sp = new URLSearchParams(raw);
-      const p = sp.get("start_param");
-      if (p) return p;
-    } catch {}
-  }
-  const tg = (window as any)?.Telegram?.WebApp;
-  const p2 = tg?.initDataUnsafe?.start_param;
-  if (typeof p2 === "string") return p2;
-
-  const p3 = getStartParamFromUrlLike();
-  if (p3) return p3;
-
-  return lp ?? null;
-}
-
-export const App = observer(() => {
-  const [loading, setLoading] = useState(true);
-  const lp = useMemo(() => retrieveLaunchParams(), []);
-  const rawInitData = useSignal(_initDataRaw);
-
-  const startedRef = useRef(false);
-  const startParam = useMemo(
-    () => extractStartParam(rawInitData, lp.startParam),
-    [rawInitData, lp.startParam]
-  );
-  const [showLoading, setShowLoading] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    miniApp.ready();
-
-    if (startedRef.current || typeof rawInitData !== "string") return;
-    startedRef.current = true;
-
-    const referrerId =
-      typeof startParam === "string" && startParam.startsWith("ref_")
-        ? startParam.slice(4)
-        : null;
-
-    store.setReferralContext(startParam, referrerId);
-
-    if (referrerId) {
-      console.log(`РЕФЕРАЛ ОБНАРУЖЕН! ID родителя: ${referrerId}`);
-    } else {
-      console.log("Пользователь зашел без реферальной ссылки.", {
-        startParam,
-        lpStartParam: lp.startParam,
-        rawInitData,
-        initDataUnsafe: (window as any)?.Telegram?.WebApp?.initDataUnsafe,
-      });
+    if (raw) {
+        try {
+            const sp = new URLSearchParams(raw);
+            const p = sp.get("start_param");
+            if (p) return p;
+        } catch {}
     }
 
-    const loadingTimer = setTimeout(() => setShowLoading(true), 3000);
+    const tg = (window as any)?.Telegram?.WebApp;
+    const p2 = tg?.initDataUnsafe?.start_param;
+    if (typeof p2 === "string") return p2;
 
-    store.authenticateUser(rawInitData, referrerId).catch((e: any) => {
-      console.error("Auth error:", e);
-      clearTimeout(loadingTimer);
-    });
+    const p3 = getStartParamFromUrlLike();
+    if (p3) return p3;
 
-    return () => clearTimeout(loadingTimer);
-  }, [rawInitData, lp.startParam, startParam]);
+    return lp ?? null;
+}
 
-  if (loading) {
-    return <Preloader />;
-  }
+const App: React.FC = observer(() => {
+    const [booting, setBooting] = useState(true);
+    const [showLoading, setShowLoading] = useState(false);
+    const startedRef = useRef(false);
 
-  if (!showLoading) {
-    return (
-      <Router>
-        <div className="app-container">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/tasks" element={<Tasks />} />
-            <Route path="/friends" element={<Friends />} />
-            <Route path="/bank" element={<Bank />} />
-          </Routes>
-          <Footer />
-          <WebSocketComponent />;
-        </div>
-      </Router>
+    // Безопасно читаем launch params
+    const lp: any = useMemo(() => {
+        try {
+            return retrieveLaunchParams();
+        } catch {
+            return {};
+        }
+    }, []);
+
+    const rawInitData = useSignal(_initDataRaw) as unknown as string | undefined;
+
+    const startParam = useMemo(
+        () => extractStartParam(rawInitData, lp?.startParam),
+        [rawInitData, lp?.startParam]
     );
-  }
+
+    useEffect(() => {
+        try {
+            miniApp?.ready?.();
+        } catch {}
+    }, []);
+
+    // Короткий "boot" оверлей
+    useEffect(() => {
+        const t = setTimeout(() => setBooting(false), 1200);
+        return () => clearTimeout(t);
+    }, []);
+
+    // Авторизация / контекст
+    useEffect(() => {
+        if (startedRef.current) return;
+        startedRef.current = true;
+
+        const referrerId =
+            typeof startParam === "string" && startParam.startsWith("ref_")
+                ? startParam.slice(4)
+                : null;
+
+        store.setReferralContext(startParam ?? null, referrerId);
+
+        store
+            .authenticateUser(typeof rawInitData === "string" ? rawInitData : "", referrerId)
+            .catch((e: any) => console.error("Auth error:", e));
+
+        // Если долго нет sessionId — показать "loading"
+        const loadingTimer = setTimeout(() => setShowLoading(true), 3000);
+        return () => clearTimeout(loadingTimer);
+    }, [rawInitData, startParam]);
+
+    const showOverlay = booting || (showLoading && !store.sessionId);
+
+    return (
+        <Router>
+            {showOverlay && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
+                    <Preloader />
+                </div>
+            )}
+
+            <div className="app-container">
+                <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/tasks" element={<Tasks />} />
+                    <Route path="/friends" element={<Friends />} />
+                    <Route path="/bank" element={<Bank />} />
+                </Routes>
+
+                <Footer />
+                <WebSocketComponent />
+            </div>
+        </Router>
+    );
 });
 
 export default App;
