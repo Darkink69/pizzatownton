@@ -148,7 +148,7 @@ const WebSocketComponent = observer(() => {
                     'text-gray-600'
           }>{status}</span></p>
           <p>ReadyState: <span className="text-gray-800">{getReadyStateText()}</span></p>
-          <p className="text-gray-500 text-xs">Session: {store.sessionId || '-'}</p>
+          {/* <p className="text-gray-500 text-xs">Session: {store.sessionId || '-'}</p> */}
         </div>
 
         <div className="mb-4">
