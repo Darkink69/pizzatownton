@@ -1,154 +1,142 @@
-import { observer } from 'mobx-react-lite'
-import { useEffect, useRef, useState } from 'react'
-import store from '../store/store'
-
-interface WebSocketMessage {
-  type: string
-  requestId: string
-  session: string
-  authReq?: {
-    referralCode: string | null
-    initData: string
-  }
-  claimDoRq?: {
-    telegramId: number
-  }
-  [key: string]: any
-}
+// src/components/websocket.tsx
+import { observer } from "mobx-react-lite";
+import { useEffect, useMemo, useRef, useState } from "react";
+import store from "../store/store";
+import type { AuthData, ClaimData, WsRequest, WsResponse } from "../types/ws";
 
 function generateRequestId() {
-  return Math.random().toString(36).substring(2, 10)
+  return Math.random().toString(36).substring(2, 10);
 }
 
 const WebSocketComponent = observer(() => {
-  const wsRef = useRef<WebSocket | null>(null)
-  const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [lastMessage, setLastMessage] = useState<string>('')
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [lastMessage, setLastMessage] = useState<string>("");
+  const [status, setStatus] =
+      useState<"connected" | "disconnected" | "error" | "connecting">("disconnected");
 
-  const [status, setStatus] = useState<'connected' | 'disconnected' | 'error'>('disconnected')
-
-  const WS_URL =
-      import.meta.env.VITE_WS_URL ||
-      import.meta.env.VITE_API_URL.replace(/^http/, 'ws') + '/ws'
+  const WS_URL = useMemo(
+      () =>
+          import.meta.env.VITE_WS_URL ||
+          ((import.meta.env.VITE_API_URL || "").replace(/^http/, "ws") + "/ws"),
+      []
+  );
 
   const connectWebSocket = () => {
-    if (wsRef.current) {
-      wsRef.current.close()
-    }
+    if (wsRef.current) wsRef.current.close();
 
-    console.log('🔌 Connecting to WebSocket:', WS_URL)
-    const ws = new WebSocket(WS_URL)
-    wsRef.current = ws
+    setStatus("connecting");
+    const ws = new WebSocket(WS_URL);
+    wsRef.current = ws;
 
     ws.onopen = () => {
-      setStatus('connected')
-      console.log('✅ WebSocket connected')
+      setStatus("connected");
 
-      const requestId = generateRequestId()
-
-      const authMsg: WebSocketMessage = {
-        type: 'AUTH_INIT',
-        requestId,
-        session: '',
+      const rq: WsRequest = {
+        type: "AUTH_INIT",
+        requestId: generateRequestId(),
+        session: "",
         authReq: {
           referralCode: store.referrerId,
           initData: store.initDataRaw,
         },
-      }
+      };
 
-      ws.send(JSON.stringify(authMsg))
-      console.log('📤 Sent AUTH_INIT:', authMsg)
-    }
+      ws.send(JSON.stringify(rq));
+    };
 
     ws.onmessage = (event) => {
-      console.log('📨 WS message received:', event.data)
-      setLastMessage(event.data)
-
+      setLastMessage(event.data);
       try {
-        const parsed = JSON.parse(event.data)
+        const parsed: WsResponse<any> = JSON.parse(event.data);
 
         switch (parsed.type) {
-          case 'AUTH_INIT':
+          case "AUTH_INIT": {
             if (parsed.success) {
-              const { user, sessionId } = parsed.data ?? {}
-              store.setUser(user)
-              store.setSessionId(sessionId)
-              console.log('✅ AUTH success:', user)
+              const { user, sessionId } = (parsed.data || {}) as AuthData;
+              store.setUser(user);             // теперь принимает undefined
+              store.setSessionId(sessionId);   // безопасно
             } else {
-              console.warn('❌ AUTH failed:', parsed.message)
-              store.setAuthError(parsed.message)
+              store.setAuthError(parsed.message || "AUTH_INIT failed");
             }
-            break
+            break;
+          }
 
-          case 'CLAIM_DO':
+          case "CLAIM_DO": {
             if (parsed.success) {
-              const { userResponse } = parsed.data ?? {}
-              store.setUserState(userResponse)
-              console.log('💰 CLAIM ok:', userResponse)
-            } else {
-              console.warn('❌ CLAIM error:', parsed.message)
+              const d = (parsed.data || {}) as ClaimData;
+              if (d.userState) store.setUserState(d.userState);
+              else if (d.userResponse) store.setUserState(d.userResponse);
             }
-            break
+            break;
+          }
 
           default:
-            console.log('ℹ️ Unknown message type:', parsed.type)
+            // прочие типы обработаем позже
+            break;
         }
       } catch (e) {
-        console.warn('❗ Failed to parse WS message:', e)
+        // ignore parse errors
       }
-    }
+    };
 
-    ws.onerror = (error) => {
-      setStatus('error')
-      console.error('❌ WebSocket error:', error)
-    }
+    ws.onerror = () => setStatus("error");
 
-    ws.onclose = (event) => {
-      setStatus('disconnected')
-      console.warn(`⚠️ WS closed (code: ${event.code}, reason: ${event.reason})`)
+    ws.onclose = () => {
+      setStatus("disconnected");
       reconnectTimeout.current = setTimeout(() => {
-        console.log('🔁 Reconnecting WebSocket...')
-        connectWebSocket()
-      }, 10000)
-    }
-  }
+        connectWebSocket();
+      }, 10000);
+    };
+  };
 
   useEffect(() => {
-    connectWebSocket()
+    connectWebSocket();
     return () => {
-      if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current)
-      if (wsRef.current) wsRef.current.close()
-    }
-  }, [])
+      if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
+      if (wsRef.current) wsRef.current.close();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const getReadyStateText = () => {
-    if (!wsRef.current) return '-'
-    switch (wsRef.current.readyState) {
-      case WebSocket.CONNECTING:
-        return '⏳ Connecting'
-      case WebSocket.OPEN:
-        return '🟢 Open'
-      case WebSocket.CLOSING:
-        return '🟠 Closing'
-      case WebSocket.CLOSED:
-        return '🔴 Closed'
+    switch (status) {
+      case "connecting":
+        return "⏳ Connecting";
+      case "connected":
+        return "🟢 Open";
+      case "error":
+        return "🔴 Error";
+      case "disconnected":
+        return "🔴 Closed";
       default:
-        return 'Unknown'
+        return "-";
     }
-  }
+  };
 
   return (
       <div className="p-4">
         <h1 className="text-xl font-bold mb-4">WebSocket Debug</h1>
 
         <div className="mb-4">
-          <p>Status: <span className={
-            status === 'connected' ? 'text-green-600 font-semibold' :
-                status === 'error' ? 'text-red-600 font-semibold' :
-                    'text-gray-600'
-          }>{status}</span></p>
-          <p>ReadyState: <span className="text-gray-800">{getReadyStateText()}</span></p>
-          {/* <p className="text-gray-500 text-xs">Session: {store.sessionId || '-'}</p> */}
+          <p>
+            Status:{" "}
+            <span
+                className={
+                  status === "connected"
+                      ? "text-green-600 font-semibold"
+                      : status === "error"
+                          ? "text-red-600 font-semibold"
+                          : "text-gray-600"
+                }
+            >
+            {status}
+          </span>
+          </p>
+          <p>
+            ReadyState: <span className="text-gray-800">{getReadyStateText()}</span>
+          </p>
+          <p className="text-gray-500 text-xs">Session: {store.sessionId || "-"}</p>
         </div>
 
         <div className="mb-4">
@@ -164,10 +152,12 @@ const WebSocketComponent = observer(() => {
 
         <div className="text-sm text-gray-500">
           <p>Auto reconnect after 10 sec</p>
-          <p>WS URL: <code className="break-all">{WS_URL}</code></p>
+          <p>
+            WS URL: <code className="break-all">{WS_URL}</code>
+          </p>
         </div>
       </div>
-  )
-})
+  );
+});
 
 export default WebSocketComponent;

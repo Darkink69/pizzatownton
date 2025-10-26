@@ -8,7 +8,12 @@ function Bank() {
   const [tonExchangeAmount, setTonExchangeAmount] = useState('0,02');
 
   const handleBuy = () => {
-    alert(`Вы купили ${pcoinAmount} PCOIN за ${tonAmount} TON`);
+    const parsed = parseInt(pcoinAmount);
+    if (Number.isNaN(parsed) || parsed < 100) {
+      alert("Минимальная покупка — 100 PCoin");
+      return;
+    }
+    store.bankCreateOrder(parsed);
   };
 
   const handleExchange = () => {
