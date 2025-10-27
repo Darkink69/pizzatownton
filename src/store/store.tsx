@@ -7,7 +7,8 @@ import type {
 import { bankStore } from "./BankStore";
 
 class Store {
-  imgUrl = "/assets/";
+  imgUrl = "https://s3.twcstorage.ru/c6bae09a-a5938890-9b68-453c-9c54-76c439a70d3e/Pizzatownton/";
+
   initDataRaw = "";
   referrerId: string | null = null;
   startParam: string | null = null;

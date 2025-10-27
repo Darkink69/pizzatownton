@@ -4,7 +4,7 @@ import App from "./App.tsx";
 import "./index.css";
 
 import { retrieveLaunchParams } from "@telegram-apps/sdk-react";
-import "@telegram-apps/telegram-ui/dist/styles.css";
+// import "@telegram-apps/telegram-ui/dist/styles.css";
 import "./mockEnv.ts";
 
 const root = ReactDOM.createRoot(document.getElementById("root")!);
