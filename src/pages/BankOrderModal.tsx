@@ -1,36 +1,89 @@
 import React, { useEffect, useState } from "react";
-import store from "../store/store";
 import { QRCodeCanvas } from "qrcode.react";
+import store from "../store/store";
 
-// Конвертация TON в nanoTON (для URL тонкой оплаты)
-const tonToNano = (ton: string): string => {
-    const val = parseFloat(ton);
-    return isNaN(val) ? "0" : Math.floor(val * 1e9).toString();
-};
+import {
+    useTonConnectUI,
+    useTonWallet,
+} from "@tonconnect/ui-react";
 
-// Радиальный круг
+// Helpers
 const CIRCLE_RADIUS = 40;
 const CIRCLE_CIRC = 2 * Math.PI * CIRCLE_RADIUS;
 
-export const BankOrderModal: React.FC = () => {
+function tonToNano(ton: string | number): string {
+    const amount = typeof ton === "string" ? parseFloat(ton) : ton;
+    return BigInt(Math.floor((amount || 0) * 1e9)).toString();
+}
+
+// Словарь отображения статусов
+const statusUi: Record<
+    string,
+    { title: string; color: string; icon: string; animation?: string }
+> = {
+    NEW: {
+        title: "Ожидает оплаты",
+        color: "text-gray-700",
+        icon: "🕓",
+        animation: "animate-pulse",
+    },
+    WAITING_PAYMENT: {
+        title: "Ожидание перевода",
+        color: "text-blue-700",
+        icon: "⌛",
+        animation: "animate-pulse",
+    },
+    PAID: {
+        title: "Оплачен успешно",
+        color: "text-green-600",
+        icon: "✅",
+        animation: "animate-scale-pop",
+    },
+    EXPIRED: {
+        title: "Время оплаты истекло",
+        color: "text-red-500",
+        icon: "⏰",
+        animation: "animate-fade-in",
+    },
+    CANCELLED: {
+        title: "Отменён",
+        color: "text-yellow-600",
+        icon: "⚠️",
+        animation: "animate-fade-in",
+    },
+    FAILED: {
+        title: "Ошибка оплаты",
+        color: "text-red-600",
+        icon: "❌",
+        animation: "animate-shake",
+    },
+};
+
+const BankOrderModal: React.FC = () => {
     const { order } = store.bank;
+
     const [timeLeft, setTimeLeft] = useState("00:00");
     const [percent, setPercent] = useState(100);
 
-    const isConfirmed = order?.status === "CONFIRMED";
+    const [tonConnectUI] = useTonConnectUI();
+    const wallet = useTonWallet();
+    const isWalletConnected = !!wallet;
 
-    // Таймер отображения времени и прогресса
+    const isPaid = order?.status === "PAID";
+    const isExpired = order?.status === "EXPIRED";
+    const statusInfo = order?.status ? statusUi[order.status] : null;
+
+    // Таймер до EXPIRES_AT
     useEffect(() => {
-        if (!order?.expiresAt || !order?.createdAt) return;
+        if (!order?.expiresAt || isPaid || isExpired) return;
 
         const exp = new Date(order.expiresAt).getTime();
-        const start = new Date(order.createdAt).getTime();
-        const duration = exp - start;
+        const total = exp - Date.now();
 
         const interval = setInterval(() => {
             const now = Date.now();
-            const remaining = Math.max(0, exp - now);
-            const progress = Math.max((remaining / duration) * 100, 0);
+            const remaining = Math.max(exp - now, 0);
+            const progress = Math.max((remaining / total) * 100, 0);
 
             const mins = Math.floor(remaining / 60000);
             const secs = Math.floor((remaining % 60000) / 1000);
@@ -41,33 +94,49 @@ export const BankOrderModal: React.FC = () => {
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [order?.expiresAt, order?.createdAt]);
+    }, [order?.expiresAt]);
 
-    // Автообновление статуса
+    // Автообновление статуса заказа
     useEffect(() => {
-        if (!order || isConfirmed) return;
+        if (!order?.orderId || isPaid || isExpired) return;
 
         const interval = setInterval(() => {
-            store.bankRequestOrderView();
+            store.bank.fetchOrder(order.orderId); // ✅ исправлено
         }, 5000);
 
         return () => clearInterval(interval);
-    }, [order, isConfirmed]);
-
-    // Авто-закрытие по подтверждению
-    useEffect(() => {
-        if (!isConfirmed) return;
-
-        const timeout = setTimeout(() => {
-            store.bank.order = null;
-        }, 3000);
-
-        return () => clearTimeout(timeout);
-    }, [isConfirmed]);
+    }, [order?.orderId, order?.status]);
 
     if (!order) return null;
 
-    const { amountTon, rate, merchantAddr, comment } = order;
+    const {
+        orderId,
+        amountTon,
+        rate,
+        merchantAddr,
+        comment,
+    } = order;
+
+    const handleTonConnectPayment = async () => {
+        if (!merchantAddr || !amountTon || !comment) return;
+
+        try {
+            await tonConnectUI.sendTransaction({
+                validUntil: Math.floor(Date.now() / 1000) + 300, // 5 минут
+                messages: [
+                    {
+                        address: merchantAddr,
+                        amount: tonToNano(amountTon),
+                        payload: `comment:${comment}`,
+                    },
+                ],
+            });
+
+            console.log("✅ Запрос TonConnect отправлен");
+        } catch (e) {
+            console.warn("❌ Пользователь отменил отправку TON:", e);
+        }
+    };
 
     return (
         <div className="fixed inset-0 z-[9999] bg-black bg-opacity-70 flex items-center justify-center p-4">
@@ -75,111 +144,116 @@ export const BankOrderModal: React.FC = () => {
                 <h2 className="text-xl mb-4 font-bold">Оплата TON</h2>
 
                 <div className="mb-2">
-                    Сумма к оплате:{" "}
-                    <strong className="text-blue-700">{amountTon} TON</strong>
+                    Сумма: <strong className="text-blue-700">{amountTon} TON</strong>
                 </div>
 
                 {merchantAddr && (
-                    <div className="mb-2 text-sm break-all">
-                        Адрес:{" "}
-                        <strong className="text-gray-800">{merchantAddr}</strong>
+                    <div className="mb-1 text-sm break-all text-gray-800">
+                        Адрес: <strong>{merchantAddr}</strong>
                     </div>
                 )}
 
                 {comment && (
-                    <div className="mb-2 text-sm break-all">
-                        Комментарий:{" "}
-                        <strong className="text-gray-800">{comment}</strong>
+                    <div className="mb-2 text-sm text-gray-800 break-all">
+                        Комментарий: <strong>{comment}</strong>
                     </div>
                 )}
 
-                <div className="mb-4">
-                    Курс:{" "}
-                    <span className="text-md font-semibold text-gray-800">
-            1 TON = {rate} PCOIN
-          </span>
+                <div className="mb-3 text-md font-semibold text-gray-800">
+                    Курс: 1 TON = {rate} PCoin
                 </div>
 
                 {/* QR-код */}
-                {merchantAddr && comment && amountTon && (
-                    <div className="mb-4 flex justify-center">
-                        <QRCodeCanvas
-                            value={`ton://transfer/${merchantAddr}?amount=${tonToNano(
-                                amountTon
-                            )}&text=${comment}`}
-                            size={200}
-                            level="M"
-                            bgColor="#fff"
-                            fgColor="#000"
-                            marginSize={4} // ✅ заменено с includeMargin
-                        />
+                <div className="my-4 flex justify-center">
+                    <QRCodeCanvas
+                        value={`ton://transfer/${merchantAddr}?amount=${tonToNano(
+                            amountTon ?? 0
+                        )}&text=${comment ?? ""}`}
+                        size={200}
+                        level="M"
+                        bgColor="#ffffff"
+                        fgColor="#000000"
+                    />
+                </div>
+
+                {/* Статус */}
+                {statusInfo && (
+                    <div className={`mt-4 text-md font-semibold flex items-center justify-center gap-2 ${statusInfo.color} ${statusInfo.animation}`}>
+                        <span>{statusInfo.icon}</span>
+                        <span>{statusInfo.title}</span>
                     </div>
                 )}
 
-                {/* Цветной SVG таймер */}
-                <div className="my-4 flex justify-center">
-                    <div className="relative w-[100px] h-[100px]">
-                        <svg className="w-full h-full transform -rotate-90">
-                            <defs>
-                                <linearGradient id="gradient-ring" x1="0%" y1="0%" x2="100%" y2="0%">
-                                    <stop offset="0%" stopColor="#8e44ad" />
-                                    <stop offset="50%" stopColor="#e67e22" />
-                                    <stop offset="100%" stopColor="#f1c40f" />
-                                </linearGradient>
-                            </defs>
-
-                            <circle
-                                cx="50%"
-                                cy="50%"
-                                r={CIRCLE_RADIUS}
-                                stroke="#eee"
-                                strokeWidth="8"
-                                fill="transparent"
-                            />
-                            <circle
-                                cx="50%"
-                                cy="50%"
-                                r={CIRCLE_RADIUS}
-                                stroke="url(#gradient-ring)"
-                                strokeWidth="8"
-                                fill="transparent"
-                                strokeDasharray={CIRCLE_CIRC}
-                                strokeDashoffset={(1 - percent / 100) * CIRCLE_CIRC}
-                                strokeLinecap="round"
-                                className="pulse-ring"
-                            />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center text-md font-bold text-amber-900">
-                            {timeLeft}
+                {/* Таймер */}
+                {!isPaid && !isExpired && (
+                    <div className="my-4 flex justify-center">
+                        <div className="relative w-[100px] h-[100px]">
+                            <svg className="w-full h-full transform -rotate-90">
+                                <circle
+                                    cx="50%"
+                                    cy="50%"
+                                    r={CIRCLE_RADIUS}
+                                    stroke="#eee"
+                                    strokeWidth="8"
+                                    fill="transparent"
+                                />
+                                <circle
+                                    cx="50%"
+                                    cy="50%"
+                                    r={CIRCLE_RADIUS}
+                                    stroke="url(#gradient-ring)"
+                                    strokeWidth="8"
+                                    fill="transparent"
+                                    strokeDasharray={CIRCLE_CIRC}
+                                    strokeDashoffset={(1 - percent / 100) * CIRCLE_CIRC}
+                                    strokeLinecap="round"
+                                    className="pulse-ring"
+                                />
+                                <defs>
+                                    <linearGradient id="gradient-ring" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stopColor="#8e44ad" />
+                                        <stop offset="50%" stopColor="#e67e22" />
+                                        <stop offset="100%" stopColor="#f1c40f" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <div className="absolute inset-0 flex items-center justify-center text-md font-bold text-amber-900">
+                                {timeLeft}
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
 
-                {/* ✅ Подтверждение */}
-                {isConfirmed ? (
-                    <div className="mt-4 animate-scale-pop text-green-600 text-lg font-bold">
-                        ✅ Оплата подтверждена
-                    </div>
-                ) : (
+                {/* Кнопка Ton Connect */}
+                {isWalletConnected && !isPaid && !isExpired && (
                     <button
-                        onClick={() => store.bankRequestOrderView()}
-                        className="mt-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition"
+                        onClick={handleTonConnectPayment}
+                        className="mb-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded transition"
+                    >
+                        Оплатить через кошелёк
+                    </button>
+                )}
+
+                {/* Кнопка ручной проверки */}
+                {!isPaid && !isExpired && (
+                    <button
+                        onClick={() => orderId && store.bank.fetchOrder(orderId)} // ✅ исправлено
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
                     >
                         Я оплатил
                     </button>
                 )}
 
-                {/* ❌ Закрытие вручную */}
-                {!isConfirmed && (
-                    <button
-                        onClick={() => (store.bank.order = null)}
-                        className="absolute top-2 right-2 text-[20px] text-gray-700 hover:text-red-900"
-                        title="Закрыть"
-                    >
-                        ×
-                    </button>
-                )}
+                <button
+                    onClick={() => (store.bank.order = null)}
+                    className="absolute top-2 right-2 text-[20px] text-gray-700 hover:text-red-900"
+                    title="Закрыть"
+                >
+                    ×
+                </button>
             </div>
         </div>
     );
 };
+
+export default BankOrderModal;

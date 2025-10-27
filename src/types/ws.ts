@@ -11,16 +11,16 @@ export type OperationType =
     | "BANK_ORDER_GET"
     | "BANK_ORDER_VIEW"
     | "BANK_SELL_PDOLLAR"
-    | (string & {});
+    | (string & {}); // расширяемость
 
-// Базовая структура запроса
+// Базовая структура WebSocket-запроса
 export interface WsBase {
     type: OperationType;
     requestId: string;
     session: string;
 }
 
-// Пользователь из Telegram (может быть пустым)
+// Telegram User (может быть частично заполнен)
 export interface TgUser {
     id?: number;
     telegramId?: number;
@@ -32,13 +32,12 @@ export interface TgUser {
     [k: string]: any;
 }
 
+// Текущее состояние пользователя (цифры + статус)
 export interface UserState {
     [key: string]: any;
 }
 
-// ---------------------
-//          RQ
-// ---------------------
+// -------------------- Запросы (RQ) --------------------
 
 export interface AuthReq {
     referralCode: string | null;
@@ -51,23 +50,23 @@ export interface ClaimDoRq {
 
 export interface BankBuyPCoinRq {
     amountPCoin: number;
-    comment: string; // ✅ ОБЯЗАТЕЛЬНО
+    comment: string;
 }
 
 export interface BankConfirmRq {
-    operationId: string;
+    orderId: string;
     txHash: string;
 }
 
 export interface BankOrderGetRq {
-    operationId: string;
+    orderId: string;
 }
 
 export interface BankSellPDollarRq {
     amountPDollar: number;
 }
 
-// Полная структура запроса
+// Полный WS-запрос
 export interface WsRequest extends WsBase {
     authReq?: AuthReq;
     claimDoRq?: ClaimDoRq;
@@ -80,11 +79,8 @@ export interface WsRequest extends WsBase {
     [key: string]: any;
 }
 
-// ---------------------
-//          RS
-// ---------------------
+// -------------------- Ответы (RS) --------------------
 
-// Базовый ответ
 export interface WsResponse<T = any> {
     success: boolean;
     message?: string | null;
@@ -94,40 +90,38 @@ export interface WsResponse<T = any> {
     [key: string]: any;
 }
 
-// Ответ на AUTH_INIT
 export interface AuthData {
     sessionId?: string;
     user?: TgUser;
     userState?: UserState;
 }
 
-// Ответ на CLAIM
 export interface ClaimData {
     userResponse?: UserState;
     userState?: UserState;
 }
 
-// Ответ на создание ордера
+// Ответ после создания ордера на PCoin
 export interface BankCreateOrderData {
-    operationId: string;
+    orderId: string;
     amountTon: string;
     rate: string;
     expiresAt: string;
+    merchantAddress: string;
+    comment: string;
 }
 
-// Ответ на просмотр ордера
+// Ответ при получении статуса ордера
 export interface BankOrderViewData {
-    operationId: string;
-    status?: string | null;
-    merchantAddr?: string | null;
-    comment?: string | null;
-    amountPcoin?: number | null;
-    amountTon?: string | null;
-    rate?: string | number | null;
-    expiresAt?: string | null;
-    createdAt?: string | null;
-    updatedAt?: string | null;
+    orderId: string;
+    status: string;
+    amountTon: string;
+    rate: string | number;
+    expiresAt: string;
+    merchantAddr: string;
+    comment: string;
+    amountPcoin?: number;
+    txHash?: string | null;
+    createdAt?: string;
+    updatedAt?: string;
 }
-
-// Устаревшее, но безопасное
-export type TGUser = TgUser;
