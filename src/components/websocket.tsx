@@ -11,15 +11,16 @@ function generateRequestId() {
 const WebSocketComponent = observer(() => {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [lastMessage, setLastMessage] = useState<string>("");
-  const [status, setStatus] =
-      useState<"connected" | "disconnected" | "error" | "connecting">("disconnected");
+  const [_lastMessage, setLastMessage] = useState<string>("");
+  const [_status, setStatus] = useState<
+    "connected" | "disconnected" | "error" | "connecting"
+  >("disconnected");
 
   const WS_URL = useMemo(
-      () =>
-          import.meta.env.VITE_WS_URL ||
-          ((import.meta.env.VITE_API_URL || "").replace(/^http/, "ws") + "/ws"),
-      []
+    () =>
+      import.meta.env.VITE_WS_URL ||
+      (import.meta.env.VITE_API_URL || "").replace(/^http/, "ws") + "/ws",
+    []
   );
 
   const connectWebSocket = () => {
@@ -54,8 +55,8 @@ const WebSocketComponent = observer(() => {
           case "AUTH_INIT": {
             if (parsed.success) {
               const { user, sessionId } = (parsed.data || {}) as AuthData;
-              store.setUser(user);             // теперь принимает undefined
-              store.setSessionId(sessionId);   // безопасно
+              store.setUser(user); // теперь принимает undefined
+              store.setSessionId(sessionId); // безопасно
             } else {
               store.setAuthError(parsed.message || "AUTH_INIT failed");
             }
@@ -99,65 +100,67 @@ const WebSocketComponent = observer(() => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const getReadyStateText = () => {
-    switch (status) {
-      case "connecting":
-        return "⏳ Connecting";
-      case "connected":
-        return "🟢 Open";
-      case "error":
-        return "🔴 Error";
-      case "disconnected":
-        return "🔴 Closed";
-      default:
-        return "-";
-    }
-  };
+  // const getReadyStateText = () => {
+  //   switch (status) {
+  //     case "connecting":
+  //       return "⏳ Connecting";
+  //     case "connected":
+  //       return "🟢 Open";
+  //     case "error":
+  //       return "🔴 Error";
+  //     case "disconnected":
+  //       return "🔴 Closed";
+  //     default:
+  //       return "-";
+  //   }
+  // };
 
-  return (
-      <div className="p-4">
-        <h1 className="text-xl font-bold mb-4">WebSocket Debug</h1>
+  return null;
 
-        <div className="mb-4">
-          <p>
-            Status:{" "}
-            <span
-                className={
-                  status === "connected"
-                      ? "text-green-600 font-semibold"
-                      : status === "error"
-                          ? "text-red-600 font-semibold"
-                          : "text-gray-600"
-                }
-            >
-            {status}
-          </span>
-          </p>
-          <p>
-            ReadyState: <span className="text-gray-800">{getReadyStateText()}</span>
-          </p>
-          <p className="text-gray-500 text-xs">Session: {store.sessionId || "-"}</p>
-        </div>
+  // return (
+  //     <div className="p-4">
+  //       <h1 className="text-xl font-bold mb-4">WebSocket Debug</h1>
 
-        <div className="mb-4">
-          <p className="font-semibold">Last Message:</p>
-          <div className="mt-2 p-3 bg-gray-100 rounded border max-h-[200px] overflow-auto">
-            {lastMessage ? (
-                <code className="text-sm break-all">{lastMessage}</code>
-            ) : (
-                <span className="text-gray-500">No messages received yet</span>
-            )}
-          </div>
-        </div>
+  //       <div className="mb-4">
+  //         <p>
+  //           Status:{" "}
+  //           <span
+  //               className={
+  //                 status === "connected"
+  //                     ? "text-green-600 font-semibold"
+  //                     : status === "error"
+  //                         ? "text-red-600 font-semibold"
+  //                         : "text-gray-600"
+  //               }
+  //           >
+  //           {status}
+  //         </span>
+  //         </p>
+  //         <p>
+  //           ReadyState: <span className="text-gray-800">{getReadyStateText()}</span>
+  //         </p>
+  //         <p className="text-gray-500 text-xs">Session: {store.sessionId || "-"}</p>
+  //       </div>
 
-        <div className="text-sm text-gray-500">
-          <p>Auto reconnect after 10 sec</p>
-          <p>
-            WS URL: <code className="break-all">{WS_URL}</code>
-          </p>
-        </div>
-      </div>
-  );
+  //       <div className="mb-4">
+  //         <p className="font-semibold">Last Message:</p>
+  //         <div className="mt-2 p-3 bg-gray-100 rounded border max-h-[200px] overflow-auto">
+  //           {lastMessage ? (
+  //               <code className="text-sm break-all">{lastMessage}</code>
+  //           ) : (
+  //               <span className="text-gray-500">No messages received yet</span>
+  //           )}
+  //         </div>
+  //       </div>
+
+  //       <div className="text-sm text-gray-500">
+  //         <p>Auto reconnect after 10 sec</p>
+  //         <p>
+  //           WS URL: <code className="break-all">{WS_URL}</code>
+  //         </p>
+  //       </div>
+  //     </div>
+  // );
 });
 
 export default WebSocketComponent;

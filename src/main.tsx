@@ -1,10 +1,10 @@
-// src/main.tsx
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
 import { retrieveLaunchParams } from "@telegram-apps/sdk-react";
+import "@telegram-apps/telegram-ui/dist/styles.css";
 import "./mockEnv.ts";
 
 const root = ReactDOM.createRoot(document.getElementById("root")!);
@@ -34,9 +34,9 @@ const root = ReactDOM.createRoot(document.getElementById("root")!);
   } finally {
     // Всегда монтируем UI, чтобы не было черного экрана
     root.render(
-        <StrictMode>
-          <App />
-        </StrictMode>
+      <StrictMode>
+        <App />
+      </StrictMode>
     );
   }
 })();

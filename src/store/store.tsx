@@ -8,17 +8,20 @@ import type {
 } from "../types/ws";
 
 const DEFAULT_CDN_URL =
-    "https://s3.twcstorage.ru/c6bae09a-a5938890-9b68-453c-9c54-76c439a70d3e/Pizzatownton/";
+  "https://s3.twcstorage.ru/c6bae09a-a5938890-9b68-453c-9c54-76c439a70d3e/Pizzatownton/";
 
 const ENV_IMG_URL = import.meta.env.VITE_IMG_URL as string | undefined;
 const RUNTIME_IMG_URL =
-    typeof window !== "undefined"
-        ? ((window as any).__IMG_URL__ as string | undefined)
-        : undefined;
+  typeof window !== "undefined"
+    ? ((window as any).__IMG_URL__ as string | undefined)
+    : undefined;
 const LOCAL_ASSETS =
-    typeof window !== "undefined" ? `${window.location.origin}/assets/` : "/assets/";
+  typeof window !== "undefined"
+    ? `${window.location.origin}/assets/`
+    : "/assets/";
 
-const RAW_IMG_URL = ENV_IMG_URL || RUNTIME_IMG_URL || DEFAULT_CDN_URL || LOCAL_ASSETS;
+const RAW_IMG_URL =
+  ENV_IMG_URL || RUNTIME_IMG_URL || DEFAULT_CDN_URL || LOCAL_ASSETS;
 const IMG_URL = RAW_IMG_URL.endsWith("/") ? RAW_IMG_URL : `${RAW_IMG_URL}/`;
 
 class Store {
@@ -55,6 +58,7 @@ class Store {
 
   // WebSocket отправка
   private wsSend: ((rq: WsRequest) => void) | null = null;
+  tonBalance: any;
 
   constructor() {
     makeAutoObservable(this);
@@ -168,9 +172,9 @@ class Store {
     try {
       this.ensureWs();
       const tgId =
-          (this.user?.telegramId as number | undefined) ||
-          (this.user?.id as number | undefined) ||
-          0;
+        (this.user?.telegramId as number | undefined) ||
+        (this.user?.id as number | undefined) ||
+        0;
 
       this.wsSend!({
         type: "CLAIM_DO",

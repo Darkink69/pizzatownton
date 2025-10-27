@@ -6,41 +6,41 @@ function Home() {
   const [floors] = useState(9); // Количество этажей всего
 
   const userFloors = {
-    "success": true,
-    "message": "Ok",
-    "type": "FLOORS_GET",
-    "requestId": "",
-    "data": {
-        "floorList": [
-            {
-                "floorId": 1,
-                "level": 1,
-                "costCurrency": "pcoin",
-                "costAmount": 500,
-                "yieldPerHour": 84,
-                "yieldCurrency": "pdollar",
-                "floorName": "1"
-            },
-            {
-                "floorId": 2,
-                "level": 5,
-                "costCurrency": "pcoin",
-                "costAmount": 1200,
-                "yieldPerHour": 206,
-                "yieldCurrency": "pdollar",
-                "floorName": "2"
-            },
-            {
-                "floorId": 3,
-                "level": 3,
-                "costCurrency": "pcoin",
-                "costAmount": 1200,
-                "yieldPerHour": 206,
-                "yieldCurrency": "pdollar",
-                "floorName": "3"
-            },
-        ]
-    }
+    success: true,
+    message: "Ok",
+    type: "FLOORS_GET",
+    requestId: "",
+    data: {
+      floorList: [
+        {
+          floorId: 1,
+          level: 1,
+          costCurrency: "pcoin",
+          costAmount: 500,
+          yieldPerHour: 84,
+          yieldCurrency: "pdollar",
+          floorName: "1",
+        },
+        {
+          floorId: 2,
+          level: 5,
+          costCurrency: "pcoin",
+          costAmount: 2500,
+          yieldPerHour: 206,
+          yieldCurrency: "pdollar",
+          floorName: "2",
+        },
+        {
+          floorId: 3,
+          level: 3,
+          costCurrency: "pcoin",
+          costAmount: 1200,
+          yieldPerHour: 206,
+          yieldCurrency: "pdollar",
+          floorName: "3",
+        },
+      ],
+    },
   };
 
   // Получаем количество заполненных этажей
@@ -50,10 +50,10 @@ function Home() {
   const getFloorData = (index: number) => {
     // Индексы идут сверху вниз: 0 - крыша, 1 - верхний этаж, floors-1 - первый этаж
     // floorList идет снизу вверх: 0 - первый этаж, 1 - второй этаж и т.д.
-    
+
     // Преобразуем индекс грида в индекс floorList
     const floorListIndex = floors - 2 - index;
-    
+
     // Проверяем, существует ли такой этаж в floorList
     if (floorListIndex >= 0 && floorListIndex < filledFloorsCount) {
       return userFloors.data.floorList[floorListIndex];
@@ -65,13 +65,13 @@ function Home() {
   const getFloorImage = (index: number) => {
     if (index === 0) return "img_roof.png"; // Крыша (первая ячейка)
     if (index === floors - 1) return "img_first_floor.png"; // Первый этаж (последняя ячейка)
-    
+
     // Проверяем, является ли этаж заполненным (есть видео)
     const floorData = getFloorData(index);
     if (floorData) {
       return "img_floor_empty.png"; // Этаж с дыркой для видео
     }
-    
+
     return "img_floor_dark.png"; // Остальные этажи
   };
 
@@ -89,7 +89,7 @@ function Home() {
   const renderStars = (level: number) => {
     const stars = [];
     const totalStars = 5;
-    
+
     for (let i = 0; i < totalStars; i++) {
       if (i < level) {
         stars.push(
@@ -126,7 +126,7 @@ function Home() {
     // Прокрутка к самому низу страницы
     window.scrollTo({
       top: document.documentElement.scrollHeight,
-      behavior: "auto", 
+      behavior: "auto",
     });
   }, []);
 
@@ -160,7 +160,7 @@ function Home() {
               {Array.from({ length: floors }, (_, index) => {
                 const floorData = getFloorData(index);
                 const isFilled = isFilledFloor(index);
-                
+
                 return (
                   <div
                     key={index}
@@ -233,14 +233,15 @@ function Home() {
                             />
 
                             {/* Контент поверх фона */}
-                            <div className="absolute inset-0 flex items-center p-2 sm:p-2">
+                            <div className="absolute inset-0 flex items-center">
                               {/* Левая часть - название этажа и уровня */}
                               <div className="flex-1 px-2 sm:px-4 text-xs sm:text-sm text-amber-800 shantell text-center leading-3">
-                                Этаж {floorData.floorName} - Уровень {floorData.level}
+                                Этаж {floorData.floorName} - Уровень{" "}
+                                {floorData.level}
                               </div>
 
                               {/* Звезды */}
-                              <div className="flex items-center gap-1 mr-2 sm:mr-4">
+                              <div className="flex items-center gap-1 ml-2 sm:ml-4">
                                 {renderStars(floorData.level)}
                               </div>
 
