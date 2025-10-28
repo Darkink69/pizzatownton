@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { bankStore } from "../store/BankStore";
-import BankOrderModal from "./BankOrderModal";
+// import { bankStore } from "../store/BankStore";
+// import BankOrderModal from "./BankOrderModal";
 import store from "../store/store";
 
 function Bank() {
@@ -17,7 +17,7 @@ function Bank() {
 
     try {
       setBuying(true);
-      await bankStore.createOrder(parsed);
+      // await bankStore.createOrder(parsed);
     } catch (e) {
       console.warn("Ошибка создания заказа:", e);
     } finally {
@@ -46,13 +46,10 @@ function Bank() {
         </div>
 
         <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-20">
-          <img
-            src={`${store.imgUrl}img_bank.png`}
-            alt="bank"
-          />
+          <img src={`${store.imgUrl}img_bank.png`} alt="bank" />
         </div>
 
-                <div className="absolute top-12 right-4 flex items-center space-x-3 z-40">
+        <div className="absolute top-12 right-4 flex items-center space-x-3 z-40">
           <Link to="/ton-connect">
             <div className="rounded-full w-10 flex items-center justify-center">
               <svg
@@ -84,83 +81,78 @@ function Bank() {
         <div className="relative z-30 h-screen flex flex-col pt-25 pb-20">
           <div className="flex-1 overflow-y-auto">
             <div className="flex flex-col items-center gap-6 sm:gap-8 md:gap-10 py-4">
-            
-                <div className="w-11/12 max-w-md">
-                  <div className="relative">
-                    {/* Фон модального окна */}
-                    <img 
-                      src={`${store.imgUrl}img_window2.png`} 
-                      alt="Modal background" 
-                      className="w-full h-auto object-contain"
-                    />
-                    
-                    {/* Контент поверх фона */}
-                    <div className="absolute inset-0 flex flex-col justify-center p-3 sm:p-4 md:p-5">
-                      
-                      <div className="text-center text-xl sm:text-3xl mb-2 sm:mb-3 text-amber-800 shantell leading-tight tracking-wide">
-                        Покупка PCoin
-                      </div>
+              <div className="w-11/12 max-w-md">
+                <div className="relative">
+                  {/* Фон модального окна */}
+                  <img
+                    src={`${store.imgUrl}img_window2.png`}
+                    alt="Modal background"
+                    className="w-full h-auto object-contain"
+                  />
 
-                      <div className="">
-                        <div className="flex justify-between items-center mb-2">
-                          <div className="flex items-center gap-2">
-                            <img 
-                              src={`${store.imgUrl}"b_blue2.png"`} 
-                              alt=""
-                              className="w-6 h-auto sm:w-8 inline-block"
-                            />                    
-                            <span className="text-md sm:text-lg text-amber-800 shantell">
-                              Сколько PCoin вы хотите купить:
-                            </span>
-                          </div>
-                        </div>
-                        <div className="relative">
-                          <div className="bg-white rounded-xl py-4 mb-2 sm:mb-3 border-2 border-amber-800 shadow-inner text-center text-base sm:text-lg text-amber-800 shantell">
-                          <input
-                          className="absolute inset-0 bg-transparent w-full px-4 py-4 text-center font-bold text-lg sm:text-xl text-amber-800 shantell border-none outline-none"
-                          value={pcoinAmount}
-                          onChange={(e) => setPcoinAmount(e.target.value)}
-                          type="number"
-                          min="100"
-                          step="100"
-                          placeholder="500"
+                  {/* Контент поверх фона */}
+                  <div className="absolute inset-0 flex flex-col justify-center p-3 sm:p-4 md:p-5">
+                    <div className="text-center text-xl sm:text-3xl mb-2 sm:mb-3 text-amber-800 shantell leading-tight tracking-wide">
+                      Покупка PCoin
+                    </div>
+
+                    <div className="">
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={`${store.imgUrl}"b_blue2.png"`}
+                            alt=""
+                            className="w-6 h-auto sm:w-8 inline-block"
                           />
-                          </div>
-                        </div>
-                      </div>
-                            <span className="text-md sm:text-lg text-amber-800 text-center shantell">
-                              Курс: 1 TON = 1000 PCoin
-                            </span>
-
-                      <button
-                        className="relative w-full flex justify-center hover:opacity-90 transition-opacity mt-4"
-                        disabled={buying}
-                        onClick={handleBuy}
-                      >
-                        <img 
-                          src={`${store.imgUrl}b_blue2.png`} 
-                          alt=""
-                          className="w-1/3 h-auto"
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-blue-900 text-md sm:text-lg shantell">
-                            {buying ? "Создание заказа..." : "Купить"}
+                          <span className="text-md sm:text-lg text-amber-800 shantell">
+                            Сколько PCoin вы хотите купить:
                           </span>
                         </div>
-                      </button>
-
+                      </div>
+                      <div className="relative">
+                        <div className="bg-white rounded-xl py-4 mb-2 sm:mb-3 border-2 border-amber-800 shadow-inner text-center text-base sm:text-lg text-amber-800 shantell">
+                          <input
+                            className="absolute inset-0 bg-transparent w-full px-4 py-4 text-center font-bold text-lg sm:text-xl text-amber-800 shantell border-none outline-none"
+                            value={pcoinAmount}
+                            onChange={(e) => setPcoinAmount(e.target.value)}
+                            type="number"
+                            min="100"
+                            step="100"
+                            placeholder="500"
+                          />
+                        </div>
+                      </div>
                     </div>
+                    <span className="text-md sm:text-lg text-amber-800 text-center shantell">
+                      Курс: 1 TON = 1000 PCoin
+                    </span>
+
+                    <button
+                      className="relative w-full flex justify-center hover:opacity-90 transition-opacity mt-4"
+                      disabled={buying}
+                      onClick={handleBuy}
+                    >
+                      <img
+                        src={`${store.imgUrl}b_blue2.png`}
+                        alt=""
+                        className="w-1/3 h-auto"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-blue-900 text-md sm:text-lg shantell">
+                          {buying ? "Создание заказа..." : "Купить"}
+                        </span>
+                      </div>
+                    </button>
                   </div>
                 </div>
-             
+              </div>
             </div>
           </div>
         </div>
         {/* Модалка оплаты */}
-        {bankStore.order && <BankOrderModal />}
+        {/* {bankStore.order && <BankOrderModal />} */}
       </div>
     </>
-
   );
 }
 

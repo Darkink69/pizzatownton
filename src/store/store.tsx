@@ -1,13 +1,10 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import type {
-  TgUser,
-  UserState,
-  WsRequest,
-} from "../types/ws"; // ⛔️ Больше НЕ импортим Bank DTO
-import { bankStore } from "./BankStore";
+import type { TgUser, UserState, WsRequest } from "../types/ws"; // ⛔️ Больше НЕ импортим Bank DTO
+// import { bankStore } from "./BankStore";
 
 class Store {
-  imgUrl = "https://s3.twcstorage.ru/c6bae09a-a5938890-9b68-453c-9c54-76c439a70d3e/Pizzatownton/";
+  imgUrl =
+    "https://s3.twcstorage.ru/c6bae09a-a5938890-9b68-453c-9c54-76c439a70d3e/Pizzatownton/";
 
   initDataRaw = "";
   referrerId: string | null = null;
@@ -24,7 +21,7 @@ class Store {
   floors: any[] = [];
   floorsLoaded = false;
 
-  bank = bankStore; // ✅ подключаем внешний стор
+  // bank = bankStore; // ✅ подключаем внешний стор
 
   private wsSend: ((rq: WsRequest) => void) | null = null;
 
@@ -60,7 +57,7 @@ class Store {
   setSessionId(sessionId?: string | null) {
     this.sessionId = sessionId ?? null;
     // Передаём session в BankStore тоже
-    this.bank.setSession(this.sessionId ?? null);
+    // this.bank.setSession(this.sessionId ?? null);
   }
 
   setAuthError(message: string | null) {
@@ -131,7 +128,7 @@ class Store {
     this.floors = [];
     this.floorsLoaded = false;
     this.authError = null;
-    this.bank.reset(); // сбрасываем и банк
+    // this.bank.reset(); // сбрасываем и банк
   }
 }
 

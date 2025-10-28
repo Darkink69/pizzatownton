@@ -5,13 +5,13 @@ import {
   useTonAddress,
 } from "@tonconnect/ui-react";
 import {
-  Avatar,
-  Cell,
-  List,
+  // Avatar,
+  // Cell,
+  // List,
   Placeholder,
-  Section,
+  // Section,
   Text,
-  Title,
+  // Title,
 } from "@telegram-apps/telegram-ui";
 import { observer } from "mobx-react-lite";
 
@@ -31,6 +31,8 @@ function nanosToTonStr(nano: string | number, fractionDigits = 2): string {
 export const TONConnectPage: FC = observer(() => {
   const wallet = useTonWallet();
   const adrss = useTonAddress();
+  console.log(adrss, "adrss!!!");
+  console.log(wallet, "wallet!!!");
 
   // ---------------- Логика получения баланса ----------------
   const getTonBalance = async (address: string, signal?: AbortSignal) => {
@@ -71,6 +73,7 @@ export const TONConnectPage: FC = observer(() => {
 
   // ---------------- useEffect при подключении кошелька ----------------
   useEffect(() => {
+    console.log("Пробуем подключить кошелек...");
     if (!adrss) return;
     // store.setAdrss(adrss);
 
@@ -114,45 +117,6 @@ export const TONConnectPage: FC = observer(() => {
       <div className="relative h-screen w-full flex flex-col bg-[#FFBC6B] overflow-hidden">
         <div className="text-black text-3xl">КОШЕЛЕК!</div>
         {/* Обновление баланса вручную */}
-        {/* <div
-          className="cursor-pointer px-3 py-2 text-white nunito-sans-400"
-          onClick={() => adrss && getTonBalance(adrss)}
-        >
-          🔄 Обновить баланс TON (текущий: {store.tonBalance})
-        </div> */}
-
-        <Section header="💰 Баланс TON">
-          <Cell>{/* <Title level="2">{store.tonBalance} TON</Title> */}</Cell>
-        </Section>
-
-        <List>
-          <Section>
-            <Cell
-              before={
-                <Avatar
-                  src="https://wallet.ton.org/assets/ui/tonconnect-logo.png"
-                  alt="Wallet logo"
-                  width={60}
-                  height={60}
-                />
-              }
-              // subtitle={wallet.device?.platform ?? "TON Wallet"}
-            >
-              <Title level="3">
-                {/* {wallet.device?.appName ?? "Подключенный кошелёк"} */}
-              </Title>
-            </Cell>
-            <TonConnectButton className={e("button-connected")} />
-          </Section>
-
-          {/* <DisplayData
-            header="Аккаунт"
-            rows={[
-              { title: "Адрес", value: wallet.account?.address ?? "—" },
-              { title: "Сеть", value: wallet.account?.chain ?? "?" },
-            ]}
-          /> */}
-        </List>
       </div>
     </Page>
   );
