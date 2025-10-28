@@ -8,6 +8,7 @@ import {
   useSignal,
 } from "@telegram-apps/sdk-react";
 import { observer } from "mobx-react-lite";
+import { AppRoot } from "@telegram-apps/telegram-ui";
 
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -128,28 +129,30 @@ const App: React.FC = observer(() => {
   const showOverlay = booting || (showLoading && !store.sessionId);
 
   return (
-    <TonConnectUIProvider manifestUrl={manifestUrl}>
-      <Router>
-        {showOverlay && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
-            <Preloader />
+    <AppRoot>
+      <TonConnectUIProvider manifestUrl={manifestUrl}>
+        <Router>
+          {showOverlay && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
+              <Preloader />
+            </div>
+          )}
+
+          <div className="app-container">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/tasks" element={<Tasks />} />
+              <Route path="/friends" element={<Friends />} />
+              <Route path="/bank" element={<Bank />} />
+              <Route path="/ton-connect" element={<TONConnectPage />} />
+            </Routes>
+
+            <Footer />
+            <WebSocketComponent />
           </div>
-        )}
-
-        <div className="app-container">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/tasks" element={<Tasks />} />
-            <Route path="/friends" element={<Friends />} />
-            <Route path="/bank" element={<Bank />} />
-            <Route path="/ton-connect" element={<TONConnectPage />} />
-          </Routes>
-
-          <Footer />
-          <WebSocketComponent />
-        </div>
-      </Router>
-    </TonConnectUIProvider>
+        </Router>
+      </TonConnectUIProvider>
+    </AppRoot>
   );
 });
 

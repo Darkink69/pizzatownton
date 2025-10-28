@@ -17,8 +17,8 @@ import { observer } from "mobx-react-lite";
 
 import "./TONConnectPage.css";
 import { bem } from "../../css/bem";
-import { DisplayData } from "../../components/DisplayData/DisplayData";
-import store from "../../store/store";
+// import { DisplayData } from "../../components/DisplayData/DisplayData";
+// import store from "../../store/store";
 import { Page } from "../../components/Page";
 const [, e] = bem("ton-connect-page");
 
@@ -112,18 +112,17 @@ export const TONConnectPage: FC = observer(() => {
   return (
     <Page>
       <div className="relative h-screen w-full flex flex-col bg-[#FFBC6B] overflow-hidden">
+        <div className="text-black text-3xl">КОШЕЛЕК!</div>
         {/* Обновление баланса вручную */}
-        <div
+        {/* <div
           className="cursor-pointer px-3 py-2 text-white nunito-sans-400"
           onClick={() => adrss && getTonBalance(adrss)}
         >
           🔄 Обновить баланс TON (текущий: {store.tonBalance})
-        </div>
+        </div> */}
 
         <Section header="💰 Баланс TON">
-          <Cell>
-            <Title level="2">{store.tonBalance} TON</Title>
-          </Cell>
+          <Cell>{/* <Title level="2">{store.tonBalance} TON</Title> */}</Cell>
         </Section>
 
         <List>
@@ -137,22 +136,22 @@ export const TONConnectPage: FC = observer(() => {
                   height={60}
                 />
               }
-              subtitle={wallet.device?.platform ?? "TON Wallet"}
+              // subtitle={wallet.device?.platform ?? "TON Wallet"}
             >
               <Title level="3">
-                {wallet.device?.appName ?? "Подключенный кошелёк"}
+                {/* {wallet.device?.appName ?? "Подключенный кошелёк"} */}
               </Title>
             </Cell>
             <TonConnectButton className={e("button-connected")} />
           </Section>
 
-          <DisplayData
+          {/* <DisplayData
             header="Аккаунт"
             rows={[
               { title: "Адрес", value: wallet.account?.address ?? "—" },
               { title: "Сеть", value: wallet.account?.chain ?? "?" },
             ]}
-          />
+          /> */}
         </List>
       </div>
     </Page>
