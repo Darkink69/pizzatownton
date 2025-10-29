@@ -20,7 +20,7 @@ import "./TONConnectPage.css";
 import store from "../../store/store";
 import { Page } from "../../components/Page";
 import { bem } from "../../css/bem";
-import { DisplayData } from "../../components/DisplayData/DisplayData";
+// import { DisplayData } from "../../components/DisplayData/DisplayData";
 import Footer from "../../components/Footer";
 import WebSocketComponent from "../../components/websocket";
 
@@ -67,7 +67,7 @@ export const TONConnectPage: FC = observer(() => {
 
       const ton = nanosToTonStr(nanos, 2);
       console.log(`💰 Баланс получен: ${nanos} нанотон = ${ton} TON`);
-      // store.setTonBalance(parseFloat(ton).toFixed(2));
+      store.setTonBalance(parseFloat(ton).toFixed(2));
     } catch (error) {
       console.error("❌ Ошибка получения TON баланса", error);
     }
@@ -76,7 +76,7 @@ export const TONConnectPage: FC = observer(() => {
   // ---------------- useEffect при подключении кошелька ----------------
   useEffect(() => {
     if (!adrss) return;
-    // store.setAdrss(adrss);
+    store.setAdrss(adrss);
 
     console.log("✅ Кошелёк подключен:", {
       address: adrss,
@@ -154,13 +154,13 @@ export const TONConnectPage: FC = observer(() => {
             <TonConnectButton className={e("button-connected")} />
           </Section>
 
-          <DisplayData
+          {/* <DisplayData
             header="Аккаунт"
             rows={[
               { title: "Адрес", value: wallet.account?.address ?? "—" },
               { title: "Сеть", value: wallet.account?.chain ?? "?" },
             ]}
-          />
+          /> */}
         </List>
       </div>
       <Footer />

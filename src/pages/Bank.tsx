@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-// import { bankStore } from "../store/BankStore";
-// import BankOrderModal from "./BankOrderModal";
+import { bankStore } from "../store/BankStore";
+import BankOrderModal from "./BankOrderModal";
 import store from "../store/store";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
@@ -19,7 +19,7 @@ function Bank() {
 
     try {
       setBuying(true);
-      // await bankStore.createOrder(parsed);
+      await bankStore.createOrder(parsed);
     } catch (e) {
       console.warn("Ошибка создания заказа:", e);
     } finally {
@@ -152,7 +152,7 @@ function Bank() {
           </div>
         </div>
         {/* Модалка оплаты */}
-        {/* {bankStore.order && <BankOrderModal />} */}
+        {bankStore.order && <BankOrderModal />}
         <Footer />
         <WebSocketComponent />
       </div>

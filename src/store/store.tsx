@@ -1,6 +1,6 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import type { TgUser, UserState, WsRequest } from "../types/ws"; // ⛔️ Больше НЕ импортим Bank DTO
-// import { bankStore } from "./BankStore";
+import { bankStore } from "./BankStore";
 
 class Store {
   imgUrl =
@@ -17,11 +17,12 @@ class Store {
   user: TgUser = {};
   userState: UserState = {};
   tonBalance: any;
+  adrss!: string;
 
   floors: any[] = [];
   floorsLoaded = false;
 
-  // bank = bankStore; // ✅ подключаем внешний стор
+  bank = bankStore; // ✅ подключаем внешний стор
 
   private wsSend: ((rq: WsRequest) => void) | null = null;
 
@@ -57,11 +58,18 @@ class Store {
   setSessionId(sessionId?: string | null) {
     this.sessionId = sessionId ?? null;
     // Передаём session в BankStore тоже
-    // this.bank.setSession(this.sessionId ?? null);
+    this.bank.setSession(this.sessionId ?? null);
   }
 
   setAuthError(message: string | null) {
     this.authError = message;
+  }
+
+  setAdrss(adrss: string) {
+    this.adrss = adrss;
+  }
+  setTonBalance(balanceTon: string) {
+    this.tonBalance = balanceTon;
   }
 
   hydrateFromAuthInit(payload?: {
@@ -128,7 +136,7 @@ class Store {
     this.floors = [];
     this.floorsLoaded = false;
     this.authError = null;
-    // this.bank.reset(); // сбрасываем и банк
+    this.bank.reset(); // сбрасываем и банк
   }
 }
 
