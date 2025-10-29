@@ -1,17 +1,17 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import store from "../store/store";
 
 const Preloader = () => {
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, _setIsVisible] = useState(true);
 
-  useEffect(() => {
-    // Небольшая задержка перед началом анимации исчезновения
-    const timer = setTimeout(() => {
-      setIsVisible(false);
-    }, 1800);
+  // useEffect(() => {
+  //   // Небольшая задержка перед началом анимации исчезновения
+  //   const timer = setTimeout(() => {
+  //     setIsVisible(false);
+  //   }, 1800);
 
-    return () => clearTimeout(timer);
-  }, []);
+  //   return () => clearTimeout(timer);
+  // }, []);
 
   return (
     <div

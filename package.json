@@ -14,6 +14,7 @@
     "@telegram-apps/bridge": "^2.11.0",
     "@telegram-apps/sdk-react": "^3.3.9",
     "@telegram-apps/telegram-ui": "^2.1.13",
+    "@ton/core": "^0.62.0",
     "@tonconnect/ui-react": "^2.3.1",
     "buffer": "^6.0.3",
     "mobx": "^6.15.0",

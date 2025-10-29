@@ -1,3 +1,4 @@
+// src/pages/TONConnectPage.tsx
 import { useEffect, type FC } from "react";
 import {
   TonConnectButton,
@@ -5,21 +6,24 @@ import {
   useTonAddress,
 } from "@tonconnect/ui-react";
 import {
-  // Avatar,
-  // Cell,
-  // List,
+  Avatar,
+  Cell,
+  List,
   Placeholder,
-  // Section,
+  Section,
   Text,
-  // Title,
+  Title,
 } from "@telegram-apps/telegram-ui";
 import { observer } from "mobx-react-lite";
 
 import "./TONConnectPage.css";
-import { bem } from "../../css/bem";
-// import { DisplayData } from "../../components/DisplayData/DisplayData";
-// import store from "../../store/store";
+import store from "../../store/store";
 import { Page } from "../../components/Page";
+import { bem } from "../../css/bem";
+import { DisplayData } from "../../components/DisplayData/DisplayData";
+import Footer from "../../components/Footer";
+import WebSocketComponent from "../../components/websocket";
+
 const [, e] = bem("ton-connect-page");
 
 function nanosToTonStr(nano: string | number, fractionDigits = 2): string {
@@ -31,8 +35,6 @@ function nanosToTonStr(nano: string | number, fractionDigits = 2): string {
 export const TONConnectPage: FC = observer(() => {
   const wallet = useTonWallet();
   const adrss = useTonAddress();
-  console.log(adrss, "adrss!!!");
-  console.log(wallet, "wallet!!!");
 
   // ---------------- Логика получения баланса ----------------
   const getTonBalance = async (address: string, signal?: AbortSignal) => {
@@ -73,7 +75,6 @@ export const TONConnectPage: FC = observer(() => {
 
   // ---------------- useEffect при подключении кошелька ----------------
   useEffect(() => {
-    console.log("Пробуем подключить кошелек...");
     if (!adrss) return;
     // store.setAdrss(adrss);
 
@@ -94,20 +95,24 @@ export const TONConnectPage: FC = observer(() => {
   if (!wallet) {
     return (
       <Page>
-        <div className="relative h-screen w-full flex flex-col bg-[#FFBC6B]  overflow-hidden">
+        <div className="relative h-screen w-full flex flex-col bg-[#FFBC6B] overflow-hidden text-amber-800">
           <Placeholder
             className={e("placeholder")}
             header="TON Connect"
             description={
               <Text>
-                <div className="text-white mb-2">
+                <div className="text-amber-800 mb-2 ">
                   Подключите ваш TON-кошелёк, чтобы увидеть баланс.
                 </div>
-                <TonConnectButton className={e("button")} />
+                <div className="flex justify-center text-center">
+                  <TonConnectButton className={e("button")} />
+                </div>
               </Text>
             }
           />
         </div>
+        <Footer />
+        <WebSocketComponent />
       </Page>
     );
   }
@@ -115,9 +120,51 @@ export const TONConnectPage: FC = observer(() => {
   return (
     <Page>
       <div className="relative h-screen w-full flex flex-col bg-[#FFBC6B] overflow-hidden">
-        <div className="text-black text-3xl">КОШЕЛЕК!</div>
         {/* Обновление баланса вручную */}
+        <div
+          className="cursor-pointer px-3 py-2 text-white nunito-sans-400"
+          onClick={() => adrss && getTonBalance(adrss)}
+        >
+          🔄 Обновить баланс TON (текущий: {store.tonBalance})
+        </div>
+
+        <Section header="💰 Баланс TON">
+          <Cell>
+            <Title level="2">{store.tonBalance} TON</Title>
+          </Cell>
+        </Section>
+
+        <List>
+          <Section>
+            <Cell
+              before={
+                <Avatar
+                  src="https://wallet.ton.org/assets/ui/tonconnect-logo.png"
+                  alt="Wallet logo"
+                  width={60}
+                  height={60}
+                />
+              }
+              subtitle={wallet.device?.platform ?? "TON Wallet"}
+            >
+              <Title level="3">
+                {wallet.device?.appName ?? "Подключенный кошелёк"}
+              </Title>
+            </Cell>
+            <TonConnectButton className={e("button-connected")} />
+          </Section>
+
+          <DisplayData
+            header="Аккаунт"
+            rows={[
+              { title: "Адрес", value: wallet.account?.address ?? "—" },
+              { title: "Сеть", value: wallet.account?.chain ?? "?" },
+            ]}
+          />
+        </List>
       </div>
+      <Footer />
+      <WebSocketComponent />
     </Page>
   );
 });

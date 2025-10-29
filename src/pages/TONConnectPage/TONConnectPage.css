@@ -21,7 +21,7 @@
 }
 
 /* Кнопка "Подключить Ton Connect" */
-.ton-connect-page__button {
+/* .ton-connect-page__button {
   margin: 24px auto 0;
   padding: 12px 28px;
   border-radius: 9999px;
@@ -33,19 +33,19 @@
   transition: all 0.25s ease;
   cursor: pointer;
   border: none;
-}
+} */
 
-.ton-connect-page__button:hover {
+/* .ton-connect-page__button:hover {
   transform: translateY(-2px) scale(1.03);
   box-shadow: 0 6px 20px rgba(0, 158, 255, 0.55);
-}
+} */
 
-.ton-connect-page__button:active {
+/* .ton-connect-page__button:active {
   transform: translateY(1px) scale(0.97);
-}
+} */
 
 /* Кнопка уже подключенного TonConnect */
-.ton-connect-page__button-connected {
+/* .ton-connect-page__button-connected {
   margin: 16px 24px 16px auto;
   padding: 10px 22px;
   border-radius: 12px;
@@ -60,4 +60,4 @@
   background: rgba(93, 225, 255, 0.15);
   color: #fff;
   border-color: rgba(93, 225, 255, 0.5);
-}
+} */

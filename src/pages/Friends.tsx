@@ -1,5 +1,7 @@
 import { useRef } from "react";
 import store from "../store/store";
+import Footer from "../components/Footer";
+import WebSocketComponent from "../components/websocket";
 
 function Friends() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -199,6 +201,8 @@ function Friends() {
           </div>
         </div>
       </div>
+      <Footer />
+      <WebSocketComponent />
     </>
   );
 }

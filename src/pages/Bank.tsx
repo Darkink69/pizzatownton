@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 // import { bankStore } from "../store/BankStore";
 // import BankOrderModal from "./BankOrderModal";
 import store from "../store/store";
+import Footer from "../components/Footer";
+import WebSocketComponent from "../components/websocket";
 
 function Bank() {
   const [pcoinAmount, setPcoinAmount] = useState("500");
@@ -151,6 +153,8 @@ function Bank() {
         </div>
         {/* Модалка оплаты */}
         {/* {bankStore.order && <BankOrderModal />} */}
+        <Footer />
+        <WebSocketComponent />
       </div>
     </>
   );

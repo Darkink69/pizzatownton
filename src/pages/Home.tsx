@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import store from "../store/store";
+import Footer from "../components/Footer";
+import WebSocketComponent from "../components/websocket";
 
 function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -506,6 +508,8 @@ function Home() {
           </>
         )}
       </div>
+      <Footer />
+      <WebSocketComponent />
     </>
   );
 }
