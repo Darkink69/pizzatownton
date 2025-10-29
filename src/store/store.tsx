@@ -9,7 +9,7 @@ class Store {
   initDataRaw = "";
   referrerId: string | null = null;
   startParam: string | null = null;
-
+  private wsSend: ((rq: WsRequest) => void) | null = null;
   sessionId: string | null = null;
   isAuthenticating = false;
   authError: string | null = null;
@@ -24,14 +24,14 @@ class Store {
 
   bank = bankStore; // ✅ подключаем внешний стор
 
-  private wsSend: ((rq: WsRequest) => void) | null = null;
+
 
   constructor() {
     makeAutoObservable(this);
   }
 
   // Контекст + авторизация
-  setWsSender(fn: (rq: WsRequest) => void) {
+  setWsSend(fn: (rq: WsRequest) => void) {
     this.wsSend = fn;
   }
 
@@ -70,6 +70,15 @@ class Store {
   }
   setTonBalance(balanceTon: string) {
     this.tonBalance = balanceTon;
+  }
+
+  send(rq: WsRequest): boolean {
+    if (!this.wsSend) {
+      console.warn("WS is not connected — send aborted:", rq?.type);
+      return false;
+    }
+    this.wsSend(rq);
+    return true;
   }
 
   hydrateFromAuthInit(payload?: {

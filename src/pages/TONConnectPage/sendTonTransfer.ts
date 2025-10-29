@@ -1,7 +1,8 @@
 import { useTonConnectUI } from "@tonconnect/ui-react";
+import { beginCell } from "@ton/core";
 
 /**
- * Преобразует TON в нанотоны (TON → nanoTON)
+ * Преобразует TON в nanoTON
  */
 function toNano(ton: string | number): string {
     const amount = typeof ton === "number" ? ton : Number(ton);
@@ -9,19 +10,25 @@ function toNano(ton: string | number): string {
 }
 
 /**
- * Хук для отправки TON-платежа через TonConnect
- *
- * @returns Функция, которую можно вызвать для инициирования оплаты
+ * Преобразует текстовый комментарий в BOC (base64) payload для TON
+ */
+function encodeCommentAsPayload(comment: string): string {
+    return beginCell()
+        .storeUint(0, 32)
+        .storeStringTail(comment)
+        .endCell()
+        .toBoc()
+        .toString("base64");
+}
+
+/**
+ * Хук для отправки TON-платежей через TonConnect
  */
 export function useTonTransfer() {
     const [tonConnectUI] = useTonConnectUI();
 
     /**
-     * Отправка TON-платежа
-     *
-     * @param address Адрес получателя (например, из merchantAddr)
-     * @param amountTon Сумма в TON (например, "1.25")
-     * @param comment Комментарий (например, "ORD-XYZ123")
+     * Отправка TON
      */
     const send = async ({
                             address,
@@ -38,12 +45,12 @@ export function useTonTransfer() {
         const nanoAmount = toNano(amountTon);
 
         const tx = {
-            validUntil: Math.floor(Date.now() / 1000) + 60 * 5, // 5 минут
+            validUntil: Math.floor(Date.now() / 1000) + 5 * 60,
             messages: [
                 {
                     address,
                     amount: nanoAmount,
-                    payload: comment ? `comment:${comment}` : undefined,
+                    payload: comment ? encodeCommentAsPayload(comment) : undefined,
                 },
             ],
         };
@@ -53,7 +60,7 @@ export function useTonTransfer() {
         try {
             await tonConnectUI.sendTransaction(tx);
         } catch (err) {
-            console.error("❌ Ошибка отправки оплаты через TonConnect", err);
+            console.error("❌ Ошибка отправки TonConnect-платежа:", err);
             throw err;
         }
     };

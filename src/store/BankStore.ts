@@ -1,4 +1,5 @@
 import { makeAutoObservable, runInAction } from "mobx";
+import store from "./store.tsx";
 
 // Типы DTO
 export interface BankOrder {
@@ -7,7 +8,7 @@ export interface BankOrder {
   amountTon: string;
   rate: string;
   expiresAt: string;
-  merchantAddr: string;
+  merchantAddress: string;
   comment: string;
   txHash?: string;
   createdAt?: string;
@@ -37,47 +38,32 @@ class BankStore {
     return `ORD-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
   }
   async createOrder(amountPcoin: number) {
-    if (!this.sessionId) {
-      console.warn("Нет sessionId – BankStore.createOrder прерван");
-      this.error = "Не авторизован";
-      return;
-    }
     this.creating = true;
+    const comment = this.generateOrderComment();
     this.error = null;
+
+    const requestId = `ord_${Math.random().toString(36).slice(2, 10)}`;
+
+    // Сохраниваем ожидание requestId
     try {
-      const comment = this.generateOrderComment();
-      const res = await fetch("/api/bank/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Session-Id": this.sessionId,
-        },
-        body: JSON.stringify({
+      store.send({
+        type: "BANK_BUY_PCOIN",
+        requestId,
+        session: store.sessionId!,
+        createOrderRq: {
+          telegramId: store.user.telegramId!,
           amountPcoin,
-          comment,
-        }),
+          tonComment: comment,
+        },
       });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`Response ${res.status}: ${text}`);
-      }
-      const data = await res.json();
-      runInAction(() => {
-        this.lastOrderId = data.orderId;
-        this.order = {
-          orderId: data.orderId,
-          amountTon: data.amountTon,
-          rate: data.rate,
-          expiresAt: data.expiresAt,
-          merchantAddr: data.merchantAddress,
-          comment: data.comment,
-          status: "NEW",
-        };
-      });
+
+      // Устанавливаем "заказ создаётся", пока не придет ответ,
+      // который обработается в websocket.tsx через:
+      // case "BANK_BUY_PCOIN" → store.setBankCreateOrder(parsed.data)
+
     } catch (e: any) {
-      console.error("BANK_CREATE_ORDER_ERROR:", e);
-      this.error = e?.message ?? "Произошла ошибка";
-    } finally {
+      console.error("CREATE_ORDER_ERROR (WS):", e);
+      this.error = e?.message ?? "Ошибка при создании заказа";
       this.creating = false;
     }
   }
@@ -104,7 +90,7 @@ class BankStore {
           amountTon: data.amountTon,
           rate: data.rate,
           expiresAt: data.expiresAt,
-          merchantAddr: data.merchantAddr,
+          merchantAddress: data.merchantAddr,
           comment: data.comment,
           createdAt: data.createdAt,
           updatedAt: data.updatedAt,

@@ -3,6 +3,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import store from "../store/store";
 
 import { useTonConnectUI, useTonWallet } from "@tonconnect/ui-react";
+import {encodeCommentAsPayload} from "../utils/ton.ts";
 
 // Helpers
 const CIRCLE_RADIUS = 40;
@@ -106,19 +107,19 @@ const BankOrderModal: React.FC = () => {
 
   if (!order) return null;
 
-  const { orderId, amountTon, rate, merchantAddr, comment } = order;
+  const { orderId, amountTon, rate, merchantAddress, comment } = order;
 
   const handleTonConnectPayment = async () => {
-    if (!merchantAddr || !amountTon || !comment) return;
+    if (!merchantAddress || !amountTon || !comment) return;
 
     try {
       await tonConnectUI.sendTransaction({
         validUntil: Math.floor(Date.now() / 1000) + 300, // 5 минут
         messages: [
           {
-            address: merchantAddr,
+            address: merchantAddress,
             amount: tonToNano(amountTon),
-            payload: `comment:${comment}`,
+            payload: encodeCommentAsPayload(comment),
           },
         ],
       });
@@ -138,9 +139,9 @@ const BankOrderModal: React.FC = () => {
           Сумма: <strong className="text-blue-700">{amountTon} TON</strong>
         </div>
 
-        {merchantAddr && (
+        {merchantAddress && (
           <div className="mb-1 text-sm break-all text-gray-800">
-            Адрес: <strong>{merchantAddr}</strong>
+            Адрес: <strong>{merchantAddress}</strong>
           </div>
         )}
 
@@ -157,7 +158,7 @@ const BankOrderModal: React.FC = () => {
         {/* QR-код */}
         <div className="my-4 flex justify-center">
           <QRCodeCanvas
-            value={`ton://transfer/${merchantAddr}?amount=${tonToNano(
+            value={`ton://transfer/${merchantAddress}?amount=${tonToNano(
               amountTon ?? 0
             )}&text=${comment ?? ""}`}
             size={200}
