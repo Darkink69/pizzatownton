@@ -134,7 +134,7 @@ export const TONConnectPage: FC = observer(() => {
               <Title level="2">{store.tonBalance} TON</Title>
             </Cell>
           </Section> */}
-        <div className="mt-10 flex justify-center items-center text-3xl text-amber-800 shantell">
+        <div className="mt-10 mb-10 flex justify-center items-center text-3xl text-amber-800 shantell">
           <img
             src={`${store.imgUrl}icon_ton.png`}
             alt="Pizza Logo"
