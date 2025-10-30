@@ -12,7 +12,7 @@ COPY . .
 
 # --- Собираем с плейсхолдерами ---
 RUN VITE_API_URL="__VITE_API_URL__" \
-    VITE_TIME="__VITE_TIME__" \
+    VITE_WS_URL="__VITE_WS_URL__" \
     npm run build
 
 # --- Этап 2: Запуск на Nginx ---

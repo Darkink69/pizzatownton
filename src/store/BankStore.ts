@@ -1,4 +1,4 @@
-import { makeAutoObservable, runInAction } from "mobx";
+import { makeAutoObservable } from "mobx";
 import store from "./store.tsx";
 
 // Типы DTO
@@ -15,28 +15,32 @@ export interface BankOrder {
   updatedAt?: string;
 }
 
-// BankStore
 class BankStore {
   order: BankOrder | null = null;
   lastOrderId: string | null = null;
   creating: boolean = false;
   error: string | null = null;
   sessionId: string | null = null;
+
   constructor() {
     makeAutoObservable(this);
   }
+
   setSession(sessionId: string | null) {
     this.sessionId = sessionId;
   }
+
   reset() {
     this.order = null;
     this.lastOrderId = null;
     this.creating = false;
     this.error = null;
   }
+
   private generateOrderComment(): string {
     return `ORD-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
   }
+
   async createOrder(amountPcoin: number) {
     this.creating = true;
     const comment = this.generateOrderComment();
@@ -44,7 +48,6 @@ class BankStore {
 
     const requestId = `ord_${Math.random().toString(36).slice(2, 10)}`;
 
-    // Сохраниваем ожидание requestId
     try {
       store.send({
         type: "BANK_BUY_PCOIN",
@@ -57,8 +60,7 @@ class BankStore {
         },
       });
 
-      // Устанавливаем "заказ создаётся", пока не придет ответ,
-      // который обработается в websocket.tsx через:
+      // После этого ответ придёт в websocket.tsx:
       // case "BANK_BUY_PCOIN" → store.setBankCreateOrder(parsed.data)
 
     } catch (e: any) {
@@ -67,38 +69,34 @@ class BankStore {
       this.creating = false;
     }
   }
+
   async fetchOrder(orderId: string) {
-    if (!this.sessionId) {
-      console.warn("Нет sessionId – BankStore.fetchOrder прерван");
+    const tgId = store.user.telegramId ?? store.user.id;
+    const session = this.sessionId;
+
+    if (!session || !tgId) {
+      console.warn("Нет sessionId или telegramId — fetchOrder прерван");
       return;
     }
+
+    const requestId = `confirm_${Math.random().toString(36).slice(2, 10)}`;
+
     try {
-      const res = await fetch(`/api/bank/orders/${orderId}`, {
-        headers: {
-          "X-Session-Id": this.sessionId,
+      store.send({
+        type: "BANK_CONFIRM",
+        requestId,
+        session,
+        confirmOrderRq: {
+          orderId,
+          telegramId: tgId,
         },
       });
-      if (!res.ok) {
-        console.warn("Ошибка запроса заказа", res.status);
-        return;
-      }
-      const data = await res.json();
-      runInAction(() => {
-        this.order = {
-          orderId: data.orderId,
-          status: data.status,
-          amountTon: data.amountTon,
-          rate: data.rate,
-          expiresAt: data.expiresAt,
-          merchantAddress: data.merchantAddr,
-          comment: data.comment,
-          createdAt: data.createdAt,
-          updatedAt: data.updatedAt,
-          txHash: data.txHash,
-        };
-      });
-    } catch (e) {
-      console.warn("Ошибка получения заказа:", e);
+
+      // Ответ придёт через websocket.tsx → case "BANK_CONFIRM"
+      // и попадёт в setBankOrderView или другую обработку
+
+    } catch (e: any) {
+      console.warn("Ошибка WS-запроса заказа:", e);
     }
   }
 }

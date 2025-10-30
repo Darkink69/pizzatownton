@@ -9,98 +9,66 @@ import {
 import { Page } from "../../components/Page";
 import Home from "../Home";
 
+function generateRequestId(): string {
+  return "auth_" + Math.random().toString(36).slice(2, 8);
+}
+
 export const IndexPage: FC = observer(() => {
   const initDataRaw = useSignal(_initDataRaw);
   const initDataState = useSignal(_initDataState);
   const [error, setError] = useState<string | null>(null);
-  // console.log(initDataRaw);
-  // console.log(initDataState);
 
-  // const initData = window.Telegram.WebApp.initData;
-  // const initData = (window as any).Telegram?.WebApp?.initData;
-
-  // Проверка окружения запуска
+  // Проверяем, что запущено в Telegram WebApp
   useEffect(() => {
     if (!window.Telegram?.WebApp) {
       setError("Приложение должно быть запущено через Telegram бота");
       return;
     }
-
-    // Инициализация Mini App
     window.Telegram.WebApp.ready();
     window.Telegram.WebApp.expand();
 
-    const webApp = window.Telegram.WebApp;
-    console.log(webApp);
+    // debug info
+    console.log("Telegram WebApp detected:", window.Telegram.WebApp);
   }, []);
 
-  // Обработка данных пользователя
+  // Основной хук: инициализация и авторизация по WS
   useEffect(() => {
     if (!initDataRaw) {
       console.warn("initDataRaw отсутствует");
-      setError("Не удалось получить данные инициализации Telegram");
-      console.log(error);
+      setError("Не удалось получить initData от Telegram");
       return;
     }
 
+    // Telegram user (вырезан из сигнатуры initDataState)
     if (initDataState?.user) {
       store.setUser(initDataState.user);
       console.log("Пользователь установлен:", initDataState.user);
-      // console.log("Весь state:", initDataState);
     }
 
-    // Регистрация пользователя с отправкой ПОЛНОЙ строки initDataRaw
-    registerUser(initDataRaw);
+    // Сохраняем raw initData в стор (может пригодиться потом)
+    store.setInitDataRaw(initDataRaw);
+
+    // Отправляем AUTH_INIT через WebSocket
+    store.send({
+      type: "AUTH_INIT",
+      requestId: generateRequestId(),
+      session: "",
+      authReq: {
+        initData: initDataRaw,
+        referralCode: store.referrerId ?? null,
+      },
+    });
   }, [initDataRaw, initDataState]);
 
-  // Функция регистрации с отправкой ПОЛНОЙ строки initData
-  const registerUser = async (rawInitData: string) => {
-    try {
-      const domain = import.meta.env.VITE_API_URL;
-      console.log("Отправка полной initData на бэкенд для верификации...");
-
-      const response = await fetch(`${domain}/api/v1/users/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          initDataRaw: rawInitData, // Отправляем ПОЛНУЮ строку
-          // referrerId: referrerId // <-- ПЕРЕДАЕМ ID РЕФЕРЕРА
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Ошибка сервера: ${response.status} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log("Пользователь успешно зарегистрирован:", data);
-      store.setUserState(data);
-    } catch (error) {
-      console.error("Ошибка регистрации:", error);
-      setError(
-        `Ошибка регистрации: ${
-          error instanceof Error ? error.message : "Неизвестная ошибка"
-        }`
-      );
-    }
-  };
-
-  // useEffect(() => {
-  //   fetch(
-  //     `https://toncenter.com/api/v2/getAddressBalance?address=UQDncYGSo8oA2jQVZwolIiTdylIE4QAeNtrpkmwW9sYjX0bB`
-  //     `https://toncenter.com/api/v2/getAddressBalance?address=UQDoj1UzJasYurg5oLsfA69pmVG7ATWTxyxawgfGFvLffbX8`
-  //   )
-  //     .then((response) => response.json())
-  //     .then((data) => store.setTons(data.result))
-  //     .catch((error) => console.error(error));
-  // }, []);
-
   return (
-    <Page back={false}>
-      <div className="bg-gray-800 min-h-screen flex items-center justify-center">
-        <Home />
-      </div>
-    </Page>
+      <Page back={false}>
+        <div className="bg-gray-800 min-h-screen flex items-center justify-center">
+          {error ? (
+              <div className="text-red-500 text-center p-4">{error}</div>
+          ) : (
+              <Home />
+          )}
+        </div>
+      </Page>
   );
 });

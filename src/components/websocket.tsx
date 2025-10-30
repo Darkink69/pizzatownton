@@ -40,7 +40,7 @@ const WebSocketComponent = observer(() => {
 
     ws.onopen = () => {
       setStatus("connected");
-
+      if (store.sessionId) return;
       const rq: WsRequest = {
         type: "AUTH_INIT",
         requestId: generateRequestId(),
