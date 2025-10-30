@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
+import { TonConnectButton, useTonWallet } from "@tonconnect/ui-react";
 import store from "../store/store";
-
-import { useTonConnectUI, useTonWallet } from "@tonconnect/ui-react";
-import {encodeCommentAsPayload} from "../utils/ton.ts";
+import { useTonConnectUI } from "@tonconnect/ui-react";
+import { encodeCommentAsPayload } from "../utils/ton";
 
 // Helpers
 const CIRCLE_RADIUS = 40;
@@ -16,8 +16,8 @@ function tonToNano(ton: string | number): string {
 
 // Словарь отображения статусов
 const statusUi: Record<
-  string,
-  { title: string; color: string; icon: string; animation?: string }
+    string,
+    { title: string; color: string; icon: string; animation?: string }
 > = {
   NEW: {
     title: "Ожидает оплаты",
@@ -65,13 +65,12 @@ const BankOrderModal: React.FC = () => {
 
   const [tonConnectUI] = useTonConnectUI();
   const wallet = useTonWallet();
-  const isWalletConnected = !!wallet;
 
   const isPaid = order?.status === "PAID";
   const isExpired = order?.status === "EXPIRED";
   const statusInfo = order?.status ? statusUi[order.status] : null;
 
-  // Таймер до EXPIRES_AT
+  // Таймер
   useEffect(() => {
     if (!order?.expiresAt || isPaid || isExpired) return;
 
@@ -94,12 +93,12 @@ const BankOrderModal: React.FC = () => {
     return () => clearInterval(interval);
   }, [order?.expiresAt]);
 
-  // Автообновление статуса заказа
+  // Автообновление
   useEffect(() => {
     if (!order?.orderId || isPaid || isExpired) return;
 
     const interval = setInterval(() => {
-      store.bank.fetchOrder(order.orderId); // ✅ исправлено
+      store.bank.fetchOrder(order.orderId);
     }, 5000);
 
     return () => clearInterval(interval);
@@ -110,12 +109,11 @@ const BankOrderModal: React.FC = () => {
   const { orderId, amountTon, rate, merchantAddress, comment } = order;
 
   const handleTonConnectPayment = async () => {
-    console.log(order)
     if (!merchantAddress || !amountTon || !comment) return;
 
     try {
       await tonConnectUI.sendTransaction({
-        validUntil: Math.floor(Date.now() / 1000) + 300, // 5 минут
+        validUntil: Math.floor(Date.now() / 1000) + 300,
         messages: [
           {
             address: merchantAddress,
@@ -125,135 +123,149 @@ const BankOrderModal: React.FC = () => {
         ],
       });
 
-      console.log("✅ Запрос TonConnect отправлен");
+      console.log("✅ Транзакция отправлена");
     } catch (e) {
       console.warn("❌ Пользователь отменил отправку TON:", e);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-black bg-opacity-70 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full text-center shadow-lg border-2 border-amber-800 shantell text-amber-800 relative">
-        <h2 className="text-xl mb-4 font-bold">Оплата TON</h2>
+      <div className="fixed inset-0 z-[9999] bg-black bg-opacity-70 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg p-6 max-w-md w-full text-center shadow-lg border-2 border-amber-800 shantell text-amber-800 relative">
+          <h2 className="text-xl mb-4 font-bold">Оплата TON</h2>
 
-        <div className="mb-2">
-          Сумма: <strong className="text-blue-700">{amountTon} TON</strong>
-        </div>
-
-        {merchantAddress && (
-          <div className="mb-1 text-sm break-all text-gray-800">
-            Адрес: <strong>{merchantAddress}</strong>
+          <div className="mb-2">
+            Сумма: <strong className="text-blue-700">{amountTon} TON</strong>
           </div>
-        )}
 
-        {comment && (
-          <div className="mb-2 text-sm text-gray-800 break-all">
-            Комментарий: <strong>{comment}</strong>
-          </div>
-        )}
-
-        <div className="mb-3 text-md font-semibold text-gray-800">
-          Курс: 1 TON = {rate} PCoin
-        </div>
-
-        {/* QR-код */}
-        <div className="my-4 flex justify-center">
-          <QRCodeCanvas
-            value={`ton://transfer/${merchantAddress}?amount=${tonToNano(
-              amountTon ?? 0
-            )}&text=${comment ?? ""}`}
-            size={200}
-            level="M"
-            bgColor="#ffffff"
-            fgColor="#000000"
-          />
-        </div>
-
-        {/* Статус */}
-        {statusInfo && (
-          <div
-            className={`mt-4 text-md font-semibold flex items-center justify-center gap-2 ${statusInfo.color} ${statusInfo.animation}`}
-          >
-            <span>{statusInfo.icon}</span>
-            <span>{statusInfo.title}</span>
-          </div>
-        )}
-
-        {/* Таймер */}
-        {!isPaid && !isExpired && (
-          <div className="my-4 flex justify-center">
-            <div className="relative w-[100px] h-[100px]">
-              <svg className="w-full h-full transform -rotate-90">
-                <circle
-                  cx="50%"
-                  cy="50%"
-                  r={CIRCLE_RADIUS}
-                  stroke="#eee"
-                  strokeWidth="8"
-                  fill="transparent"
-                />
-                <circle
-                  cx="50%"
-                  cy="50%"
-                  r={CIRCLE_RADIUS}
-                  stroke="url(#gradient-ring)"
-                  strokeWidth="8"
-                  fill="transparent"
-                  strokeDasharray={CIRCLE_CIRC}
-                  strokeDashoffset={(1 - percent / 100) * CIRCLE_CIRC}
-                  strokeLinecap="round"
-                  className="pulse-ring"
-                />
-                <defs>
-                  <linearGradient
-                    id="gradient-ring"
-                    x1="0%"
-                    y1="0%"
-                    x2="100%"
-                    y2="0%"
-                  >
-                    <stop offset="0%" stopColor="#8e44ad" />
-                    <stop offset="50%" stopColor="#e67e22" />
-                    <stop offset="100%" stopColor="#f1c40f" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center text-md font-bold text-amber-900">
-                {timeLeft}
+          {merchantAddress && (
+              <div className="mb-1 text-sm break-all text-gray-800">
+                Адрес: <strong>{merchantAddress}</strong>
               </div>
-            </div>
+          )}
+
+          {comment && (
+              <div className="mb-2 text-sm text-gray-800 break-all">
+                Комментарий: <strong>{comment}</strong>
+              </div>
+          )}
+
+          <div className="mb-3 text-md font-semibold text-gray-800">
+            Курс: 1 TON = {rate} PCoin
           </div>
-        )}
 
-        {/* Кнопка Ton Connect */}
-        {isWalletConnected && !isPaid && !isExpired && (
+          {/* QR-код */}
+          <div className="my-4 flex justify-center">
+            {merchantAddress ? (
+                <QRCodeCanvas
+                    value={`ton://transfer/${merchantAddress}?amount=${tonToNano(
+                        amountTon ?? 0
+                    )}&text=${encodeURIComponent(comment ?? "")}`}
+                    size={200}
+                    level="M"
+                    bgColor="#ffffff"
+                    fgColor="#000000"
+                />
+            ) : (
+                <div className="text-sm text-red-600">
+                  ⚠ Адрес получателя не загружен. Попробуйте позже.
+                </div>
+            )}
+          </div>
+
+          {/* Статус */}
+          {statusInfo && (
+              <div
+                  className={`mt-4 text-md font-semibold flex items-center justify-center gap-2 ${statusInfo.color} ${statusInfo.animation}`}
+              >
+                <span>{statusInfo.icon}</span>
+                <span>{statusInfo.title}</span>
+              </div>
+          )}
+
+          {/* Таймер */}
+          {!isPaid && !isExpired && (
+              <div className="my-4 flex justify-center">
+                <div className="relative w-[100px] h-[100px]">
+                  <svg className="w-full h-full transform -rotate-90">
+                    <circle
+                        cx="50%"
+                        cy="50%"
+                        r={CIRCLE_RADIUS}
+                        stroke="#eee"
+                        strokeWidth="8"
+                        fill="transparent"
+                    />
+                    <circle
+                        cx="50%"
+                        cy="50%"
+                        r={CIRCLE_RADIUS}
+                        stroke="url(#gradient-ring)"
+                        strokeWidth="8"
+                        fill="transparent"
+                        strokeDasharray={CIRCLE_CIRC}
+                        strokeDashoffset={(1 - percent / 100) * CIRCLE_CIRC}
+                        strokeLinecap="round"
+                        className="pulse-ring"
+                    />
+                    <defs>
+                      <linearGradient
+                          id="gradient-ring"
+                          x1="0%"
+                          y1="0%"
+                          x2="100%"
+                          y2="0%"
+                      >
+                        <stop offset="0%" stopColor="#8e44ad" />
+                        <stop offset="50%" stopColor="#e67e22" />
+                        <stop offset="100%" stopColor="#f1c40f" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center text-md font-bold text-amber-900">
+                    {timeLeft}
+                  </div>
+                </div>
+              </div>
+          )}
+
+          {/* Подключение кошелька */}
+          {!wallet && (
+              <div className="mb-3">
+                <TonConnectButton />
+              </div>
+          )}
+
+          {/* Кнопка оплаты через кошелек */}
+          {wallet && !isPaid && !isExpired && (
+              <button
+                  onClick={handleTonConnectPayment}
+                  className="mb-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded transition"
+              >
+                💸 Оплатить через кошелёк
+              </button>
+          )}
+
+          {/* Кнопка ручной проверки */}
+          {!isPaid && !isExpired && (
+              <button
+                  onClick={() => orderId && store.bank.fetchOrder(orderId)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
+              >
+                Я оплатил
+              </button>
+          )}
+
+          {/* Закрытие */}
           <button
-            onClick={() => handleTonConnectPayment()}
-            className="mb-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded transition"
+              onClick={() => (store.bank.order = null)}
+              className="absolute top-2 right-2 text-[20px] text-gray-700 hover:text-red-900"
+              title="Закрыть"
           >
-            Оплатить через кошелёк
+            ×
           </button>
-        )}
-
-        {/* Кнопка ручной проверки */}
-        {!isPaid && !isExpired && (
-          <button
-            onClick={() => orderId && store.bank.fetchOrder(orderId)} // ✅ исправлено
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
-          >
-            Я оплатил
-          </button>
-        )}
-
-        <button
-          onClick={() => (store.bank.order = null)}
-          className="absolute top-2 right-2 text-[20px] text-gray-700 hover:text-red-900"
-          title="Закрыть"
-        >
-          ×
-        </button>
+        </div>
       </div>
-    </div>
   );
 };
 
