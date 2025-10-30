@@ -5,16 +5,31 @@ import store from "../store/store";
 import { useTonConnectUI } from "@tonconnect/ui-react";
 import { encodeCommentAsPayload } from "../utils/ton";
 
-// Helpers
+// Helpers for QR progress ring
 const CIRCLE_RADIUS = 40;
 const CIRCLE_CIRC = 2 * Math.PI * CIRCLE_RADIUS;
 
-function tonToNano(ton: string | number): string {
-  const amount = typeof ton === "string" ? parseFloat(ton) : ton;
-  return BigInt(Math.floor((amount || 0) * 1e9)).toString();
+/**
+ * Преобразует TON в наноTON (1 TON = 1e9)
+ */
+function tonToNano(ton: number): string {
+  return BigInt(Math.floor(ton * 1e9)).toString();
 }
 
-// Словарь отображения статусов
+/**
+ * Генерирует ссылку для QR оплаты через tonkeeper / Telegram Wallet
+ */
+function generateTonTransferLink(
+    address: string,
+    amountTon: number,
+    comment?: string
+): string {
+  const amountNano = tonToNano(amountTon);
+  const encodedComment = encodeURIComponent(comment?.trim() || "");
+  return `ton://transfer/${address}?amount=${amountNano}&text=${encodedComment}`;
+}
+
+// Словарь UI по статусу ордера
 const statusUi: Record<
     string,
     { title: string; color: string; icon: string; animation?: string }
@@ -70,7 +85,10 @@ const BankOrderModal: React.FC = () => {
   const isExpired = order?.status === "EXPIRED";
   const statusInfo = order?.status ? statusUi[order.status] : null;
 
-  // Таймер
+  // 👉 Безопасное приведение amountTon
+  const numericAmountTon = Number(order?.amountTon ?? 0);
+
+  // Таймер до истечения срока действия
   useEffect(() => {
     if (!order?.expiresAt || isPaid || isExpired) return;
 
@@ -93,7 +111,7 @@ const BankOrderModal: React.FC = () => {
     return () => clearInterval(interval);
   }, [order?.expiresAt]);
 
-  // Автообновление
+  // Автообновление статуса ордера
   useEffect(() => {
     if (!order?.orderId || isPaid || isExpired) return;
 
@@ -106,10 +124,15 @@ const BankOrderModal: React.FC = () => {
 
   if (!order) return null;
 
-  const { orderId, amountTon, rate, merchantAddress, comment } = order;
+  const {
+    orderId,
+    merchantAddress,
+    rate,
+    tonComment = order.tonComment || "",
+  } = order;
 
   const handleTonConnectPayment = async () => {
-    if (!merchantAddress || !amountTon || !comment) return;
+    if (!merchantAddress || numericAmountTon <= 0 || !tonComment) return;
 
     try {
       await tonConnectUI.sendTransaction({
@@ -117,15 +140,15 @@ const BankOrderModal: React.FC = () => {
         messages: [
           {
             address: merchantAddress,
-            amount: tonToNano(amountTon),
-            payload: encodeCommentAsPayload(comment),
+            amount: tonToNano(numericAmountTon),
+            payload: encodeCommentAsPayload(tonComment),
           },
         ],
       });
 
       console.log("✅ Транзакция отправлена");
     } catch (e) {
-      console.warn("❌ Пользователь отменил отправку TON:", e);
+      console.warn("❌ Отменено пользователем или ошибка", e);
     }
   };
 
@@ -135,7 +158,8 @@ const BankOrderModal: React.FC = () => {
           <h2 className="text-xl mb-4 font-bold">Оплата TON</h2>
 
           <div className="mb-2">
-            Сумма: <strong className="text-blue-700">{amountTon} TON</strong>
+            Сумма:{" "}
+            <strong className="text-blue-700">{numericAmountTon} TON</strong>
           </div>
 
           {merchantAddress && (
@@ -144,9 +168,9 @@ const BankOrderModal: React.FC = () => {
               </div>
           )}
 
-          {comment && (
+          {tonComment && (
               <div className="mb-2 text-sm text-gray-800 break-all">
-                Комментарий: <strong>{comment}</strong>
+                Комментарий: <strong>{tonComment}</strong>
               </div>
           )}
 
@@ -156,11 +180,13 @@ const BankOrderModal: React.FC = () => {
 
           {/* QR-код */}
           <div className="my-4 flex justify-center">
-            {merchantAddress ? (
+            {merchantAddress && numericAmountTon > 0 ? (
                 <QRCodeCanvas
-                    value={`ton://transfer/${merchantAddress}?amount=${tonToNano(
-                        amountTon ?? 0
-                    )}&text=${encodeURIComponent(comment ?? "")}`}
+                    value={generateTonTransferLink(
+                        merchantAddress,
+                        numericAmountTon,
+                        tonComment
+                    )}
                     size={200}
                     level="M"
                     bgColor="#ffffff"
@@ -168,7 +194,7 @@ const BankOrderModal: React.FC = () => {
                 />
             ) : (
                 <div className="text-sm text-red-600">
-                  ⚠ Адрес получателя не загружен. Попробуйте позже.
+                  ⚠ Недостаточно данных для генерации QR.
                 </div>
             )}
           </div>
@@ -183,7 +209,7 @@ const BankOrderModal: React.FC = () => {
               </div>
           )}
 
-          {/* Таймер */}
+          {/* Таб таймера */}
           {!isPaid && !isExpired && (
               <div className="my-4 flex justify-center">
                 <div className="relative w-[100px] h-[100px]">
@@ -231,12 +257,12 @@ const BankOrderModal: React.FC = () => {
 
           {/* Подключение кошелька */}
           {!wallet && (
-              <div className="mb-3">
+              <div className="mb-4">
                 <TonConnectButton />
               </div>
           )}
 
-          {/* Кнопка оплаты через кошелек */}
+          {/* Кнопка оплаты через TonConnect */}
           {wallet && !isPaid && !isExpired && (
               <button
                   onClick={handleTonConnectPayment}
@@ -246,7 +272,7 @@ const BankOrderModal: React.FC = () => {
               </button>
           )}
 
-          {/* Кнопка ручной проверки */}
+          {/* "Я оплатил" — ручной refresh */}
           {!isPaid && !isExpired && (
               <button
                   onClick={() => orderId && store.bank.fetchOrder(orderId)}
@@ -256,7 +282,7 @@ const BankOrderModal: React.FC = () => {
               </button>
           )}
 
-          {/* Закрытие */}
+          {/* Закрыть */}
           <button
               onClick={() => (store.bank.order = null)}
               className="absolute top-2 right-2 text-[20px] text-gray-700 hover:text-red-900"

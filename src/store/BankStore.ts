@@ -9,7 +9,7 @@ export interface BankOrder {
   rate: string;
   expiresAt: string;
   merchantAddress: string;
-  comment: string;
+  tonComment: string;
   txHash?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -43,7 +43,7 @@ class BankStore {
 
   async createOrder(amountPcoin: number) {
     this.creating = true;
-    const comment = this.generateOrderComment();
+    const tonComment = this.generateOrderComment();
     this.error = null;
 
     const requestId = `ord_${Math.random().toString(36).slice(2, 10)}`;
@@ -56,7 +56,7 @@ class BankStore {
         createOrderRq: {
           telegramId: store.user.telegramId!,
           amountPcoin,
-          tonComment: comment,
+          tonComment: tonComment,
         },
       });
 
