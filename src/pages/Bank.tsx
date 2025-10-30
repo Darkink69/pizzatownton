@@ -152,7 +152,7 @@ function Bank() {
           </div>
         </div>
         {/* Модалка оплаты */}
-        {buying && <BankOrderModal />}
+        {bankStore.order && <BankOrderModal />}
         <Footer />
         <WebSocketComponent />
       </div>
