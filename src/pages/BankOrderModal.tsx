@@ -110,6 +110,7 @@ const BankOrderModal: React.FC = () => {
   const { orderId, amountTon, rate, merchantAddress, comment } = order;
 
   const handleTonConnectPayment = async () => {
+    console.log(order)
     if (!merchantAddress || !amountTon || !comment) return;
 
     try {
