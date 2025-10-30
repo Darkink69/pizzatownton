@@ -111,6 +111,7 @@ export const TONConnectPage: FC = observer(() => {
             }
           />
         </div>
+
         <Footer />
         <WebSocketComponent />
       </Page>
@@ -122,17 +123,25 @@ export const TONConnectPage: FC = observer(() => {
       <div className="relative h-screen w-full flex flex-col bg-[#FFBC6B] overflow-hidden">
         {/* Обновление баланса вручную */}
         <div
-          className="cursor-pointer px-3 py-2 text-white nunito-sans-400"
+          className="mt-10 cursor-pointer text-center px-3 py-2 text-white shantell"
           onClick={() => adrss && getTonBalance(adrss)}
         >
           🔄 Обновить баланс TON (текущий: {store.tonBalance})
         </div>
 
-        <Section header="💰 Баланс TON">
-          <Cell>
-            <Title level="2">{store.tonBalance} TON</Title>
-          </Cell>
-        </Section>
+        {/* <Section header="Баланс TON">
+            <Cell>
+              <Title level="2">{store.tonBalance} TON</Title>
+            </Cell>
+          </Section> */}
+        <div className="mt-10 flex justify-center items-center text-3xl text-amber-800 shantell">
+          <img
+            src={`${store.imgUrl}icon_ton.png`}
+            alt="Pizza Logo"
+            className="w-10 mr-4"
+          />
+          {store.tonBalance} TON
+        </div>
 
         <List>
           <Section>
@@ -162,6 +171,13 @@ export const TONConnectPage: FC = observer(() => {
             ]}
           /> */}
         </List>
+        <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 z-20">
+          <img
+            src={`${store.imgUrl}img_blue_pizza.png`}
+            alt="Pizza Logo"
+            className="w-max max-w-md"
+          />
+        </div>
       </div>
       <Footer />
       <WebSocketComponent />

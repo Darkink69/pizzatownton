@@ -16,15 +16,13 @@ class Store {
 
   user: TgUser = {};
   userState: UserState = {};
-  tonBalance: any;
+  tonBalance: any = "0";
   adrss!: string;
 
   floors: any[] = [];
   floorsLoaded = false;
 
   bank = bankStore; // ✅ подключаем внешний стор
-
-
 
   constructor() {
     makeAutoObservable(this);
