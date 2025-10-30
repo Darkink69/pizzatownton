@@ -227,7 +227,7 @@ const BankOrderModal: React.FC = () => {
         {/* Кнопка Ton Connect */}
         {isWalletConnected && !isPaid && !isExpired && (
           <button
-            onClick={handleTonConnectPayment}
+            onClick={() => handleTonConnectPayment()}
             className="mb-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded transition"
           >
             Оплатить через кошелёк

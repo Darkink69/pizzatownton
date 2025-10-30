@@ -132,7 +132,7 @@ function Bank() {
                     <button
                       className="relative w-full flex justify-center hover:opacity-90 transition-opacity mt-4"
                       disabled={buying}
-                      onClick={handleBuy}
+                      onClick={() => handleBuy()}
                     >
                       <img
                         src={`${store.imgUrl}b_blue2.png`}
@@ -152,7 +152,7 @@ function Bank() {
           </div>
         </div>
         {/* Модалка оплаты */}
-        {bankStore.order && <BankOrderModal />}
+        {buying && <BankOrderModal />}
         <Footer />
         <WebSocketComponent />
       </div>
