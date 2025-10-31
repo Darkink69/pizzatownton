@@ -44,7 +44,7 @@ const WebSocketComponent = observer(() => {
       requestId: generateRequestId(),
       session: store.sessionId,
       getFloorRq: {
-        telegramId: store.user.id,
+        telegramId: store.user.telegramId,
       },
     };
 
