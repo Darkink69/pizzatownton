@@ -126,20 +126,20 @@ const BankOrderModal: React.FC = () => {
 
   const {
     orderId,
-    merchantAddress,
+    merchantAddr,
     rate,
     tonComment = order.tonComment || "",
   } = order;
 
   const handleTonConnectPayment = async () => {
-    if (!merchantAddress || numericAmountTon <= 0 || !tonComment) return;
+    if (!merchantAddr || numericAmountTon <= 0 || !tonComment) return;
 
     try {
       await tonConnectUI.sendTransaction({
         validUntil: Math.floor(Date.now() / 1000) + 300,
         messages: [
           {
-            address: merchantAddress,
+            address: merchantAddr,
             amount: tonToNano(numericAmountTon),
             payload: encodeCommentAsPayload(tonComment),
           },
@@ -162,11 +162,11 @@ const BankOrderModal: React.FC = () => {
           <strong className="text-blue-700">{numericAmountTon} TON</strong>
         </div>
 
-        {merchantAddress && (
-          <div className="mb-1 text-sm break-all text-gray-800">
-            Адрес: <strong>{merchantAddress}</strong>
-          </div>
-        )}
+          {merchantAddr && (
+              <div className="mb-1 text-sm break-all text-gray-800">
+                Адрес: <strong>{merchantAddr}</strong>
+              </div>
+          )}
 
         {tonComment && (
           <div className="mb-2 text-sm text-gray-800 break-all">
@@ -178,7 +178,7 @@ const BankOrderModal: React.FC = () => {
           Курс: 1 TON = {rate} PCoin
         </div>
 
-        {/* QR-код */}
+          {/* QR-код */}
         {/* <div className="my-4 flex justify-center">
           {merchantAddress && numericAmountTon > 0 ? (
             <QRCodeCanvas

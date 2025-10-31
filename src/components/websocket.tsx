@@ -144,7 +144,7 @@ const WebSocketComponent = observer(() => {
                 amountTon: d.amountTon,
                 rate: d.rate,
                 expiresAt: d.expiresAt,
-                merchantAddress: d.merchantAddress,
+                merchantAddr: d.merchantAddr,
                 tonComment: d.comment,
                 status: "WAITING_PAYMENT",
               };

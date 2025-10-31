@@ -170,28 +170,29 @@ export interface ClaimData {
 
 // Ответ после создания ордера на PCoin
 export interface BankCreateOrderData {
-  orderId: string;
-  amountTon: string; // Java даёт строку (toPlainString)
-  rate: string; // то же
-  expiresAt: string; // ISO
-  merchantAddress: string; // именно 'merchantAddress'
-  comment: string; // tonComment, который передали
+    orderId: string;
+    amountTon: string;         // Java даёт строку (toPlainString)
+    rate: string;              // то же
+    expiresAt: string;         // ISO
+    merchantAddr: string;   // именно 'merchantAddress'
+    comment: string;           // tonComment, который передали
 }
 
 // Ответ при получении статуса ордера (BANK_CONFIRM)
 export interface BankOrderViewData {
-  orderId: string;
-  status: string;
-  amountTon: string | number; // может прийти как число — даём гибкость
-  rate: string | number;
-  expiresAt: string;
-  merchantAddress: string; // именно 'merchantAddr' из Java
-  comment: string;
+    orderId: string;
+    status: string;
+    amountTon: string | number; // может прийти как число — даём гибкость
+    rate: string | number;
+    expiresAt: string;
+    merchantAddr: string;       // именно 'merchantAddr' из Java
+    comment: string;
 
   amountPcoin?: number;
   txHash?: string | null;
   createdAt?: string;
   updatedAt?: string;
 
-  telegramId?: number;
+
+    telegramId?: number;
 }

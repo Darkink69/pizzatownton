@@ -8,7 +8,7 @@ export interface BankOrder {
   amountTon: string;
   rate: string;
   expiresAt: string;
-  merchantAddress: string;
+  merchantAddr: string;
   tonComment: string;
   txHash?: string;
   createdAt?: string;
