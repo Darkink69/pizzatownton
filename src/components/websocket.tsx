@@ -33,6 +33,16 @@ const WebSocketComponent = observer(() => {
     []
   );
 
+//   const x = {
+//   "type" : "FLOORS_BUY",
+//   "requestId": "",
+//   "session": "caa01d47373b057393808e81bdb87ba2c7a12fa2dfbec129447b3c6a69885690",
+//   "buyFloorRq": {
+//     "floorId" : 1,
+//     "telegramId" : 813012401
+//   }
+// }
+
   const sendFloorsGetRequest = () => {
     if (!store.sessionId || !store.user?.id) {
       console.warn("Cannot send FLOORS_GET: missing sessionId or user id");
@@ -57,6 +67,31 @@ const WebSocketComponent = observer(() => {
     }
   };
 
+  const sendFloorsBuy = () => {
+    if (!store.sessionId || !store.user?.id) {
+      console.warn("Cannot send FLOORS_GET: missing sessionId or user id");
+      return;
+    }
+
+    const rq: WsRequest = {
+      type: "FLOORS_BUY",
+      requestId: generateRequestId(),
+      session: store.sessionId,
+      buyFloorRq: {
+      floorId: store.userFloors.data.floorList[0].floorId,
+      telegramId: store.user.telegramId,
+      }
+    };
+
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(rq));
+      console.log("FLOORS_GET request sent:", rq);
+    } else {
+      console.warn("WS not open, cannot send FLOORS_GET");
+    }
+  };
+
   const connectWebSocket = () => {
     if (wsRef.current) wsRef.current.close();
 
@@ -69,6 +104,7 @@ const WebSocketComponent = observer(() => {
       if (store.sessionId) {
         // Если уже есть сессия, отправляем запрос на получение этажей
         sendFloorsGetRequest();
+        sendFloorsBuy()
         return;
       }
 
