@@ -22,6 +22,45 @@ class Store {
   floors: any[] = [];
   floorsLoaded = false;
 
+  userFloors = {
+    success: true,
+    message: "Ok",
+    type: "FLOORS_GET",
+    requestId: "019a2fb3-3584-736e-87c1-74d852bedeec",
+    data: {
+      floorList: [
+        {
+          floorId: 1,
+          level: 1,
+          costCurrency: "pcoin",
+          costAmount: 625,
+          yieldPerHour: 104,
+          yieldCurrency: "pdollar",
+          floorName: "1 floor",
+        },
+      ],
+      userFloorList: [
+        {
+          floorId: 1,
+          level: 1,
+          yieldPerHour: 100,
+          yieldCurrency: "pizza",
+          floorName: "Basement",
+          floorType: "basement",
+        },
+        {
+          floorId: 2,
+          level: 1,
+          yieldPerHour: 84,
+          yieldCurrency: "pdollar",
+          floorName: "1 floor",
+          floorType: "regular",
+        },
+      ],
+      pdollarAmount: 250,
+    },
+  };
+
   bank = bankStore; // ✅ подключаем внешний стор
 
   constructor() {
@@ -118,6 +157,10 @@ class Store {
     } catch (e) {
       console.warn("FLOORS_GET failed", e);
     }
+  }
+
+  setFloorsData(d: any) {
+    this.userFloors = d;
   }
 
   // Клейм

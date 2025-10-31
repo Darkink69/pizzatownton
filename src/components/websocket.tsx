@@ -4,13 +4,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import store from "../store/store";
 import type {
   AuthData,
+  FloorsGet,
+  FloorsBuy,
   ClaimData,
   WsRequest,
   WsResponse,
   BankCreateOrderData,
   BankOrderViewData,
 } from "../types/ws";
-import {bankStore} from "../store/BankStore.ts";
+import { bankStore } from "../store/BankStore.ts";
 
 function generateRequestId() {
   return Math.random().toString(36).substring(2, 10);
@@ -19,17 +21,41 @@ function generateRequestId() {
 const WebSocketComponent = observer(() => {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [_lastMessage, setLastMessage] = useState<string>("");
-  const [_status, setStatus] = useState<
-      "connected" | "disconnected" | "error" | "connecting"
+  const [lastMessage, setLastMessage] = useState<string>("");
+  const [status, setStatus] = useState<
+    "connected" | "disconnected" | "error" | "connecting"
   >("disconnected");
 
   const WS_URL = useMemo(
-      () =>
-          import.meta.env.VITE_WS_URL ||
-          (import.meta.env.VITE_API_URL || "").replace(/^http/, "ws") + "/ws",
-      []
+    () =>
+      import.meta.env.VITE_WS_URL ||
+      (import.meta.env.VITE_API_URL || "").replace(/^http/, "ws") + "/ws",
+    []
   );
+
+  const sendFloorsGetRequest = () => {
+    if (!store.sessionId || !store.user?.id) {
+      console.warn("Cannot send FLOORS_GET: missing sessionId or user id");
+      return;
+    }
+
+    const rq: WsRequest = {
+      type: "FLOORS_GET",
+      requestId: generateRequestId(),
+      session: store.sessionId,
+      getFloorRq: {
+        telegramId: store.user.id,
+      },
+    };
+
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(rq));
+      console.log("FLOORS_GET request sent:", rq);
+    } else {
+      console.warn("WS not open, cannot send FLOORS_GET");
+    }
+  };
 
   const connectWebSocket = () => {
     if (wsRef.current) wsRef.current.close();
@@ -40,6 +66,12 @@ const WebSocketComponent = observer(() => {
 
     ws.onopen = () => {
       setStatus("connected");
+      if (store.sessionId) {
+        // Если уже есть сессия, отправляем запрос на получение этажей
+        sendFloorsGetRequest();
+        return;
+      }
+
       if (store.sessionId) return;
       const rq: WsRequest = {
         type: "AUTH_INIT",
@@ -71,6 +103,28 @@ const WebSocketComponent = observer(() => {
             break;
           }
 
+          case "FLOORS_GET": {
+            if (parsed.success) {
+              const d = (parsed.data || {}) as FloorsGet;
+              store.setFloorsData?.(d);
+              console.log("FLOORS_GET success:", d);
+            } else {
+              console.error("FLOORS_GET failed:", parsed.message);
+            }
+            break;
+          }
+
+          case "FLOORS_BUY": {
+            if (parsed.success) {
+              const d = (parsed.data || {}) as FloorsBuy;
+              // store.setFloorsData?.(d);
+              console.log("FLOORS_BUY success:", d);
+            } else {
+              console.error("FLOORS_BUY failed:", parsed.message);
+            }
+            break;
+          }
+
           case "CLAIM_DO": {
             if (parsed.success) {
               const d = (parsed.data || {}) as ClaimData;
@@ -80,7 +134,7 @@ const WebSocketComponent = observer(() => {
             break;
           }
 
-            // Создание ордера на покупку PCoin
+          // Создание ордера на покупку PCoin
           case "BANK_BUY_PCOIN": {
             if (parsed.success && parsed.data) {
               const d = parsed.data as BankCreateOrderData;
@@ -95,12 +149,13 @@ const WebSocketComponent = observer(() => {
                 status: "WAITING_PAYMENT",
               };
             } else {
-              (store as any).bank.error = parsed.message || "BANK_BUY_PCOIN failed";
+              (store as any).bank.error =
+                parsed.message || "BANK_BUY_PCOIN failed";
             }
             break;
           }
 
-            // Получение/обновление статуса ордера (pull или push)
+          // Получение/обновление статуса ордера (pull или push)
           case "BANK_CONFIRM":
           case "BANK_ORDER_GET":
           case "BANK_ORDER_VIEW":
@@ -112,7 +167,9 @@ const WebSocketComponent = observer(() => {
               (store as any).bankOrderView = orderViewData;
               (store as any).confirmedOrder = orderViewData;
             } else {
-              (store as any).setBankError?.(parsed.message || "BANK_ORDER_VIEW failed");
+              (store as any).setBankError?.(
+                parsed.message || "BANK_ORDER_VIEW failed"
+              );
             }
             break;
           }
@@ -162,68 +219,71 @@ const WebSocketComponent = observer(() => {
     };
   }, []);
 
-  return null;
+  // return null;
 
   // DEBUG UI (оставляем как было, закомментировано)
-  // const getReadyStateText = () => {
-  //   switch (status) {
-  //     case "connecting":
-  //       return "⏳ Connecting";
-  //     case "connected":
-  //       return "🟢 Open";
-  //     case "error":
-  //       return "🔴 Error";
-  //     case "disconnected":
-  //       return "🔴 Closed";
-  //     default:
-  //       return "-";
-  //   }
-  // };
+  const getReadyStateText = () => {
+    switch (status) {
+      case "connecting":
+        return "⏳ Connecting";
+      case "connected":
+        return "🟢 Open";
+      case "error":
+        return "🔴 Error";
+      case "disconnected":
+        return "🔴 Closed";
+      default:
+        return "-";
+    }
+  };
 
-  // return (
-  //   <div className="p-4">
-  //     <h1 className="text-xl font-bold mb-4">WebSocket Debug</h1>
-  //
-  //     <div className="mb-4">
-  //       <p>
-  //         Status:{" "}
-  //         <span
-  //           className={
-  //             status === "connected"
-  //               ? "text-green-600 font-semibold"
-  //               : status === "error"
-  //               ? "text-red-600 font-semibold"
-  //               : "text-gray-600"
-  //           }
-  //         >
-  //           {status}
-  //         </span>
-  //       </p>
-  //       <p>
-  //         ReadyState: <span className="text-gray-800">{getReadyStateText()}</span>
-  //       </p>
-  //       <p className="text-gray-500 text-xs">Session: {store.sessionId || "-"}</p>
-  //     </div>
-  //
-  //     <div className="mb-4">
-  //       <p className="font-semibold">Last Message:</p>
-  //       <div className="mt-2 p-3 bg-gray-100 rounded border max-h-[200px] overflow-auto">
-  //         {lastMessage ? (
-  //           <code className="text-sm break-all">{lastMessage}</code>
-  //         ) : (
-  //           <span className="text-gray-500">No messages received yet</span>
-  //         )}
-  //       </div>
-  //     </div>
-  //
-  //     <div className="text-sm text-gray-500">
-  //       <p>Auto reconnect after 10 sec</p>
-  //       <p>
-  //         WS URL: <code className="break-all">{WS_URL}</code>
-  //       </p>
-  //     </div>
-  //   </div>
-  // );
+  return (
+    <div className="p-4">
+      <h1 className="text-xl font-bold mb-4">WebSocket Debug</h1>
+
+      <div className="mb-4">
+        <p>
+          Status:{" "}
+          <span
+            className={
+              status === "connected"
+                ? "text-green-600 font-semibold"
+                : status === "error"
+                ? "text-red-600 font-semibold"
+                : "text-gray-600"
+            }
+          >
+            {status}
+          </span>
+        </p>
+        <p>
+          ReadyState:{" "}
+          <span className="text-gray-800">{getReadyStateText()}</span>
+        </p>
+        {/* <p className="text-gray-500 text-xs">
+          Session: {store.sessionId || "-"}
+        </p> */}
+      </div>
+
+      <div className="mb-4">
+        <p className="font-semibold">Last Message:</p>
+        <div className="mt-2 p-3 bg-gray-100 rounded border max-h-[200px] overflow-auto">
+          {lastMessage ? (
+            <code className="text-sm break-all">{lastMessage}</code>
+          ) : (
+            <span className="text-gray-500">No messages received yet</span>
+          )}
+        </div>
+      </div>
+
+      <div className="text-sm text-gray-500">
+        <p>Auto reconnect after 10 sec</p>
+        <p>
+          WS URL: <code className="break-all">{WS_URL}</code>
+        </p>
+      </div>
+    </div>
+  );
 });
 
 export default WebSocketComponent;

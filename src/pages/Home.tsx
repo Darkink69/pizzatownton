@@ -7,46 +7,8 @@ function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [floors] = useState(9); // Количество этажей всего
 
-  const userFloors = {
-    success: true,
-    message: "Ok",
-    type: "FLOORS_GET",
-    requestId: "",
-    data: {
-      floorList: [
-        {
-          floorId: 1,
-          level: 1,
-          costCurrency: "pcoin",
-          costAmount: 500,
-          yieldPerHour: 84,
-          yieldCurrency: "pdollar",
-          floorName: "1",
-        },
-        {
-          floorId: 2,
-          level: 5,
-          costCurrency: "pcoin",
-          costAmount: 2500,
-          yieldPerHour: 206,
-          yieldCurrency: "pdollar",
-          floorName: "2",
-        },
-        {
-          floorId: 3,
-          level: 3,
-          costCurrency: "pcoin",
-          costAmount: 1200,
-          yieldPerHour: 206,
-          yieldCurrency: "pdollar",
-          floorName: "3",
-        },
-      ],
-    },
-  };
-
   // Получаем количество заполненных этажей
-  const filledFloorsCount = userFloors.data.floorList.length;
+  const filledFloorsCount = store.userFloors.data.floorList.length;
 
   // Функция для получения данных этажа по индексу
   const getFloorData = (index: number) => {
@@ -58,7 +20,7 @@ function Home() {
 
     // Проверяем, существует ли такой этаж в floorList
     if (floorListIndex >= 0 && floorListIndex < filledFloorsCount) {
-      return userFloors.data.floorList[floorListIndex];
+      return store.userFloors.data.floorList[floorListIndex];
     }
     return null;
   };
@@ -261,7 +223,7 @@ function Home() {
                                     className="w-8 sm:w-10"
                                   />
                                   <span className="text-white text-md sm:text-lg shantell">
-                                    {floorData.costAmount}
+                                    {floorData!.costAmount || 0}
                                   </span>
                                   <img
                                     src={`${store.imgUrl}icon_arrow.png`}
