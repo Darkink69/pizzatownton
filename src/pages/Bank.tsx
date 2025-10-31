@@ -132,12 +132,12 @@ function Bank() {
                     <button
                       className="relative w-full flex justify-center hover:opacity-90 transition-opacity mt-4"
                       disabled={buying}
-                      onClick={() => handleBuy()}
+                      onClick={handleBuy}
                     >
                       <img
                         src={`${store.imgUrl}b_blue2.png`}
                         alt=""
-                        className="w-1/3 h-auto"
+                        className="w-1/3 scale-x-150 h-auto"
                       />
                       <div className="absolute inset-0 flex items-center justify-center">
                         <span className="text-blue-900 text-md sm:text-lg shantell">

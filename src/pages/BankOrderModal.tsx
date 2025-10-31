@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { QRCodeCanvas } from "qrcode.react";
+// import { QRCodeCanvas } from "qrcode.react";
 import { TonConnectButton, useTonWallet } from "@tonconnect/ui-react";
 import store from "../store/store";
 import { useTonConnectUI } from "@tonconnect/ui-react";
@@ -19,20 +19,20 @@ function tonToNano(ton: number): string {
 /**
  * Генерирует ссылку для QR оплаты через tonkeeper / Telegram Wallet
  */
-function generateTonTransferLink(
-    address: string,
-    amountTon: number,
-    comment?: string
-): string {
-  const amountNano = tonToNano(amountTon);
-  const encodedComment = encodeURIComponent(comment?.trim() || "");
-  return `ton://transfer/${address}?amount=${amountNano}&text=${encodedComment}`;
-}
+// function generateTonTransferLink(
+//   address: string,
+//   amountTon: number,
+//   comment?: string
+// ): string {
+//   const amountNano = tonToNano(amountTon);
+//   const encodedComment = encodeURIComponent(comment?.trim() || "");
+//   return `ton://transfer/${address}?amount=${amountNano}&text=${encodedComment}`;
+// }
 
 // Словарь UI по статусу ордера
 const statusUi: Record<
-    string,
-    { title: string; color: string; icon: string; animation?: string }
+  string,
+  { title: string; color: string; icon: string; animation?: string }
 > = {
   NEW: {
     title: "Ожидает оплаты",
@@ -153,145 +153,145 @@ const BankOrderModal: React.FC = () => {
   };
 
   return (
-      <div className="fixed inset-0 z-[9999] bg-black bg-opacity-70 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg p-6 max-w-md w-full text-center shadow-lg border-2 border-amber-800 shantell text-amber-800 relative">
-          <h2 className="text-xl mb-4 font-bold">Оплата TON</h2>
+    <div className="fixed inset-0 z-[50] bg-black bg-opacity-70 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full text-center shadow-lg border-2 border-amber-800 shantell text-amber-800 relative">
+        <h2 className="text-xl mb-4 font-bold">Оплата TON</h2>
 
-          <div className="mb-2">
-            Сумма:{" "}
-            <strong className="text-blue-700">{numericAmountTon} TON</strong>
-          </div>
-
-          {merchantAddress && (
-              <div className="mb-1 text-sm break-all text-gray-800">
-                Адрес: <strong>{merchantAddress}</strong>
-              </div>
-          )}
-
-          {tonComment && (
-              <div className="mb-2 text-sm text-gray-800 break-all">
-                Комментарий: <strong>{tonComment}</strong>
-              </div>
-          )}
-
-          <div className="mb-3 text-md font-semibold text-gray-800">
-            Курс: 1 TON = {rate} PCoin
-          </div>
-
-          {/* QR-код */}
-          <div className="my-4 flex justify-center">
-            {merchantAddress && numericAmountTon > 0 ? (
-                <QRCodeCanvas
-                    value={generateTonTransferLink(
-                        merchantAddress,
-                        numericAmountTon,
-                        tonComment
-                    )}
-                    size={200}
-                    level="M"
-                    bgColor="#ffffff"
-                    fgColor="#000000"
-                />
-            ) : (
-                <div className="text-sm text-red-600">
-                  ⚠ Недостаточно данных для генерации QR.
-                </div>
-            )}
-          </div>
-
-          {/* Статус */}
-          {statusInfo && (
-              <div
-                  className={`mt-4 text-md font-semibold flex items-center justify-center gap-2 ${statusInfo.color} ${statusInfo.animation}`}
-              >
-                <span>{statusInfo.icon}</span>
-                <span>{statusInfo.title}</span>
-              </div>
-          )}
-
-          {/* Таб таймера */}
-          {!isPaid && !isExpired && (
-              <div className="my-4 flex justify-center">
-                <div className="relative w-[100px] h-[100px]">
-                  <svg className="w-full h-full transform -rotate-90">
-                    <circle
-                        cx="50%"
-                        cy="50%"
-                        r={CIRCLE_RADIUS}
-                        stroke="#eee"
-                        strokeWidth="8"
-                        fill="transparent"
-                    />
-                    <circle
-                        cx="50%"
-                        cy="50%"
-                        r={CIRCLE_RADIUS}
-                        stroke="url(#gradient-ring)"
-                        strokeWidth="8"
-                        fill="transparent"
-                        strokeDasharray={CIRCLE_CIRC}
-                        strokeDashoffset={(1 - percent / 100) * CIRCLE_CIRC}
-                        strokeLinecap="round"
-                        className="pulse-ring"
-                    />
-                    <defs>
-                      <linearGradient
-                          id="gradient-ring"
-                          x1="0%"
-                          y1="0%"
-                          x2="100%"
-                          y2="0%"
-                      >
-                        <stop offset="0%" stopColor="#8e44ad" />
-                        <stop offset="50%" stopColor="#e67e22" />
-                        <stop offset="100%" stopColor="#f1c40f" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center text-md font-bold text-amber-900">
-                    {timeLeft}
-                  </div>
-                </div>
-              </div>
-          )}
-
-          {/* Подключение кошелька */}
-          {!wallet && (
-              <div className="mb-4">
-                <TonConnectButton />
-              </div>
-          )}
-
-          {/* Кнопка оплаты через TonConnect */}
-          {wallet && !isPaid && !isExpired && (
-              <button
-                  onClick={handleTonConnectPayment}
-                  className="mb-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded transition"
-              >
-                💸 Оплатить через кошелёк
-              </button>
-          )}
-
-          {/* "Я оплатил" — ручной refresh */}
-          {!isPaid && !isExpired && (
-              <button
-                  onClick={() => orderId && store.bank.fetchOrder(orderId)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
-              >
-                Я оплатил
-              </button>
-          )}
-
-          {/* Закрыть */}
-          <button
-              onClick={() => (store.bank.order = null)}
-              className="absolute top-2 right-2 text-[20px] text-gray-700 hover:text-red-900"
-              title="Закрыть"
-          >
-            ×
-          </button>
+        <div className="mb-2">
+          Сумма:{" "}
+          <strong className="text-blue-700">{numericAmountTon} TON</strong>
         </div>
+
+        {merchantAddress && (
+          <div className="mb-1 text-sm break-all text-gray-800">
+            Адрес: <strong>{merchantAddress}</strong>
+          </div>
+        )}
+
+        {tonComment && (
+          <div className="mb-2 text-sm text-gray-800 break-all">
+            Комментарий: <strong>{tonComment}</strong>
+          </div>
+        )}
+
+        <div className="mb-3 text-md font-semibold text-gray-800">
+          Курс: 1 TON = {rate} PCoin
+        </div>
+
+        {/* QR-код */}
+        {/* <div className="my-4 flex justify-center">
+          {merchantAddress && numericAmountTon > 0 ? (
+            <QRCodeCanvas
+              value={generateTonTransferLink(
+                merchantAddress,
+                numericAmountTon,
+                tonComment
+              )}
+              size={200}
+              level="M"
+              bgColor="#ffffff"
+              fgColor="#000000"
+            />
+          ) : (
+            <div className="text-sm text-red-600">
+              ⚠ Недостаточно данных для генерации QR.
+            </div>
+          )}
+        </div> */}
+
+        {/* Статус */}
+        {statusInfo && (
+          <div
+            className={`mt-4 text-md font-semibold flex items-center justify-center gap-2 ${statusInfo.color} ${statusInfo.animation}`}
+          >
+            <span>{statusInfo.icon}</span>
+            <span>{statusInfo.title}</span>
+          </div>
+        )}
+
+        {/* Таб таймера */}
+        {!isPaid && !isExpired && (
+          <div className="my-4 flex justify-center">
+            <div className="relative w-[100px] h-[100px]">
+              <svg className="w-full h-full transform -rotate-90">
+                <circle
+                  cx="50%"
+                  cy="50%"
+                  r={CIRCLE_RADIUS}
+                  stroke="#eee"
+                  strokeWidth="8"
+                  fill="transparent"
+                />
+                <circle
+                  cx="50%"
+                  cy="50%"
+                  r={CIRCLE_RADIUS}
+                  stroke="url(#gradient-ring)"
+                  strokeWidth="8"
+                  fill="transparent"
+                  strokeDasharray={CIRCLE_CIRC}
+                  strokeDashoffset={(1 - percent / 100) * CIRCLE_CIRC}
+                  strokeLinecap="round"
+                  className="pulse-ring"
+                />
+                <defs>
+                  <linearGradient
+                    id="gradient-ring"
+                    x1="0%"
+                    y1="0%"
+                    x2="100%"
+                    y2="0%"
+                  >
+                    <stop offset="0%" stopColor="#8e44ad" />
+                    <stop offset="50%" stopColor="#e67e22" />
+                    <stop offset="100%" stopColor="#f1c40f" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center text-md font-bold text-amber-900">
+                {timeLeft}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Подключение кошелька */}
+        {!wallet && (
+          <div className="mb-4 flex justify-center">
+            <TonConnectButton />
+          </div>
+        )}
+
+        {/* Кнопка оплаты через TonConnect */}
+        {wallet && !isPaid && !isExpired && (
+          <button
+            onClick={handleTonConnectPayment}
+            className="mb-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded transition"
+          >
+            💸 Оплатить через кошелёк
+          </button>
+        )}
+
+        {/* "Я оплатил" — ручной refresh */}
+        {!isPaid && !isExpired && (
+          <button
+            onClick={() => orderId && store.bank.fetchOrder(orderId)}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
+          >
+            Я оплатил
+          </button>
+        )}
+
+        {/* Закрыть */}
+        <button
+          onClick={() => (store.bank.order = null)}
+          className="absolute top-2 right-2 text-[20px] text-gray-700 hover:text-red-900"
+          title="Закрыть"
+        >
+          X
+        </button>
       </div>
+    </div>
   );
 };
 

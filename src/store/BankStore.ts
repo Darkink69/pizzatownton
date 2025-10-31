@@ -62,7 +62,6 @@ class BankStore {
 
       // После этого ответ придёт в websocket.tsx:
       // case "BANK_BUY_PCOIN" → store.setBankCreateOrder(parsed.data)
-
     } catch (e: any) {
       console.error("CREATE_ORDER_ERROR (WS):", e);
       this.error = e?.message ?? "Ошибка при создании заказа";
@@ -94,7 +93,6 @@ class BankStore {
 
       // Ответ придёт через websocket.tsx → case "BANK_CONFIRM"
       // и попадёт в setBankOrderView или другую обработку
-
     } catch (e: any) {
       console.warn("Ошибка WS-запроса заказа:", e);
     }
