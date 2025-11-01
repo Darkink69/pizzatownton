@@ -86,6 +86,21 @@ function Home() {
     setIsModalOpen(false);
   };
 
+  // Функция для получения floorId по индексу этажа
+  const getFloorIdByIndex = (index: number): number => {
+    if (index === 0) return 1; // Крыша - это первый этаж?
+    if (index === floors - 1) return 1; // Первый этаж внизу
+
+    return index;
+  };
+
+  // Обработчик покупки этажа
+  const handleBuyFloor = (index: number) => {
+    const floorId = getFloorIdByIndex(index);
+    console.log(`Покупка этажа: index=${index}, floorId=${floorId}`);
+    store.sendFloorsBuy(floorId);
+  };
+
   useEffect(() => {
     // Прокрутка к самому низу страницы
     window.scrollTo({
@@ -142,7 +157,10 @@ function Home() {
 
                     {/* Блок "Открыть новый этаж" на всех пустых этажах */}
                     {isEmptyFloor(index) && (
-                      <div className="absolute inset-0 flex items-center justify-center z-30">
+                      <button
+                        onClick={() => handleBuyFloor(index)}
+                        className="absolute inset-0 flex items-center justify-center z-30 cursor-pointer hover:opacity-90 transition-opacity"
+                      >
                         <div className="flex items-center relative">
                           <img
                             src={`${store.imgUrl}b_blue_small.png`}
@@ -165,7 +183,7 @@ function Home() {
                             </div>
                           </div>
                         </div>
-                      </div>
+                      </button>
                     )}
 
                     {/* Видео и статистика для заполненных этажей */}

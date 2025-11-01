@@ -146,21 +146,51 @@ class Store {
   }
 
   // Этажи
-  requestFloors() {
-    try {
-      this.ensureWs();
-      this.wsSend!({
-        type: "FLOORS_GET",
-        requestId: genId(),
-        session: this.sessionId!,
-      });
-    } catch (e) {
-      console.warn("FLOORS_GET failed", e);
-    }
-  }
+  // requestFloors() {
+  //   try {
+  //     this.ensureWs();
+  //     this.wsSend!({
+  //       type: "FLOORS_GET",
+  //       requestId: genId(),
+  //       session: this.sessionId!,
+  //     });
+  //   } catch (e) {
+  //     console.warn("FLOORS_GET failed", e);
+  //   }
+  // }
 
   setFloorsData(d: any) {
     this.userFloors = d;
+  }
+
+  sendFloorsBuy(floorId: number) {
+    try {
+      this.ensureWs();
+
+      if (!this.sessionId || !this.user?.telegramId) {
+        console.warn(
+          "Cannot send FLOORS_BUY: missing sessionId or user telegramId"
+        );
+        return false;
+      }
+
+      const rq: WsRequest = {
+        type: "FLOORS_BUY",
+        requestId: genId(),
+        session: this.sessionId,
+        buyFloorRq: {
+          floorId: floorId,
+          telegramId: this.user.telegramId,
+        },
+      };
+
+      this.wsSend!(rq);
+      console.log("FLOORS_BUY request sent:", rq);
+      return true;
+    } catch (e) {
+      console.warn("FLOORS_BUY failed", e);
+      return false;
+    }
   }
 
   // Клейм
