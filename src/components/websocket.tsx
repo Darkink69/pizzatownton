@@ -1,4 +1,3 @@
-// src/components/websocket.tsx
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import store from "../store/store";
@@ -21,8 +20,8 @@ function generateRequestId() {
 const WebSocketComponent = observer(() => {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [lastMessage, setLastMessage] = useState<string>("");
-  const [status, setStatus] = useState<
+  const [_lastMessage, setLastMessage] = useState<string>("");
+  const [_status, setStatus] = useState<
     "connected" | "disconnected" | "error" | "connecting"
   >("disconnected");
 
@@ -56,31 +55,6 @@ const WebSocketComponent = observer(() => {
       console.warn("WS not open, cannot send FLOORS_GET");
     }
   };
-
-  // const sendFloorsBuy = () => {
-  //   if (!store.sessionId || !store.user?.id) {
-  //     console.warn("Cannot send FLOORS_GET: missing sessionId or user id");
-  //     return;
-  //   }
-
-  //   const rq: WsRequest = {
-  //     type: "FLOORS_BUY",
-  //     requestId: generateRequestId(),
-  //     session: store.sessionId,
-  //     buyFloorRq: {
-  //       floorId: store.userFloors.data.floorList[0].floorId,
-  //       telegramId: store.user.telegramId,
-  //     },
-  //   };
-
-  //   const ws = wsRef.current;
-  //   if (ws && ws.readyState === WebSocket.OPEN) {
-  //     ws.send(JSON.stringify(rq));
-  //     console.log("FLOORS_GET request sent:", rq);
-  //   } else {
-  //     console.warn("WS not open, cannot send FLOORS_GET");
-  //   }
-  // };
 
   const connectWebSocket = () => {
     if (wsRef.current) wsRef.current.close();
@@ -142,10 +116,13 @@ const WebSocketComponent = observer(() => {
           case "FLOORS_BUY": {
             if (parsed.success) {
               const d = (parsed.data || {}) as FloorsBuy;
-              // store.setFloorsData?.(d);
+              // Сервер подтвердил покупку, можно обновить локальные данные
               console.log("FLOORS_BUY success:", d);
+              // Если нужно, можно запросить обновленные данные этажей
+              sendFloorsGetRequest();
             } else {
               console.error("FLOORS_BUY failed:", parsed.message);
+              // TODO: Откатить локальные изменения при ошибке
             }
             break;
           }
@@ -153,8 +130,15 @@ const WebSocketComponent = observer(() => {
           case "CLAIM_DO": {
             if (parsed.success) {
               const d = (parsed.data || {}) as ClaimData;
-              if (d.userState) store.setUserState?.(d.userState);
-              else if (d.userResponse) store.setUserState?.(d.userResponse);
+              if (d.userState) {
+                store.setUserState?.(d.userState);
+              } else if (d.userResponse) {
+                // Обновляем данные пользователя из userResponse
+                store.updateUserData?.(d.userResponse);
+              }
+              console.log("CLAIM_DO success:", d);
+            } else {
+              console.error("CLAIM_DO failed:", parsed.message);
             }
             break;
           }
@@ -244,71 +228,7 @@ const WebSocketComponent = observer(() => {
     };
   }, []);
 
-  // return null;
-
-  // DEBUG UI (оставляем как было, закомментировано)
-  const getReadyStateText = () => {
-    switch (status) {
-      case "connecting":
-        return "⏳ Connecting";
-      case "connected":
-        return "🟢 Open";
-      case "error":
-        return "🔴 Error";
-      case "disconnected":
-        return "🔴 Closed";
-      default:
-        return "-";
-    }
-  };
-
-  return (
-    <div className="p-4">
-      <h1 className="text-xl font-bold mb-4">WebSocket Debug</h1>
-
-      <div className="mb-4">
-        <p>
-          Status:{" "}
-          <span
-            className={
-              status === "connected"
-                ? "text-green-600 font-semibold"
-                : status === "error"
-                ? "text-red-600 font-semibold"
-                : "text-gray-600"
-            }
-          >
-            {status}
-          </span>
-        </p>
-        <p>
-          ReadyState:{" "}
-          <span className="text-gray-800">{getReadyStateText()}</span>
-        </p>
-        {/* <p className="text-gray-500 text-xs">
-          Session: {store.sessionId || "-"}
-        </p> */}
-      </div>
-
-      <div className="mb-4">
-        <p className="font-semibold">Last Message:</p>
-        <div className="mt-2 p-3 bg-gray-100 rounded border max-h-[200px] overflow-auto">
-          {lastMessage ? (
-            <code className="text-sm break-all">{lastMessage}</code>
-          ) : (
-            <span className="text-gray-500">No messages received yet</span>
-          )}
-        </div>
-      </div>
-
-      <div className="text-sm text-gray-500">
-        <p>Auto reconnect after 10 sec</p>
-        <p>
-          WS URL: <code className="break-all">{WS_URL}</code>
-        </p>
-      </div>
-    </div>
-  );
+  return null;
 });
 
 export default WebSocketComponent;

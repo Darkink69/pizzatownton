@@ -82,6 +82,17 @@ function Bank() {
         {/* Контейнер для скролла */}
         <div className="relative z-30 h-screen flex flex-col pt-25 pb-20">
           <div className="flex-1 overflow-y-auto">
+          <div className="flex items-center justify-center gap-1 sm:gap-2 mx-2">
+            <img
+              src={`${store.imgUrl}icon_dollar_coin.png`}
+              alt="dollar"
+              className="w-8 h-auto sm:w-10"
+            />
+            <span className="text-white text-2xl sm:text-xl shantell">
+              {store.pdollar}
+            </span>
+          </div>
+
             <div className="flex flex-col items-center gap-6 sm:gap-8 md:gap-10 py-4">
               <div className="w-11/12 max-w-md">
                 <div className="relative">

@@ -1,55 +1,62 @@
 import { useEffect, useState } from "react";
+import { observer } from "mobx-react-lite";
 import store from "../store/store";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
 
-function Home() {
+const Home = observer(() => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [floors] = useState(9); // Количество этажей всего
+  const [selectedFloor, setSelectedFloor] = useState<any>(null);
+  const [notification, setNotification] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
+  const floors = 9;
 
-  // Получаем количество заполненных этажей
-  const filledFloorsCount = store.userFloors.data.floorList.length;
-
-  // Функция для получения данных этажа по индексу
-  const getFloorData = (index: number) => {
-    // Индексы идут сверху вниз: 0 - крыша, 1 - верхний этаж, floors-1 - первый этаж
-    // floorList идет снизу вверх: 0 - первый этаж, 1 - второй этаж и т.д.
-
-    // Преобразуем индекс грида в индекс floorList
-    const floorListIndex = floors - 2 - index;
-
-    // Проверяем, существует ли такой этаж в floorList
-    if (floorListIndex >= 0 && floorListIndex < filledFloorsCount) {
-      return store.userFloors.data.floorList[floorListIndex];
-    }
-    return null;
+  // Показ уведомления
+  const showNotification = (message: string, type: 'error' | 'success' = 'error') => {
+    setNotification({ message, type });
+    setTimeout(() => {
+      setNotification(null);
+    }, 3000);
   };
 
-  // Функция для определения изображения этажа
-  const getFloorImage = (index: number) => {
-    if (index === 0) return "img_roof.png"; // Крыша (первая ячейка)
-    if (index === floors - 1) return "img_first_floor.png"; // Первый этаж (последняя ячейка)
+  // Получаем количество заполненных этажей напрямую
+  // const filledFloorsCount = store.userFloors.data.userFloorList.length;
 
-    // Проверяем, является ли этаж заполненным (есть видео)
+  const getFloorData = (index: number) => {
+    const visualIndexToFloorId = (visualIndex: number): number => {
+      if (visualIndex === 0) return 1;
+      if (visualIndex === floors - 1) return 1;
+      return floors - visualIndex;
+    };
+
+    const floorId = visualIndexToFloorId(index);
+    
+    const floorData = store.userFloors.data.userFloorList.find(
+      floor => floor.floorId === floorId
+    );
+
+    return floorData || null;
+  };
+
+  const getFloorImage = (index: number) => {
+    if (index === 0) return "img_roof.png";
+    if (index === floors - 1) return "img_first_floor.png";
+
     const floorData = getFloorData(index);
     if (floorData) {
-      return "img_floor_empty.png"; // Этаж с дыркой для видео
+      return "img_floor_empty.png";
     }
 
-    return "img_floor_dark.png"; // Остальные этажи
+    return "img_floor_dark.png";
   };
 
-  // Функция для проверки, является ли этаж пустым
   const isEmptyFloor = (index: number) => {
     return getFloorImage(index) === "img_floor_dark.png";
   };
 
-  // Функция для проверки, является ли этаж заполненным (с видео)
   const isFilledFloor = (index: number) => {
     return getFloorImage(index) === "img_floor_empty.png";
   };
 
-  // Функция для рендеринга звезд
   const renderStars = (level: number) => {
     const stars = [];
     const totalStars = 5;
@@ -78,31 +85,107 @@ function Home() {
     return stars;
   };
 
-  const handleOpenModal = () => {
+  // Открытие модального окна для улучшения этажа
+  const handleOpenUpgradeModal = (floorData: any) => {
+    setSelectedFloor(floorData);
     setIsModalOpen(true);
   };
 
+  // Закрытие модального окна
   const handleCloseModal = () => {
     setIsModalOpen(false);
+    setSelectedFloor(null);
   };
 
-  // Функция для получения floorId по индексу этажа
+  // Улучшение этажа из модального окна
+  const handleUpgradeFromModal = () => {
+    if (!selectedFloor) return;
+
+    const floorId = selectedFloor.floorId;
+    const floor = store.getFloorById(floorId);
+    if (!floor) return;
+
+    if (!store.canUpgradeFloor(floorId)) {
+      if (!store.hasEnoughMoney(floor.costAmount)) {
+        showNotification(`Недостаточно денег для улучшения! Нужно: ${floor.costAmount} pdollar`);
+      }
+      handleCloseModal();
+      return;
+    }
+
+    const success: any = store.upgradeFloor(floorId);
+    if (!success) {
+      showNotification(`Этаж улучшен до уровня ${floor.level + 1}!`, 'success');
+    } else {
+      showNotification(`Не удалось улучшить этаж. Недостаточно денег!`);
+    }
+    
+    handleCloseModal();
+  };
+
+  // Обработчик кнопки CLAIM_DO
+  const handleClaimDo = () => {
+    const success = store.sendClaimDo();
+    if (success) {
+      showNotification("Запрос на получение награды отправлен!", 'success');
+    } else {
+      showNotification("Ошибка при отправке запроса");
+    }
+  };
+
   const getFloorIdByIndex = (index: number): number => {
-    if (index === 0) return 1; // Крыша - это первый этаж?
-    if (index === floors - 1) return 1; // Первый этаж внизу
-
-    return index;
+    if (index === 0) return 1;
+    if (index === floors - 1) return 1;
+    return floors - index;
   };
 
-  // Обработчик покупки этажа
+  const getFloorNameByIndex = (index: number): string => {
+    const floorId = getFloorIdByIndex(index);
+    
+    if (index === 0) return "Крыша";
+    if (index === floors - 1) return "1 этаж";
+    
+    return `${floorId} этаж`;
+  };
+
   const handleBuyFloor = (index: number) => {
     const floorId = getFloorIdByIndex(index);
-    console.log(`Покупка этажа: index=${index}, floorId=${floorId}`);
-    store.sendFloorsBuy(floorId);
+    const floorCost = store.getFloorCost(floorId);
+    
+    if (!store.canBuyFloor(floorId)) {
+      if (!store.hasEnoughMoney(floorCost)) {
+        showNotification(`Недостаточно денег! Нужно: ${floorCost} pdollar`);
+      }
+      return;
+    }
+
+    const success: any = store.buyNewFloor(floorId);
+    if (!success) {
+      showNotification(`Этаж успешно куплен за ${floorCost} pdollar!`, 'success');
+    } else {
+      showNotification(`Не удалось купить этаж. Недостаточно денег!`);
+    }
+  };
+
+  // Обработчик улучшения этажа (открывает модальное окно)
+  const handleUpgradeFloor = (floorId: number, event: React.MouseEvent) => {
+    event.stopPropagation();
+    
+    const floor = store.getFloorById(floorId);
+    if (!floor) return;
+
+    if (!store.canUpgradeFloor(floorId)) {
+      if (!store.hasEnoughMoney(floor.costAmount)) {
+        showNotification(`Недостаточно денег для улучшения! Нужно: ${floor.costAmount} pdollar`);
+      }
+      return;
+    }
+
+    // Открываем модальное окно вместо немедленного улучшения
+    handleOpenUpgradeModal(floor);
   };
 
   useEffect(() => {
-    // Прокрутка к самому низу страницы
     window.scrollTo({
       top: document.documentElement.scrollHeight,
       behavior: "auto",
@@ -112,13 +195,31 @@ function Home() {
   return (
     <>
       <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B]">
+        {/* Уведомление */}
+        {notification && (
+          <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg ${
+            notification.type === 'error' 
+              ? 'bg-red-500 text-white' 
+              : 'bg-green-500 text-white'
+          }`}>
+            <div className="flex items-center gap-2">
+              {notification.type === 'error' ? (
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              )}
+              <span className="font-medium">{notification.message}</span>
+            </div>
+          </div>
+        )}
+
         <div className="relative min-h-[160vh]">
-          {" "}
-          {/* Увеличиваем высоту для скролла */}
-          {/* Фоновая картинка - скроллится вместе с контентом */}
           <div className="h-screen">
             <div className="absolute inset-0 bottom-0 bg-[#FFBC6B]">
-              {/* Фоновая картинка */}
               <div
                 className="
                   w-full h-full
@@ -133,12 +234,35 @@ function Home() {
               />
             </div>
           </div>
-          {/* Grid этажей дома - привязан к низу фоновой картинки */}
+          
+          {/* Отображение баланса */}
+          <div className="fixed top-4 right-4 z-30 bg-black bg-opacity-70 text-white px-4 py-2 rounded-lg">
+            <div className="flex items-center gap-2">
+              <img
+                src={`${store.imgUrl}icon_dollar.png`}
+                alt="pdollar"
+                className="w-6 h-6"
+              />
+              <span className="font-bold text-lg">{store.currentBalance}</span>
+              <span className="text-sm">pdollar</span>
+            </div>
+            <div className="flex items-center gap-1 mt-1 text-xs">
+              <span>pizza: {store.pizza}</span>
+              <span>•</span>
+              <span>pcoin: {store.pcoin}</span>
+            </div>
+          </div>
+
           <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-10 w-[90%] sm:w-[60%] md:w-[50%] lg:w-[40%] xl:w-[16%]">
             <div className="flex flex-col items-center relative">
               {Array.from({ length: floors }, (_, index) => {
                 const floorData = getFloorData(index);
                 const isFilled = isFilledFloor(index);
+                const isEmpty = isEmptyFloor(index);
+                const floorId = getFloorIdByIndex(index);
+                const floorName = getFloorNameByIndex(index);
+                const canBuy = store.canBuyFloor(floorId);
+                const floorCost = store.getFloorCost(floorId);
 
                 return (
                   <div
@@ -148,18 +272,20 @@ function Home() {
                       marginBottom: index === floors - 1 ? "0" : "-2px",
                     }}
                   >
-                    {/* Фон этажа */}
                     <img
                       src={`${store.imgUrl}${getFloorImage(index)}`}
-                      alt={`Этаж ${floors - index}`}
+                      alt={`Этаж ${floorName}`}
                       className="w-full max-w-md object-contain"
                     />
 
-                    {/* Блок "Открыть новый этаж" на всех пустых этажах */}
-                    {isEmptyFloor(index) && (
+                    {isEmpty && (
                       <button
                         onClick={() => handleBuyFloor(index)}
-                        className="absolute inset-0 flex items-center justify-center z-30 cursor-pointer hover:opacity-90 transition-opacity"
+                        className={`absolute inset-0 flex items-center justify-center z-30 transition-opacity ${
+                          canBuy 
+                            ? 'cursor-pointer hover:opacity-90' 
+                            : 'cursor-not-allowed opacity-80'
+                        }`}
                       >
                         <div className="flex items-center relative">
                           <img
@@ -175,18 +301,17 @@ function Home() {
                                 className="w-8 sm:w-10"
                               />
                               <span className="text-white text-sm sm:text-base shantell pr-4">
-                                1.8
+                                {floorCost}
                               </span>
                             </div>
                             <div className="text-blue-900 text-sm sm:text-md shantell font-bold whitespace-nowrap">
-                              ОТКРЫТЬ НОВЫЙ ЭТАЖ
+                              ОТКРЫТЬ {floorName.toUpperCase()}
                             </div>
                           </div>
                         </div>
                       </button>
                     )}
 
-                    {/* Видео и статистика для заполненных этажей */}
                     {isFilled && floorData && (
                       <>
                         <div className="absolute inset-0 flex items-center justify-center -z-10">
@@ -205,7 +330,6 @@ function Home() {
                           </video>
                         </div>
 
-                        {/* Статистика этажа */}
                         <div className="absolute -top-10 left-1/3 transform -translate-x-1/2 translate-y-1/2 z-40 w-4/5 max-w-xs">
                           <div className="flex items-center relative">
                             <img
@@ -214,21 +338,24 @@ function Home() {
                               className="w-full h-auto object-contain"
                             />
 
-                            {/* Контент поверх фона */}
                             <div className="absolute inset-0 flex items-center">
-                              {/* Левая часть - название этажа и уровня */}
                               <div className="flex-1 px-2 sm:px-4 text-xs sm:text-sm text-amber-800 shantell text-center leading-3">
-                                Этаж {floorData.floorName} - Уровень{" "}
-                                {floorData.level}
+                                {floorName} - Уровень {floorData.level}
                               </div>
 
-                              {/* Звезды */}
                               <div className="flex items-center gap-1 ml-2 sm:ml-4">
                                 {renderStars(floorData.level)}
                               </div>
 
-                              {/* Правая часть - стоимость улучшения */}
-                              <div className="relative translate-x-[40px]">
+                              <button 
+                                onClick={(e) => handleUpgradeFloor(floorData.floorId, e)}
+                                disabled={!store.canUpgradeFloor(floorData.floorId)}
+                                className={`relative translate-x-[40px] ${
+                                  store.canUpgradeFloor(floorData.floorId) 
+                                    ? 'cursor-pointer hover:opacity-90 transition-opacity' 
+                                    : 'opacity-50 cursor-not-allowed'
+                                }`}
+                              >
                                 <img
                                   src={`${store.imgUrl}b_red_mini.png`}
                                   alt="Upgrade"
@@ -241,7 +368,7 @@ function Home() {
                                     className="w-8 sm:w-10"
                                   />
                                   <span className="text-white text-md sm:text-lg shantell">
-                                    {floorData!.costAmount || 0}
+                                    {floorData.costAmount || 0}
                                   </span>
                                   <img
                                     src={`${store.imgUrl}icon_arrow.png`}
@@ -249,7 +376,7 @@ function Home() {
                                     className="w-8 sm:w-12"
                                   />
                                 </div>
-                              </div>
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -259,7 +386,6 @@ function Home() {
                 );
               })}
 
-              {/* Видео лифта - позиционируется относительно всего грида */}
               <div className="absolute bottom-2 right-[20px] z-20">
                 <video
                   autoPlay
@@ -276,7 +402,6 @@ function Home() {
           </div>
         </div>
 
-        {/* Фиксированные элементы поверх скролла */}
         <div className="fixed top-0 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-[600px] sm:max-w-[800px] md:max-w-[1000px] lg:max-w-[2000px] xl:max-w-[1550px]">
           <img
             src={`${store.imgUrl}testo.png`}
@@ -307,26 +432,24 @@ function Home() {
           </div>
         </div>
 
-        {/* Кнопка для открытия модального окна */}
+        {/* Кнопка CLAIM_DO */}
         <button
-          onClick={handleOpenModal}
+          onClick={handleClaimDo}
           className="fixed bottom-20 left-1/2 w-50 sm:w-80 transform -translate-x-1/2 z-20 hover:opacity-90 transition-opacity"
         >
-          <img src={`${store.imgUrl}b_zabrat.png`} alt="Zabrat" />
+          <img src={`${store.imgUrl}b_zabrat.png`} alt="Claim" />
         </button>
 
-        {/* Затемнение экрана и модальное окно */}
-        {isModalOpen && (
+        {/* Модальное окно улучшения этажа */}
+        {isModalOpen && selectedFloor && (
           <>
             <div
               className="fixed inset-0 bg-black opacity-70 z-40"
               onClick={handleCloseModal}
             />
 
-            {/* Модальное окно */}
             <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-11/12 max-w-md">
               <div className="relative">
-                {/* Фон модального окна */}
                 <img
                   src={`${store.imgUrl}img_window.png`}
                   alt="Modal background"
@@ -334,9 +457,10 @@ function Home() {
                 />
 
                 <div className="absolute inset-0 flex flex-col p-4 sm:p-6 md:p-8">
+                  {/* Заголовок с номером этажа и текущим уровнем */}
                   <div className="text-center mb-4 mt-2 sm:mt-4">
                     <div className="absolute -top-0 left-1/2 transform -translate-x-1/2 shantell text-center text-sm sm:text-md text-amber-800 font-bold py-1 inline-block">
-                      ЭТАЖ 1 - УРОВЕНЬ 1
+                      ЭТАЖ {selectedFloor.floorId} - УРОВЕНЬ {selectedFloor.level}
                     </div>
                   </div>
 
@@ -380,7 +504,7 @@ function Home() {
                       </div>
                       <div className="flex items-center gap-1 sm:gap-2 mx-2 sm:mx-4">
                         <span className="ont-bold text-base sm:text-lg text-amber-800 shantell">
-                          0
+                          {selectedFloor.yieldPerHour}
                         </span>
                         <img
                           src={`${store.imgUrl}icon_dollar.png`}
@@ -436,7 +560,15 @@ function Home() {
 
                   {/* Кнопка улучшения */}
                   <div className="mt-auto px-2">
-                    <button className="relative w-full hover:opacity-90 transition-opacity">
+                    <button 
+                      onClick={handleUpgradeFromModal}
+                      disabled={!store.canUpgradeFloor(selectedFloor.floorId)}
+                      className={`relative w-full transition-opacity ${
+                        store.canUpgradeFloor(selectedFloor.floorId) 
+                          ? 'hover:opacity-90' 
+                          : 'opacity-50 cursor-not-allowed'
+                      }`}
+                    >
                       <img
                         src={`${store.imgUrl}b_red.png`}
                         alt="Улучшить этаж"
@@ -445,7 +577,7 @@ function Home() {
 
                       <div className="absolute inset-0 flex items-center justify-between ">
                         <div className="text-white text-sm sm:text-base shantell flex-1 text-center">
-                          Этаж 1 - Улучшить <br></br>до уровня 1
+                          Этаж {selectedFloor.floorId} - Улучшить <br></br>до уровня {selectedFloor.level + 1}
                         </div>
 
                         <div className="flex items-center gap-1 sm:gap-2 mx-2">
@@ -455,7 +587,7 @@ function Home() {
                             className="w-8 h-auto sm:w-10"
                           />
                           <span className="text-white text-sm sm:text-base shantell font-bold">
-                            625
+                            {selectedFloor.costAmount}
                           </span>
                           <img
                             src={`${store.imgUrl}icon_arrow.png`}
@@ -480,7 +612,9 @@ function Home() {
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                   >
-                    {/* SVG код остался без изменений */}
+                    <circle cx="12" cy="12" r="12" fill="white"/>
+                    <path d="M8 8L16 16" stroke="#FFBC6B" strokeWidth="2" strokeLinecap="round"/>
+                    <path d="M16 8L8 16" stroke="#FFBC6B" strokeWidth="2" strokeLinecap="round"/>
                   </svg>
                 </button>
               </div>
@@ -492,6 +626,6 @@ function Home() {
       <WebSocketComponent />
     </>
   );
-}
+});
 
 export default Home;
