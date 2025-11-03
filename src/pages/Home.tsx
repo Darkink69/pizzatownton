@@ -39,6 +39,7 @@ const Home = observer(() => {
 
   const getFloorImage = (index: number) => {
     if (index === 0) return "img_roof.png";
+    if (getFloorIdByIndex(index) === 1) return "img_basement_floor.png";
     if (index === floors - 1) return "img_first_floor.png";
 
     const floorData = getFloorData(index);
@@ -105,26 +106,35 @@ const Home = observer(() => {
     const floor = store.getFloorById(floorId);
     if (!floor) return;
 
-    if (!store.canUpgradeFloor(floorId)) {
-      if (!store.hasEnoughMoney(floor.costAmount)) {
-        showNotification(`Недостаточно денег для улучшения! Нужно: ${floor.costAmount} pdollar`);
-      }
-      handleCloseModal();
-      return;
-    }
+    // Инстантное уведомление — пользователь сразу видит отклик
+    showNotification(`🚀 Отправляем запрос на улучшение этажа ${floorId}...`, "success");
 
     const success: any = store.upgradeFloor(floorId);
+
     if (!success) {
-      showNotification(`Этаж улучшен до уровня ${floor.level + 1}!`, 'success');
+      // Уведомляем о результате с задержкой, чтобы не "перебивать" первое сообщение
+      setTimeout(() => {
+        showNotification(
+            `✅ Этаж ${floorId} улучшен до уровня ${floor.level + 1}!`,
+            "success"
+        );
+      }, 800);
     } else {
-      showNotification(`Не удалось улучшить этаж. Недостаточно денег!`);
+      setTimeout(() => {
+        showNotification(
+            `❌ Не удалось улучшить этаж ${floorId}. Недостаточно средств!`,
+            "error"
+        );
+      }, 800);
     }
-    
+
     handleCloseModal();
   };
 
+
+
   // Обработчик кнопки CLAIM_DO
-  const handleClaimDo = () => {
+    const handleClaimDo = () => {
     const success = store.sendClaimDo();
     if (success) {
       showNotification("Запрос на получение награды отправлен!", 'success');
@@ -143,6 +153,7 @@ const Home = observer(() => {
     const floorId = getFloorIdByIndex(index);
     
     if (index === 0) return "Крыша";
+    if (floorId === 1) return "Basement";
     if (index === floors - 1) return "1 этаж";
     
     return `${floorId} этаж`;
@@ -150,21 +161,8 @@ const Home = observer(() => {
 
   const handleBuyFloor = (index: number) => {
     const floorId = getFloorIdByIndex(index);
-    const floorCost = store.getFloorCost(floorId);
-    
-    if (!store.canBuyFloor(floorId)) {
-      if (!store.hasEnoughMoney(floorCost)) {
-        showNotification(`Недостаточно денег! Нужно: ${floorCost} pdollar`);
-      }
-      return;
-    }
-
-    const success: any = store.buyNewFloor(floorId);
-    if (!success) {
-      showNotification(`Этаж успешно куплен за ${floorCost} pdollar!`, 'success');
-    } else {
-      showNotification(`Не удалось купить этаж. Недостаточно денег!`);
-    }
+    store.sendFloorsBuy(floorId);
+    showNotification(`🏗 Запрос на покупку этажа ${floorId} отправлен!`, "success");
   };
 
   // Обработчик улучшения этажа (открывает модальное окно)

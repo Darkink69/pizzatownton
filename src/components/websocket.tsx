@@ -1,11 +1,9 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import store from "../store/store";
+import { toast } from "react-toastify";
 import type {
   AuthData,
-  FloorsGet,
-  FloorsBuy,
-  ClaimData,
   WsRequest,
   WsResponse,
   BankCreateOrderData,
@@ -22,18 +20,19 @@ const WebSocketComponent = observer(() => {
   const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [_lastMessage, setLastMessage] = useState<string>("");
   const [_status, setStatus] = useState<
-    "connected" | "disconnected" | "error" | "connecting"
+      "connected" | "disconnected" | "error" | "connecting"
   >("disconnected");
 
   const WS_URL = useMemo(
-    () =>
-      import.meta.env.VITE_WS_URL ||
-      (import.meta.env.VITE_API_URL || "").replace(/^http/, "ws") + "/ws",
-    []
+      () =>
+          import.meta.env.VITE_WS_URL ||
+          (import.meta.env.VITE_API_URL || "").replace(/^http/, "ws") + "/ws",
+      []
   );
 
+  /** Отправка запроса FLOORS_GET после подключения */
   const sendFloorsGetRequest = () => {
-    if (!store.sessionId || !store.user?.id) {
+    if (!store.sessionId || !store.user?.telegramId) {
       console.warn("Cannot send FLOORS_GET: missing sessionId or user id");
       return;
     }
@@ -56,22 +55,25 @@ const WebSocketComponent = observer(() => {
     }
   };
 
+  /** Основной коннектор WebSocket */
   const connectWebSocket = () => {
     if (wsRef.current) wsRef.current.close();
-
     setStatus("connecting");
+
     const ws = new WebSocket(WS_URL);
     wsRef.current = ws;
 
     ws.onopen = () => {
       setStatus("connected");
-      if (store.sessionId) {
-        // Если уже есть сессия, отправляем запрос на получение этажей
+      console.info("🔌 WebSocket connected");
+
+      // Если пользователь уже аутентифицирован — запрашиваем этажи
+      if (store.sessionId && store.user?.telegramId) {
         sendFloorsGetRequest();
         return;
       }
 
-      if (store.sessionId) return;
+      // Иначе инициализируем AUTH_INIT
       const rq: WsRequest = {
         type: "AUTH_INIT",
         requestId: generateRequestId(),
@@ -81,69 +83,88 @@ const WebSocketComponent = observer(() => {
           initData: store.initDataRaw,
         },
       };
-
       ws.send(JSON.stringify(rq));
+      console.log("AUTH_INIT request sent");
     };
 
     ws.onmessage = (event) => {
-      setLastMessage(event.data);
+      const raw = event.data;
+      setLastMessage(raw);
+
+      // PING обработчик
+      if (raw === "ping") {
+        try {
+          ws.send("pong");
+        } catch {
+          // ignore send errors
+        }
+        return;
+      }
+
       try {
-        const parsed: WsResponse<any> = JSON.parse(event.data);
+        const parsed: WsResponse<any> = JSON.parse(raw);
+        console.debug("📩 WS response:", parsed);
 
         switch (parsed.type) {
+            /** ------------------ AUTH_INIT ------------------ */
           case "AUTH_INIT": {
             if (parsed.success) {
               const { user, sessionId } = (parsed.data || {}) as AuthData;
               store.setUser?.(user);
               store.setSessionId?.(sessionId);
-            } else {
-              store.setAuthError?.(parsed.message || "AUTH_INIT failed");
-            }
-            break;
-          }
-
-          case "FLOORS_GET": {
-            if (parsed.success) {
-              const d = (parsed.data || {}) as FloorsGet;
-              store.setFloorsData?.(d);
-              console.log("FLOORS_GET success:", d);
-            } else {
-              console.error("FLOORS_GET failed:", parsed.message);
-            }
-            break;
-          }
-
-          case "FLOORS_BUY": {
-            if (parsed.success) {
-              const d = (parsed.data || {}) as FloorsBuy;
-              // Сервер подтвердил покупку, можно обновить локальные данные
-              console.log("FLOORS_BUY success:", d);
-              // Если нужно, можно запросить обновленные данные этажей
               sendFloorsGetRequest();
             } else {
-              console.error("FLOORS_BUY failed:", parsed.message);
-              // TODO: Откатить локальные изменения при ошибке
+              store.setAuthError?.(parsed.message || "AUTH_INIT failed");
+              toast.error(parsed.message || "Ошибка авторизации");
             }
             break;
           }
 
-          case "CLAIM_DO": {
-            if (parsed.success) {
-              const d = (parsed.data || {}) as ClaimData;
-              if (d.userState) {
-                store.setUserState?.(d.userState);
-              } else if (d.userResponse) {
-                // Обновляем данные пользователя из userResponse
-                store.updateUserData?.(d.userResponse);
-              }
-              console.log("CLAIM_DO success:", d);
+            /** ------------------ FLOORS_BUY ------------------ */
+          case "FLOORS_BUY": {
+            if (parsed.success && parsed.data) {
+              store.setFloorsData(parsed.data);
+              toast.success("🏗 Этаж куплен!");
             } else {
-              console.error("CLAIM_DO failed:", parsed.message);
+              toast.error(parsed.message || "Ошибка покупки этажа");
             }
             break;
           }
 
-          // Создание ордера на покупку PCoin
+            /** ------------------ FLOORS_UPGRADE ------------------ */
+          case "FLOORS_UPGRADE": {
+            if (parsed.success && parsed.data) {
+              const { user, floorId, level } = parsed.data;
+              store.updateUserData?.(user);
+              toast.success(`Этаж ${floorId} улучшен до уровня ${level}!`);
+            } else {
+              toast.error(parsed.message || "Ошибка апгрейда");
+            }
+            break;
+          }
+
+            /** ------------------ CLAIM_DO ------------------ */
+          case "CLAIM_DO": {
+            if (parsed.success && parsed.data?.user) {
+              store.updateUserData?.(parsed.data.user);
+              toast.success("💰 Доход успешно собран!");
+            } else {
+              toast.error(parsed.message || "Ошибка при сборе дохода");
+            }
+            break;
+          }
+
+            /** ------------------ CLAIM_REFRESH ------------------ */
+          case "CLAIM_REFRESH": {
+            if (parsed.success && parsed.data) {
+              const total = parsed.data?.totalEarned ?? 0;
+              store.setClaimAmount?.(total);
+              toast.info(`🔄 Накоплено: ${total} P$`);
+            }
+            break;
+          }
+
+            /** ---------------- BANK_BUY_PCOIN ---------------- */
           case "BANK_BUY_PCOIN": {
             if (parsed.success && parsed.data) {
               const d = parsed.data as BankCreateOrderData;
@@ -157,48 +178,50 @@ const WebSocketComponent = observer(() => {
                 tonComment: d.comment,
                 status: "WAITING_PAYMENT",
               };
+              toast.success("💸 Ордер на покупку PCoin создан");
             } else {
-              (store as any).bank.error =
-                parsed.message || "BANK_BUY_PCOIN failed";
+              toast.error(parsed.message || "Ошибка при создании ордера");
             }
             break;
           }
 
-          // Получение/обновление статуса ордера (pull или push)
+            /** ---------------- BANK_CONFIRM / VIEW ---------------- */
           case "BANK_CONFIRM":
-          case "BANK_ORDER_GET":
           case "BANK_ORDER_VIEW":
           case "BANK_ORDER_STATUS_CHANGED": {
             if (parsed.success && parsed.data) {
               const orderViewData = parsed.data as BankOrderViewData;
               (store as any).setBankOrderView?.(orderViewData);
               (store as any).setConfirmedOrder?.(orderViewData);
-              (store as any).bankOrderView = orderViewData;
-              (store as any).confirmedOrder = orderViewData;
+              toast.info(`💳 Статус ордера: ${orderViewData.status}`);
             } else {
               (store as any).setBankError?.(
-                parsed.message || "BANK_ORDER_VIEW failed"
+                  parsed.message || "BANK_ORDER_VIEW failed"
               );
             }
             break;
           }
 
+            /** ---------------- DEFAULT ---------------- */
           default:
-            // прочие типы обработаем позже
+            // другие типы можно обрабатывать позже
             break;
         }
-      } catch {
-        // ignore parse errors (например, "ping")
+      } catch (err) {
+        // текстовые "ping/pong" и т.п. сюда не попадают
+        console.warn("WS message parse skipped:", err);
       }
     };
 
-    ws.onerror = () => setStatus("error");
+    ws.onerror = (e) => {
+      console.error("❌ WS error:", e);
+      setStatus("error");
+    };
 
     ws.onclose = () => {
+      console.warn("⚠️ WS closed, reconnecting...");
       setStatus("disconnected");
-      reconnectTimeout.current = setTimeout(() => {
-        connectWebSocket();
-      }, 10000);
+      reconnectTimeout.current = setTimeout(connectWebSocket, 10000);
     };
   };
 
@@ -211,7 +234,7 @@ const WebSocketComponent = observer(() => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Пробрасываем sender в store при наличии соответствующего метода
+  /** Пробрасываем sender в store */
   useEffect(() => {
     const send = (rq: WsRequest) => {
       const ws = wsRef.current;
@@ -219,7 +242,7 @@ const WebSocketComponent = observer(() => {
         ws.send(JSON.stringify(rq));
         return true;
       }
-      console.warn("WS not open, cannot send:", rq?.type);
+      toast.error("❌ WebSocket не подключён, запрос не отправлен");
       return false;
     };
     (store as any).setWsSend?.(send);

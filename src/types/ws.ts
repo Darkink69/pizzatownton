@@ -1,27 +1,24 @@
-// Типы операций
+// -------------------- Типы операций --------------------
 export type OperationType =
-  | "AUTH_INIT"
-  | "FLOORS_GET"
-  | "FLOORS_BUY"
-  | "FLOORS_UPGRADE"
-  | "CLAIM_DO"
-  | "CLAIM_REFRESH"
-  | "BANK_BUY_PCOIN"
-  | "BANK_CONFIRM"
-  | "BANK_ORDER_GET"
-  | "BANK_ORDER_VIEW"
-  | "BANK_SELL_PDOLLAR" // старый тип — оставляем для совместимости
-  | "BANK_EXCHANGE_PDOLLAR" // НОВОЕ: соответствует бэку
-  | (string & {}); // расширяемость
+    | "AUTH_INIT"
+    | "FLOORS_GET"
+    | "FLOORS_BUY"
+    | "FLOORS_UPGRADE"
+    | "CLAIM_DO"
+    | "CLAIM_REFRESH"
+    | "BANK_BUY_PCOIN"
+    | "BANK_CONFIRM"
+    | "BANK_EXCHANGE_PDOLLAR"
+    | (string & {}); // резерв для будущих кейсов
 
-// Базовая структура WebSocket-запроса
+// -------------------- База запроса --------------------
 export interface WsBase {
   type: OperationType;
   requestId: string;
   session: string;
 }
 
-// Telegram User (может быть частично заполнен)
+// -------------------- Пользователь --------------------
 export interface TgUser {
   id?: number;
   telegramId?: number;
@@ -33,121 +30,83 @@ export interface TgUser {
   [k: string]: any;
 }
 
-// Текущее состояние пользователя (цифры + статус)
+// -------------------- Общее состояние --------------------
 export interface UserState {
   [key: string]: any;
 }
 
 // -------------------- Запросы (RQ) --------------------
 
+// Авторизация
 export interface AuthReq {
   referralCode: string | null;
   initData: string;
 }
 
 // Этажи
-export interface FloorsGet {
-  requestId: string;
-  session: string;
-  buyFloorRq: BuyFloorRq;
-}
-
-interface BuyFloorRq {
-  floorId: number;
+export interface GetFloorRq {
   telegramId: number;
 }
 
-export interface FloorsBuy {
-  requestId: string;
-  session: string;
-  getFloorRq: ClaimDoRq;
+export interface BuyFloorRq {
+  telegramId: number;
+  floorId: number;
 }
 
+export interface UpdateFloorRq {
+  telegramId: number;
+  floorId: number;
+}
+
+// Фарм — клейм и обновление
 export interface ClaimDoRq {
   telegramId: number;
 }
 
-// НОВОЕ: точный контракт под Java BankService.createOrder
+export interface ClaimRefreshRq {
+  telegramId: number;
+}
+
+// Банк — операции
 export interface CreateOrderRq {
-  telegramId: number; // обязателен для бэка
-  amountPcoin: number; // camelCase и строчная c — как в Java
-  tonComment: string; // комментарий, который пойдёт в TON-транзакцию
+  telegramId: number;   // обязателен для бэка
+  amountPcoin: number;  // camelCase, точно как в Java
+  tonComment: string;   // комментарий для TON‑транзакции
 }
 
-// Оставляем старый интерфейс, но добавляем алиасы полей, чтобы не падали старые места.
-// Рекомендуется мигрировать на CreateOrderRq.
-export interface BankBuyPCoinRq {
-  // новый вариант (желательно использовать)
-  amountPcoin?: number;
-  tonComment?: string;
-
-  // backward-compat: старые имена
-  amountPCoin?: number; // старое имя — с большой C
-  comment?: string; // старое имя поля комментария
-
-  // иногда вы передаёте telegramId с фронта — пусть будет опционально
-  telegramId?: number;
-}
-
-// НОВОЕ: контракт под Java BankService.getOrder (используется при type=BANK_CONFIRM)
 export interface ConfirmOrderRq {
   orderId: string;
-  telegramId: number; // обязателен для бэка
+  telegramId: number;   // обязателен
 }
 
-export interface BankConfirmRq {
-  // старый вариант — оставляем, но бэку нужен telegramId, а txHash бэку не требуется
-  orderId: string;
-  txHash?: string; // не используется бэком
-  telegramId?: number; // добавили для совместимости
-}
-
-export interface BankOrderGetRq {
-  orderId: string;
-}
-
-export interface BankSellPDollarRq {
-  amountPDollar: number;
-}
-
-// НОВОЕ: под Java BankService.exchangePDollarToTon (type=BANK_EXCHANGE_PDOLLAR)
 export interface PDollarExchangeRq {
+  telegramId?: number;
   amountPDollar: number;
 }
 
-// Полный WS-запрос
+// -------------------- Полный WS-запрос --------------------
 export interface WsRequest extends WsBase {
+  // авторизация
   authReq?: AuthReq;
+
+  // этажи
+  getFloorRq?: GetFloorRq;
+  buyFloorRq?: BuyFloorRq;
+  updateFloorRq?: UpdateFloorRq;
+
+  // фарм
   claimDoRq?: ClaimDoRq;
+  claimRefreshRq?: ClaimRefreshRq;
 
-  // НОВОЕ: используем это для BANK_BUY_PCOIN
-  createOrderRq?: CreateOrderRq;
-
-  // старый вариант — оставляем, но рекомендуется мигрировать на createOrderRq
-  bankBuyPCoinRq?: BankBuyPCoinRq;
-
-  // НОВОЕ: используем это для BANK_CONFIRM (getOrder)
-  confirmOrderRq?: ConfirmOrderRq;
-
-  // старый вариант — оставляем для совместимости
-  bankConfirmRq?: BankConfirmRq;
-
-  bankOrderGetRq?: BankOrderGetRq;
-
-  // старый (внутренний) кейс — оставляем
-  bankSellPDollarRq?: BankSellPDollarRq;
-
-  // НОВОЕ: под BANK_EXCHANGE_PDOLLAR
-  pdollarExchangeRq?: PDollarExchangeRq;
-
-  floorsBuyRq?: { floorNumber: number };
-  floorsUpgradeRq?: { floorNumber: number };
+  // банк
+  createOrderRq?: CreateOrderRq;        // BANK_BUY_PCOIN
+  confirmOrderRq?: ConfirmOrderRq;      // BANK_CONFIRM
+  pdollarExchangeRq?: PDollarExchangeRq;// BANK_EXCHANGE_PDOLLAR
 
   [key: string]: any;
 }
 
 // -------------------- Ответы (RS) --------------------
-
 export interface WsResponse<T = any> {
   success: boolean;
   message?: string | null;
@@ -157,42 +116,41 @@ export interface WsResponse<T = any> {
   [key: string]: any;
 }
 
+// Авторизация
 export interface AuthData {
   sessionId?: string;
   user?: TgUser;
   userState?: UserState;
 }
 
+// Клейм
 export interface ClaimData {
   userResponse?: UserState;
   userState?: UserState;
 }
 
-// Ответ после создания ордера на PCoin
+// Ответ после создания ордера PCoin
 export interface BankCreateOrderData {
-    orderId: string;
-    amountTon: string;         // Java даёт строку (toPlainString)
-    rate: string;              // то же
-    expiresAt: string;         // ISO
-    merchantAddr: string;   // именно 'merchantAddress'
-    comment: string;           // tonComment, который передали
+  orderId: string;
+  amountTon: string;        // Java BigDecimal -> String
+  rate: string;
+  expiresAt: string;        // ISO
+  merchantAddr: string;     // merchantAddress из Java
+  comment: string;          // переданный tonComment
 }
 
-// Ответ при получении статуса ордера (BANK_CONFIRM)
+// Ответ на BANK_CONFIRM/BANK_ORDER_VIEW
 export interface BankOrderViewData {
-    orderId: string;
-    status: string;
-    amountTon: string | number; // может прийти как число — даём гибкость
-    rate: string | number;
-    expiresAt: string;
-    merchantAddr: string;       // именно 'merchantAddr' из Java
-    comment: string;
-
+  orderId: string;
+  status: string;
+  amountTon: string | number;
+  rate: string | number;
+  expiresAt: string;
+  merchantAddr: string;
+  comment: string;
   amountPcoin?: number;
   txHash?: string | null;
   createdAt?: string;
   updatedAt?: string;
-
-
-    telegramId?: number;
+  telegramId?: number;
 }
