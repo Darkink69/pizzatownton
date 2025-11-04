@@ -10,11 +10,25 @@ const Home = observer(() => {
   const [notification, setNotification] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
   const floors = 9;
 
-    // Проверяем загружены ли данные
+  // Используем безопасные геттеры
   const areFloorsLoaded = store.areFloorsLoaded;
-  
-  // Используем безопасный геттер
   const userFloorList = store.safeUserFloorList;
+
+  // Принудительный запрос данных при монтировании
+  useEffect(() => {
+    if (!areFloorsLoaded && store.sessionId && store.user?.telegramId) {
+      console.log("Requesting floors data on component mount...");
+      store.requestFloorsData();
+    }
+  }, [areFloorsLoaded]);
+
+  // Автоскролл при загрузке
+  useEffect(() => {
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: "auto",
+    });
+  }, []);
 
   // Показ уведомления
   const showNotification = (message: string, type: 'error' | 'success' = 'error') => {
@@ -24,10 +38,17 @@ const Home = observer(() => {
     }, 3000);
   };
 
-  // Получаем количество заполненных этажей напрямую
-  // const filledFloorsCount = store.userFloors.data.userFloorList.length;
+  // Показываем загрузку пока данные не получены
+  if (!areFloorsLoaded) {
+    return (
+      <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B] flex items-center justify-center">
+        <div className="text-white text-xl">Загрузка этажей...</div>
+        <Footer />
+        <WebSocketComponent />
+      </div>
+    );
+  }
 
-  // Получаем количество заполненных этажей безопасно
   const getFloorData = (index: number) => {
     const visualIndexToFloorId = (visualIndex: number): number => {
       if (visualIndex === 0) return 1;
@@ -37,7 +58,6 @@ const Home = observer(() => {
 
     const floorId = visualIndexToFloorId(index);
     
-    // Используем безопасный геттер
     const floorData = userFloorList.find(
       floor => floor.floorId === floorId
     );
@@ -110,28 +130,25 @@ const Home = observer(() => {
   const handleUpgradeFromModal = () => {
     if (!selectedFloor) return;
 
-    const floorId = selectedFloor.floorId;
-    const floor = store.getFloorById(floorId);
-    if (!floor) return;
+    // const upgradeCost = store.getUpgradeCost(selectedFloor.floorId);
+    
+    // Инстантное уведомление
+    showNotification(`🚀 Отправляем запрос на улучшение этажа ${selectedFloor.floorId}...`, "success");
 
-    // Инстантное уведомление — пользователь сразу видит отклик
-    showNotification(`🚀 Отправляем запрос на улучшение этажа ${floorId}...`, "success");
-
-    const success: any = store.upgradeFloor(floorId);
+    const success: any = store.upgradeFloor(selectedFloor.floorId);
 
     if (!success) {
-      // Уведомляем о результате с задержкой, чтобы не "перебивать" первое сообщение
       setTimeout(() => {
         showNotification(
-            `✅ Этаж ${floorId} улучшен до уровня ${floor.level + 1}!`,
-            "success"
+          `✅ Этаж ${selectedFloor.floorId} улучшен до уровня ${selectedFloor.level + 1}!`,
+          "success"
         );
       }, 800);
     } else {
       setTimeout(() => {
         showNotification(
-            `❌ Не удалось улучшить этаж ${floorId}. Недостаточно средств!`,
-            "error"
+          `❌ Не удалось улучшить этаж ${selectedFloor.floorId}. Недостаточно средств!`,
+          "error"
         );
       }, 800);
     }
@@ -139,10 +156,8 @@ const Home = observer(() => {
     handleCloseModal();
   };
 
-
-
   // Обработчик кнопки CLAIM_DO
-    const handleClaimDo = () => {
+  const handleClaimDo = () => {
     const success = store.sendClaimDo();
     if (success) {
       showNotification("Запрос на получение награды отправлен!", 'success');
@@ -181,8 +196,9 @@ const Home = observer(() => {
     if (!floor) return;
 
     if (!store.canUpgradeFloor(floorId)) {
-      if (!store.hasEnoughMoney(floor.costAmount)) {
-        showNotification(`Недостаточно денег для улучшения! Нужно: ${floor.costAmount} pdollar`);
+      const upgradeCost = store.getUpgradeCost(floorId);
+      if (!store.hasEnoughMoney(upgradeCost)) {
+        showNotification(`Недостаточно денег для улучшения! Нужно: ${upgradeCost} pdollar`);
       }
       return;
     }
@@ -190,23 +206,6 @@ const Home = observer(() => {
     // Открываем модальное окно вместо немедленного улучшения
     handleOpenUpgradeModal(floor);
   };
-
-  useEffect(() => {
-    window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      behavior: "auto",
-    });
-  }, []);
-
-    // Показываем загрузку пока данные не получены
-  if (!areFloorsLoaded) {
-    return (
-      <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B] flex items-center justify-center">
-        <div className="text-white text-xl">Загрузка этажей...</div>
-        <WebSocketComponent />
-      </div>
-    );
-  }
 
   return (
     <>
@@ -384,7 +383,7 @@ const Home = observer(() => {
                                     className="w-8 sm:w-10"
                                   />
                                   <span className="text-white text-md sm:text-lg shantell">
-                                    {floorData.costAmount || 0}
+                                    {store.getUpgradeCost(floorData.floorId) || 0}
                                   </span>
                                   <img
                                     src={`${store.imgUrl}icon_arrow.png`}
@@ -603,7 +602,7 @@ const Home = observer(() => {
                             className="w-8 h-auto sm:w-10"
                           />
                           <span className="text-white text-sm sm:text-base shantell font-bold">
-                            {selectedFloor.costAmount || 0}
+                            {store.getUpgradeCost(selectedFloor.floorId) || 0}
                           </span>
                           <img
                             src={`${store.imgUrl}icon_arrow.png`}
@@ -637,11 +636,9 @@ const Home = observer(() => {
             </div>
           </>
         )}
-        
-        
       </div>
       <Footer />
-      {/* <WebSocketComponent /> */}
+      <WebSocketComponent />
     </>
   );
 });

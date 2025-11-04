@@ -19,7 +19,6 @@ class Store {
   tonBalance: any = "0";
   adrss!: string;
   
-  // Новые переменные из CLAIM_DO
   pcoin = 0;
   pdollar = 10000;
   pizza = 0;
@@ -27,7 +26,6 @@ class Store {
   floors: any[] = [];
   floorsLoaded = false;
 
-  // Локальное состояние этажей (для отображения)
   userFloors = {
     success: true,
     message: "Ok",
@@ -108,12 +106,12 @@ class Store {
           floorName: "8 floor",
         },
       ],
-      // Добавляем дефолтный этаж
       userFloorList: [
         {
           floorId: 1,
           level: 1,
-          costAmount: 625,
+          // costAmount: 625,
+          upgradeAmount: 1000,
           yieldPerHour: 104,
           yieldCurrency: "pdollar",
           floorName: "1",
@@ -130,7 +128,7 @@ class Store {
     makeAutoObservable(this);
   }
 
-    // Безопасный геттер для userFloorList
+  // Безопасный геттер для userFloorList
   get safeUserFloorList() {
     return this.userFloors?.data?.userFloorList || [];
   }
@@ -142,11 +140,10 @@ class Store {
 
   // Проверка загружены ли данные
   get areFloorsLoaded() {
-    return this.userFloors?.data?.userFloorList !== undefined;
+    return !!this.userFloors?.data?.userFloorList;
   }
-  
 
-  // Геттер для текущего баланса (используем pdollar из CLAIM_DO)
+  // Геттер для текущего баланса
   get currentBalance() {
     return this.pdollar || 0;
   }
@@ -156,7 +153,7 @@ class Store {
     return this.currentBalance >= amount;
   }
 
-  // Функция списания денег (теперь через вебсокет)
+  // Функция списания денег
   deductMoney(amount: number): boolean {
     if (!this.hasEnoughMoney(amount)) {
       return false;
@@ -184,6 +181,25 @@ class Store {
       if (userData.pizza !== undefined) this.pizza = userData.pizza;
     });
   }
+
+  // Обновление данных этажей из FLOORS_GET или FLOORS_BUY
+setFloorsData(response: any) {
+  runInAction(() => {
+    // Полностью заменяем данные на те, что пришли с сервера
+    this.userFloors = response;
+    
+    // Обновляем балансы из ответа
+    if (response.data?.pdollarAmount !== undefined) {
+      this.pdollar = response.data.pdollarAmount;
+    }
+    if (response.data?.pcoinAmount !== undefined) {
+      this.pcoin = response.data.pcoinAmount;
+    }
+    if (response.data?.pizzaAmount !== undefined) {
+      this.pizza = response.data.pizzaAmount;
+    }
+  });
+}
 
   setWsSend(fn: (rq: WsRequest) => void) {
     this.wsSend = fn;
@@ -237,6 +253,22 @@ class Store {
     return true;
   }
 
+  // Принудительный запрос данных этажей
+  requestFloorsData() {
+    if (this.wsSend && this.sessionId && this.user?.telegramId) {
+      this.wsSend({
+        type: "FLOORS_GET",
+        requestId: genId(),
+        session: this.sessionId,
+        getFloorRq: {
+          telegramId: this.user.telegramId,
+        },
+      });
+      return true;
+    }
+    return false;
+  }
+
   // Отправка CLAIM_DO запроса
   sendClaimDo() {
     try {
@@ -281,131 +313,69 @@ class Store {
     if (!this.sessionId) throw new Error("No session id");
   }
 
-  // Обновление данных этажей из FLOORS_GET
-  setFloorsData(d: any) {
-    runInAction(() => {
-      this.userFloors = d;
-      // Обновляем баланс из FLOORS_GET если нет данных из CLAIM_DO
-      if (d.data?.pdollarAmount && this.pdollar === 0) {
-        this.pdollar = d.data.pdollarAmount;
-      }
-    });
-  }
+  // Получение стоимости улучшения для этажа
+getUpgradeCost(floorId: number): number {
+  const floor = this.safeUserFloorList.find(f => f.floorId === floorId);
+  return floor?.upgradeAmount || 0;
+}
 
-  // Покупка этажа через вебсокет
-  buyNewFloor(floorId: number) {
-    runInAction(() => {
-      const existingFloor = this.userFloors.data.userFloorList.find(
-        floor => floor.floorId === floorId
-      );
-      
-      if (existingFloor) {
-        console.warn(`Этаж ${floorId} уже куплен`);
-        return false;
-      }
+ // Покупка этажа через вебсокет
+buyNewFloor(floorId: number) {
+  runInAction(() => {
+    const existingFloor = this.safeUserFloorList.find(
+      floor => floor.floorId === floorId
+    );
+    
+    if (existingFloor) {
+      console.warn(`Этаж ${floorId} уже куплен`);
+      return false;
+    }
 
-      const floorTemplate = this.userFloors.data.floorList.find(
-        floor => floor.floorId === floorId
-      );
+    const floorTemplate = this.safeFloorList.find(
+      floor => floor.floorId === floorId
+    );
 
-      if (!floorTemplate) {
-        console.warn(`Шаблон для этажа ${floorId} не найден`);
-        return false;
-      }
+    if (!floorTemplate) {
+      console.warn(`Шаблон для этажа ${floorId} не найден`);
+      return false;
+    }
 
-      // Проверяем достаточно ли денег для покупки этажа
-      if (!this.hasEnoughMoney(floorTemplate.costAmount)) {
-        console.warn(`Недостаточно денег для покупки этажа ${floorId}`);
-        return false;
-      }
+    if (!this.hasEnoughMoney(floorTemplate.costAmount)) {
+      console.warn(`Недостаточно денег для покупки этажа ${floorId}`);
+      return false;
+    }
 
-      // Отправляем запрос на покупку через вебсокет
-      try {
-        this.ensureWs();
-        const tgId = this.user?.telegramId ?? this.user?.id ?? 0;
-        this.wsSend!({
-          type: "FLOORS_BUY",
-          requestId: genId(),
-          session: this.sessionId!,
-          buyFloorRq: {
-            floorId: floorId,
-            telegramId: tgId,
-          },
-        });
-
-        // Локально списываем деньги (сервер подтвердит операцию)
-        this.deductMoney(floorTemplate.costAmount);
-
-        // Локально добавляем этаж (сервер подтвердит операцию)
-        const newFloor = {
+    try {
+      this.ensureWs();
+      const tgId = this.user?.telegramId ?? this.user?.id ?? 0;
+      this.wsSend!({
+        type: "FLOORS_BUY",
+        requestId: genId(),
+        session: this.sessionId!,
+        buyFloorRq: {
           floorId: floorId,
-          level: 1,
-          costAmount: floorTemplate.costAmount,
-          yieldPerHour: floorTemplate.yieldPerHour,
-          yieldCurrency: floorTemplate.yieldCurrency,
-          floorName: `${floorId}`,
-          floorType: "regular",
-        };
+          telegramId: tgId,
+        },
+      });
 
-        const newUserFloorList = [...this.userFloors.data.userFloorList, newFloor];
-        newUserFloorList.sort((a, b) => a.floorId - b.floorId);
-        
-        this.userFloors = {
-          ...this.userFloors,
-          data: {
-            ...this.userFloors.data,
-            userFloorList: newUserFloorList
-          }
-        };
+      this.deductMoney(floorTemplate.costAmount);
 
-        return true;
-      } catch (e) {
-        console.warn("FLOORS_BUY failed", e);
-        return false;
-      }
-    });
-  }
-
-  // Улучшение этажа (локально, так как в ТЗ не указано вебсокет улучшение)
-  upgradeFloor(floorId: number) {
-    runInAction(() => {
-      const floorIndex = this.userFloors.data.userFloorList.findIndex(
-        floor => floor.floorId === floorId
-      );
-
-      if (floorIndex === -1) {
-        console.warn(`Этаж ${floorId} не найден`);
-        return false;
-      }
-
-      const floor = this.userFloors.data.userFloorList[floorIndex];
-      
-      if (floor.level >= 5) {
-        console.warn(`Этаж ${floorId} уже имеет максимальный уровень`);
-        return false;
-      }
-
-      // Проверяем достаточно ли денег для улучшения
-      if (!this.hasEnoughMoney(floor.costAmount)) {
-        console.warn(`Недостаточно денег для улучшения этажа ${floorId}`);
-        return false;
-      }
-
-      // Списываем деньги
-      if (!this.deductMoney(floor.costAmount)) {
-        return false;
-      }
-
-      const updatedFloor = {
-        ...floor,
-        level: floor.level + 1,
-        yieldPerHour: Math.round(floor.yieldPerHour * 1.5),
-        costAmount: Math.round(floor.costAmount * 1.8)
+      // Создаем новый этаж с временным upgradeAmount (0)
+      // Сервер пришлет актуальное значение в ответе FLOORS_BUY
+      const newFloor = {
+        floorId: floorId,
+        level: 1,
+        costAmount: floorTemplate.costAmount,
+        upgradeAmount: 0, // Временное значение, будет обновлено сервером
+        yieldPerHour: floorTemplate.yieldPerHour,
+        yieldCurrency: floorTemplate.yieldCurrency,
+        floorName: `${floorId}`,
+        floorType: "regular",
       };
 
-      const newUserFloorList = [...this.userFloors.data.userFloorList];
-      newUserFloorList[floorIndex] = updatedFloor;
-
+      const newUserFloorList = [...this.safeUserFloorList, newFloor];
+      newUserFloorList.sort((a, b) => a.floorId - b.floorId);
+      
       this.userFloors = {
         ...this.userFloors,
         data: {
@@ -415,13 +385,63 @@ class Store {
       };
 
       return true;
-    });
-  }
+    } catch (e) {
+      console.warn("FLOORS_BUY failed", e);
+      return false;
+    }
+  });
+}
 
-  
 
-    canBuyFloor(floorId: number): boolean {
-    // Используем безопасный геттер
+// Улучшение этажа через вебсокет
+upgradeFloor(floorId: number) {
+  runInAction(() => {
+    const floor = this.safeUserFloorList.find(f => f.floorId === floorId);
+    
+    if (!floor) {
+      console.warn(`Этаж ${floorId} не найден`);
+      return false;
+    }
+
+    if (floor.level >= 5) {
+      console.warn(`Этаж ${floorId} уже имеет максимальный уровень`);
+      return false;
+    }
+
+    const upgradeCost = this.getUpgradeCost(floorId);
+
+    if (!this.hasEnoughMoney(upgradeCost)) {
+      console.warn(`Недостаточно денег для улучшения этажа ${floorId}`);
+      return false;
+    }
+
+    try {
+      this.ensureWs();
+      const tgId = this.user?.telegramId ?? this.user?.id ?? 0;
+      
+      // Отправляем запрос на улучшение - сервер пришлет обновленные данные
+      this.wsSend!({
+        type: "FLOORS_UPGRADE",
+        requestId: genId(),
+        session: this.sessionId!,
+        upgradeFloorRq: {
+          floorId: floorId,
+          telegramId: tgId,
+        },
+      });
+
+      // Локально списываем деньги (сервер подтвердит операцию)
+      this.deductMoney(upgradeCost);
+
+      return true;
+    } catch (e) {
+      console.warn("FLOORS_UPGRADE failed", e);
+      return false;
+    }
+  });
+}
+
+  canBuyFloor(floorId: number): boolean {
     const existingFloor = this.safeUserFloorList.find(
       floor => floor.floorId === floorId
     );
@@ -430,7 +450,6 @@ class Store {
       return false;
     }
 
-    // Используем безопасный геттер
     const floorTemplate = this.safeFloorList.find(
       floor => floor.floorId === floorId
     );
@@ -443,7 +462,6 @@ class Store {
   }
 
   getFloorCost(floorId: number): number {
-    // Используем безопасный геттер
     const floorTemplate = this.safeFloorList.find(
       floor => floor.floorId === floorId
     );
@@ -451,7 +469,6 @@ class Store {
   }
 
   canUpgradeFloor(floorId: number): boolean {
-    // Используем безопасный геттер
     const floor = this.safeUserFloorList.find(
       floor => floor.floorId === floorId
     );
@@ -460,11 +477,11 @@ class Store {
       return false;
     }
 
-    return floor.level < 5 && this.hasEnoughMoney(floor.costAmount);
+    const upgradeCost = this.getUpgradeCost(floorId);
+    return floor.level < 5 && this.hasEnoughMoney(upgradeCost);
   }
 
   getFloorById(floorId: number) {
-    // Используем безопасный геттер
     return this.safeUserFloorList.find(floor => floor.floorId === floorId);
   }
 
@@ -493,7 +510,7 @@ class Store {
             {
               floorId: 1,
               level: 1,
-              costAmount: 625,
+              upgradeAmount: 1000,
               yieldPerHour: 104,
               yieldCurrency: "pdollar",
               floorName: "1",
