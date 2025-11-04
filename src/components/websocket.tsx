@@ -64,21 +64,10 @@ const WebSocketComponent = observer(() => {
     wsRef.current = ws;
 
     ws.onopen = () => {
-      setStatus("connected");
-      console.info("🔌 WebSocket connected");
-
-      // Если уже есть sessionId и user - сразу запрашиваем этажи
-      if (store.sessionId && store.user?.telegramId) {
-        console.log("Session exists, requesting floors...");
-        sendFloorsGetRequest();
-        return;
-      }
-
-      // Иначе инициализируем AUTH_INIT
       const rq: WsRequest = {
         type: "AUTH_INIT",
         requestId: generateRequestId(),
-        session: "",
+        session: store.sessionId ?? "",
         authReq: {
           referralCode: store.referrerId,
           initData: store.initDataRaw,
