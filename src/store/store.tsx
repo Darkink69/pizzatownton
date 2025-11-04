@@ -126,21 +126,39 @@ class Store {
 
   constructor() {
     makeAutoObservable(this);
+    // --- безопасная инициализация на случай undefined ---
+    if (!this.userFloors || typeof this.userFloors !== "object") {
+      this.userFloors = {
+        success: true,
+        message: "",
+        type: "FLOORS_GET",
+        requestId: "",
+        data: {
+          userFloorList: [],
+          floorList: [],
+          pdollarAmount: 0,
+        },
+      };
+    }
+
   }
 
   // Безопасный геттер для userFloorList
   get safeUserFloorList() {
-    return this.userFloors?.data?.userFloorList || [];
+    return this.userFloors?.data?.userFloorList ?? [];
   }
-
-  // Безопасный геттер для floorList
   get safeFloorList() {
-    return this.userFloors?.data?.floorList || [];
+    return this.userFloors?.data?.floorList ?? [];
   }
 
   // Проверка загружены ли данные
   get areFloorsLoaded() {
-    return !!this.userFloors?.data?.userFloorList;
+    const data = this.userFloors?.data;
+    return (
+        data != null &&
+        Array.isArray(data.userFloorList) &&
+        Array.isArray(data.floorList)
+    );
   }
 
   // Геттер для текущего баланса
@@ -183,23 +201,57 @@ class Store {
   }
 
   // Обновление данных этажей из FLOORS_GET или FLOORS_BUY
-setFloorsData(response: any) {
-  runInAction(() => {
-    // Полностью заменяем данные на те, что пришли с сервера
-    this.userFloors = response;
-    
-    // Обновляем балансы из ответа
-    if (response.data?.pdollarAmount !== undefined) {
-      this.pdollar = response.data.pdollarAmount;
+  setFloorsData(payload: any) {
+    try {
+      const response = payload || {};
+      const data = response.data || {};
+
+      runInAction(() => {
+        this.userFloors = {
+          success: !!response.success,
+          message: response.message ?? "",
+          type: response.type ?? "FLOORS_GET",
+          requestId: response.requestId ?? "",
+          data: {
+            userFloorList: Array.isArray(data.userFloorList)
+                ? data.userFloorList
+                : [],
+            floorList: Array.isArray(data.floorList)
+                ? data.floorList
+                : [],
+            pdollarAmount: Number(data.pdollarAmount ?? 0),
+          },
+        };
+
+        // баланс обновляем, если есть
+        if (typeof data.pdollarAmount === "number") {
+          this.pdollar = data.pdollarAmount;
+        }
+        if (typeof data.pcoinAmount === "number") {
+          this.pcoin = data.pcoinAmount;
+        }
+        if (typeof data.pizzaAmount === "number") {
+          this.pizza = data.pizzaAmount;
+        }
+      });
+    } catch (e) {
+      console.warn("setFloorsData failed:", e);
+      runInAction(() => {
+        // безопасная пустая структура
+        this.userFloors = {
+          success: false,
+          message: "invalid data",
+          type: "FLOORS_GET",
+          requestId: "",
+          data: {
+            userFloorList: [],
+            floorList: [],
+            pdollarAmount: 0,
+          },
+        };
+      });
     }
-    if (response.data?.pcoinAmount !== undefined) {
-      this.pcoin = response.data.pcoinAmount;
-    }
-    if (response.data?.pizzaAmount !== undefined) {
-      this.pizza = response.data.pizzaAmount;
-    }
-  });
-}
+  }
 
   setWsSend(fn: (rq: WsRequest) => void) {
     this.wsSend = fn;

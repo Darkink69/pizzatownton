@@ -13,14 +13,14 @@ const Home = observer(() => {
   // Используем безопасные геттеры
   const areFloorsLoaded = store.areFloorsLoaded;
   const userFloorList = store.safeUserFloorList;
-
+  if (!Array.isArray(userFloorList)) return null;
   // Принудительный запрос данных при монтировании
   useEffect(() => {
     if (!areFloorsLoaded && store.sessionId && store.user?.telegramId) {
       console.log("Requesting floors data on component mount...");
       store.requestFloorsData();
     }
-  }, [areFloorsLoaded]);
+  }, [areFloorsLoaded, store.sessionId, store.user?.telegramId]);
 
   // Автоскролл при загрузке
   useEffect(() => {

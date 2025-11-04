@@ -121,21 +121,21 @@ const WebSocketComponent = observer(() => {
             break;
           }
 
-          // ----- FLOORS_GET -----
+            /** ------------------ FLOORS_GET ------------------ */
           case "FLOORS_GET": {
-            if (parsed.success && parsed.data) {
+            if (parsed.success) {
               store.setFloorsData(parsed);
-              console.log("Floors data loaded successfully");
+              console.log("✅ Floors data loaded from backend");
             } else {
-              console.error("Failed to load floors data:", parsed.message);
+              console.error("❌ FLOORS_GET failed:", parsed.message);
             }
             break;
           }
 
             /** ------------------ FLOORS_BUY ------------------ */
           case "FLOORS_BUY": {
-            if (parsed.success && parsed.data) {
-              store.setFloorsData(parsed.data);
+            if (parsed.success) {
+              store.setFloorsData(parsed);
               toast.success("🏗 Этаж куплен!");
             } else {
               toast.error(parsed.message || "Ошибка покупки этажа");
@@ -145,10 +145,9 @@ const WebSocketComponent = observer(() => {
 
             /** ------------------ FLOORS_UPGRADE ------------------ */
           case "FLOORS_UPGRADE": {
-            if (parsed.success && parsed.data) {
-              const { user, floorId, level } = parsed.data;
-              store.updateUserData?.(user);
-              toast.success(`Этаж ${floorId} улучшен до уровня ${level}!`);
+            if (parsed.success) {
+              store.setFloorsData(parsed);
+              toast.success("🔼 Этаж успешно улучшен!");
             } else {
               toast.error(parsed.message || "Ошибка апгрейда");
             }

@@ -9,7 +9,9 @@ export type OperationType =
     | "BANK_BUY_PCOIN"
     | "BANK_CONFIRM"
     | "BANK_EXCHANGE_PDOLLAR"
-    | (string & {}); // резерв для будущих кейсов
+    | "BANK_ORDER_VIEW"
+    | "BANK_ORDER_STATUS_CHANGED"
+    | (string & {}); // резерв на будущее
 
 // -------------------- База запроса --------------------
 export interface WsBase {
@@ -30,7 +32,7 @@ export interface TgUser {
   [k: string]: any;
 }
 
-// -------------------- Общее состояние --------------------
+// -------------------- Состояние пользователя --------------------
 export interface UserState {
   [key: string]: any;
 }
@@ -58,7 +60,7 @@ export interface UpdateFloorRq {
   floorId: number;
 }
 
-// Фарм — клейм и обновление
+// Фарм — клейм
 export interface ClaimDoRq {
   telegramId: number;
 }
@@ -67,7 +69,7 @@ export interface ClaimRefreshRq {
   telegramId: number;
 }
 
-// Банк — операции
+// Банк
 export interface CreateOrderRq {
   telegramId: number;   // обязателен для бэка
   amountPcoin: number;  // camelCase, точно как в Java
@@ -129,17 +131,19 @@ export interface ClaimData {
   userState?: UserState;
 }
 
+// -------------------- Банк --------------------
+
 // Ответ после создания ордера PCoin
 export interface BankCreateOrderData {
   orderId: string;
-  amountTon: string;        // Java BigDecimal -> String
+  amountTon: string;    // BigDecimal -> String
   rate: string;
-  expiresAt: string;        // ISO
-  merchantAddr: string;     // merchantAddress из Java
-  comment: string;          // переданный tonComment
+  expiresAt: string;    // ISO‑дата
+  merchantAddr: string; // merchantAddress из Java
+  comment: string;      // переданный tonComment
 }
 
-// Ответ на BANK_CONFIRM/BANK_ORDER_VIEW
+// Ответ на BANK_CONFIRM/BANK_ORDER_VIEW/STATUS_CHANGED
 export interface BankOrderViewData {
   orderId: string;
   status: string;
