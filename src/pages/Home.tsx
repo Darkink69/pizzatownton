@@ -10,6 +10,12 @@ const Home = observer(() => {
   const [notification, setNotification] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
   const floors = 9;
 
+    // Проверяем загружены ли данные
+  const areFloorsLoaded = store.areFloorsLoaded;
+  
+  // Используем безопасный геттер
+  const userFloorList = store.safeUserFloorList;
+
   // Показ уведомления
   const showNotification = (message: string, type: 'error' | 'success' = 'error') => {
     setNotification({ message, type });
@@ -21,6 +27,7 @@ const Home = observer(() => {
   // Получаем количество заполненных этажей напрямую
   // const filledFloorsCount = store.userFloors.data.userFloorList.length;
 
+  // Получаем количество заполненных этажей безопасно
   const getFloorData = (index: number) => {
     const visualIndexToFloorId = (visualIndex: number): number => {
       if (visualIndex === 0) return 1;
@@ -30,7 +37,8 @@ const Home = observer(() => {
 
     const floorId = visualIndexToFloorId(index);
     
-    const floorData = store.userFloors.data.userFloorList.find(
+    // Используем безопасный геттер
+    const floorData = userFloorList.find(
       floor => floor.floorId === floorId
     );
 
@@ -189,6 +197,16 @@ const Home = observer(() => {
       behavior: "auto",
     });
   }, []);
+
+    // Показываем загрузку пока данные не получены
+  if (!areFloorsLoaded) {
+    return (
+      <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B] flex items-center justify-center">
+        <div className="text-white text-xl">Загрузка этажей...</div>
+        <WebSocketComponent />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -585,7 +603,7 @@ const Home = observer(() => {
                             className="w-8 h-auto sm:w-10"
                           />
                           <span className="text-white text-sm sm:text-base shantell font-bold">
-                            {selectedFloor.costAmount}
+                            {selectedFloor.costAmount || 0}
                           </span>
                           <img
                             src={`${store.imgUrl}icon_arrow.png`}
@@ -619,9 +637,11 @@ const Home = observer(() => {
             </div>
           </>
         )}
+        
+        
       </div>
       <Footer />
-      <WebSocketComponent />
+      {/* <WebSocketComponent /> */}
     </>
   );
 });

@@ -67,11 +67,11 @@ const WebSocketComponent = observer(() => {
       setStatus("connected");
       console.info("🔌 WebSocket connected");
 
-      // Если пользователь уже аутентифицирован — запрашиваем этажи
-      if (store.sessionId && store.user?.telegramId) {
-        sendFloorsGetRequest();
-        return;
-      }
+  // Всегда запрашиваем актуальные данные при подключении
+  if (store.sessionId && store.user?.telegramId) {
+    sendFloorsGetRequest();
+    return;
+  }
 
       // Иначе инициализируем AUTH_INIT
       const rq: WsRequest = {
@@ -120,6 +120,17 @@ const WebSocketComponent = observer(() => {
             break;
           }
 
+          // ----- FLOORS_GET -----
+          case "FLOORS_GET": {
+  if (parsed.success && parsed.data) {
+    store.setFloorsData(parsed);
+    console.log("Floors data loaded successfully");
+  } else {
+    console.error("Failed to load floors data:", parsed.message);
+  }
+  break;
+}
+
             /** ------------------ FLOORS_BUY ------------------ */
           case "FLOORS_BUY": {
             if (parsed.success && parsed.data) {
@@ -158,7 +169,7 @@ const WebSocketComponent = observer(() => {
           case "CLAIM_REFRESH": {
             if (parsed.success && parsed.data) {
               const total = parsed.data?.totalEarned ?? 0;
-              store.setClaimAmount?.(total);
+              // store.setClaimAmount?.(total);
               toast.info(`🔄 Накоплено: ${total} P$`);
             }
             break;

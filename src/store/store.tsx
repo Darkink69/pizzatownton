@@ -130,6 +130,22 @@ class Store {
     makeAutoObservable(this);
   }
 
+    // Безопасный геттер для userFloorList
+  get safeUserFloorList() {
+    return this.userFloors?.data?.userFloorList || [];
+  }
+
+  // Безопасный геттер для floorList
+  get safeFloorList() {
+    return this.userFloors?.data?.floorList || [];
+  }
+
+  // Проверка загружены ли данные
+  get areFloorsLoaded() {
+    return this.userFloors?.data?.userFloorList !== undefined;
+  }
+  
+
   // Геттер для текущего баланса (используем pdollar из CLAIM_DO)
   get currentBalance() {
     return this.pdollar || 0;
@@ -402,8 +418,11 @@ class Store {
     });
   }
 
-  canBuyFloor(floorId: number): boolean {
-    const existingFloor = this.userFloors.data.userFloorList.find(
+  
+
+    canBuyFloor(floorId: number): boolean {
+    // Используем безопасный геттер
+    const existingFloor = this.safeUserFloorList.find(
       floor => floor.floorId === floorId
     );
     
@@ -411,7 +430,8 @@ class Store {
       return false;
     }
 
-    const floorTemplate = this.userFloors.data.floorList.find(
+    // Используем безопасный геттер
+    const floorTemplate = this.safeFloorList.find(
       floor => floor.floorId === floorId
     );
 
@@ -419,19 +439,20 @@ class Store {
       return false;
     }
 
-    // Проверяем достаточно ли денег
     return this.hasEnoughMoney(floorTemplate.costAmount);
   }
 
   getFloorCost(floorId: number): number {
-    const floorTemplate = this.userFloors.data.floorList.find(
+    // Используем безопасный геттер
+    const floorTemplate = this.safeFloorList.find(
       floor => floor.floorId === floorId
     );
     return floorTemplate ? floorTemplate.costAmount : 0;
   }
 
   canUpgradeFloor(floorId: number): boolean {
-    const floor = this.userFloors.data.userFloorList.find(
+    // Используем безопасный геттер
+    const floor = this.safeUserFloorList.find(
       floor => floor.floorId === floorId
     );
     
@@ -439,12 +460,12 @@ class Store {
       return false;
     }
 
-    // Проверяем уровень и достаточно ли денег
     return floor.level < 5 && this.hasEnoughMoney(floor.costAmount);
   }
 
   getFloorById(floorId: number) {
-    return this.userFloors.data.userFloorList.find(floor => floor.floorId === floorId);
+    // Используем безопасный геттер
+    return this.safeUserFloorList.find(floor => floor.floorId === floorId);
   }
 
   // Старая функция для совместимости

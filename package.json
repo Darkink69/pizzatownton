@@ -24,6 +24,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.9.4",
+    "react-toastify": "^11.0.5",
     "sockjs": "^0.3.24",
     "sockjs-client": "^1.6.1",
     "tailwindcss": "^4.1.14"
