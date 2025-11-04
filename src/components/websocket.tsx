@@ -92,16 +92,6 @@ const WebSocketComponent = observer(() => {
       const raw = event.data;
       setLastMessage(raw);
 
-      // PING обработчик
-      if (raw === "ping") {
-        try {
-          ws.send("pong");
-        } catch {
-          // ignore send errors
-        }
-        return;
-      }
-
       try {
         const parsed: WsResponse<any> = JSON.parse(raw);
         console.debug("📩 WS response:", parsed);
