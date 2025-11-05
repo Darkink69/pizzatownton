@@ -4,6 +4,7 @@ import store from "../store/store";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
 import FooterHome from "../components/FooterHome";
+import { Link } from "react-router-dom";
 
 const Home = observer(() => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -12,7 +13,7 @@ const Home = observer(() => {
     message: string;
     type: "error" | "success";
   } | null>(null);
-  const floors = 9;
+  const floors = 10;
 
   // Используем безопасные геттеры
   const areFloorsLoaded = store.areFloorsLoaded;
@@ -465,13 +466,15 @@ const Home = observer(() => {
               />
             </span>
             {store.pcoin}
-            <span className="absolute -right-14">
-              <img
-                src={`${store.imgUrl}b_red_plus.png`}
-                alt="icon_dollar"
-                className="w-1/2"
-              />
-            </span>
+            <Link to="/bank">
+              <span className="absolute -top-0.5 -right-14">
+                <img
+                  src={`${store.imgUrl}b_red_plus.png`}
+                  alt="icon_dollar"
+                  className="w-1/2"
+                />
+              </span>
+            </Link>
           </div>
         </div>
         <button
@@ -495,13 +498,15 @@ const Home = observer(() => {
               />
             </span>
             {store.currentBalance}
-            <span className="absolute -right-14">
-              <img
-                src={`${store.imgUrl}b_red_minus.png`}
-                alt="icon_dollar"
-                className="w-1/2"
-              />
-            </span>
+            <Link to="/bank">
+              <span className="absolute -top-0.5 -right-14">
+                <img
+                  src={`${store.imgUrl}b_red_minus.png`}
+                  alt="icon_dollar"
+                  className="w-1/2"
+                />
+              </span>
+            </Link>
           </div>
         </div>
 
