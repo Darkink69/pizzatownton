@@ -106,7 +106,7 @@ export const App = observer(() => {
     return () => clearTimeout(loadingTimer);
   }, [rawInitData, lp.startParam, startParam]);
 
-  if (showLoading) {
+  if (!showLoading) {
     // Можно убрать ! чтобы запускалось локально
     return <Preloader />;
   }
