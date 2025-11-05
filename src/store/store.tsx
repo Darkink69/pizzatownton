@@ -427,12 +427,17 @@ buyNewFloor(floorId: number) {
 
       const newUserFloorList = [...this.safeUserFloorList, newFloor];
       newUserFloorList.sort((a, b) => a.floorId - b.floorId);
-      
+
+      // Удаляем купленный этаж из списка доступных
+      const newFloorList = this.safeFloorList.filter(f => f.floorId !== floorId);
+
+
       this.userFloors = {
         ...this.userFloors,
         data: {
           ...this.userFloors.data,
-          userFloorList: newUserFloorList
+          userFloorList: newUserFloorList,
+          floorList: newFloorList
         }
       };
 
@@ -484,7 +489,19 @@ upgradeFloor(floorId: number) {
 
       // Локально списываем деньги (сервер подтвердит операцию)
       this.deductMoney(upgradeCost);
-
+      const updatedUserFloorList = this.safeUserFloorList.map(f => {
+        if (f.floorId === floorId) {
+          return { ...f, level: f.level + 1 };
+        }
+        return f;
+      });
+      this.userFloors = {
+        ...this.userFloors,
+        data: {
+          ...this.userFloors.data,
+          userFloorList: updatedUserFloorList
+        }
+      };
       return true;
     } catch (e) {
       console.warn("FLOORS_UPGRADE failed", e);
