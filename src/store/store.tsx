@@ -476,7 +476,7 @@ upgradeFloor(floorId: number) {
         type: "FLOORS_UPGRADE",
         requestId: genId(),
         session: this.sessionId!,
-        upgradeFloorRq: {
+        updateFloorRq: {
           floorId: floorId,
           telegramId: tgId,
         },
