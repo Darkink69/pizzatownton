@@ -3,11 +3,15 @@ import { observer } from "mobx-react-lite";
 import store from "../store/store";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
+import FooterHome from "../components/FooterHome";
 
 const Home = observer(() => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedFloor, setSelectedFloor] = useState<any>(null);
-  const [notification, setNotification] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: "error" | "success";
+  } | null>(null);
   const floors = 9;
 
   // Используем безопасные геттеры
@@ -31,7 +35,10 @@ const Home = observer(() => {
   }, []);
 
   // Показ уведомления
-  const showNotification = (message: string, type: 'error' | 'success' = 'error') => {
+  const showNotification = (
+    message: string,
+    type: "error" | "success" = "error"
+  ) => {
     setNotification({ message, type });
     setTimeout(() => {
       setNotification(null);
@@ -57,10 +64,8 @@ const Home = observer(() => {
     };
 
     const floorId = visualIndexToFloorId(index);
-    
-    const floorData = userFloorList.find(
-      floor => floor.floorId === floorId
-    );
+
+    const floorData = userFloorList.find((floor) => floor.floorId === floorId);
 
     return floorData || null;
   };
@@ -131,16 +136,21 @@ const Home = observer(() => {
     if (!selectedFloor) return;
 
     // const upgradeCost = store.getUpgradeCost(selectedFloor.floorId);
-    
+
     // Инстантное уведомление
-    showNotification(`🚀 Отправляем запрос на улучшение этажа ${selectedFloor.floorId}...`, "success");
+    showNotification(
+      `🚀 Отправляем запрос на улучшение этажа ${selectedFloor.floorId}...`,
+      "success"
+    );
 
     const success: any = store.upgradeFloor(selectedFloor.floorId);
 
     if (!success) {
       setTimeout(() => {
         showNotification(
-          `✅ Этаж ${selectedFloor.floorId} улучшен до уровня ${selectedFloor.level + 1}!`,
+          `✅ Этаж ${selectedFloor.floorId} улучшен до уровня ${
+            selectedFloor.level + 1
+          }!`,
           "success"
         );
       }, 800);
@@ -160,7 +170,7 @@ const Home = observer(() => {
   const handleClaimDo = () => {
     const success = store.sendClaimDo();
     if (success) {
-      showNotification("Запрос на получение награды отправлен!", 'success');
+      showNotification("Запрос на получение награды отправлен!", "success");
     } else {
       showNotification("Ошибка при отправке запроса");
     }
@@ -174,31 +184,36 @@ const Home = observer(() => {
 
   const getFloorNameByIndex = (index: number): string => {
     const floorId = getFloorIdByIndex(index);
-    
+
     if (index === 0) return "Крыша";
     if (floorId === 1) return "Basement";
     if (index === floors - 1) return "1 этаж";
-    
+
     return `${floorId} этаж`;
   };
 
   const handleBuyFloor = (index: number) => {
     const floorId = getFloorIdByIndex(index);
     store.sendFloorsBuy(floorId);
-    showNotification(`🏗 Запрос на покупку этажа ${floorId} отправлен!`, "success");
+    showNotification(
+      `🏗 Запрос на покупку этажа ${floorId} отправлен!`,
+      "success"
+    );
   };
 
   // Обработчик улучшения этажа (открывает модальное окно)
   const handleUpgradeFloor = (floorId: number, event: React.MouseEvent) => {
     event.stopPropagation();
-    
+
     const floor = store.getFloorById(floorId);
     if (!floor) return;
 
     if (!store.canUpgradeFloor(floorId)) {
       const upgradeCost = store.getUpgradeCost(floorId);
       if (!store.hasEnoughMoney(upgradeCost)) {
-        showNotification(`Недостаточно денег для улучшения! Нужно: ${upgradeCost} pdollar`);
+        showNotification(
+          `Недостаточно денег для улучшения! Нужно: ${upgradeCost} pdollar`
+        );
       }
       return;
     }
@@ -212,19 +227,37 @@ const Home = observer(() => {
       <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B]">
         {/* Уведомление */}
         {notification && (
-          <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg ${
-            notification.type === 'error' 
-              ? 'bg-red-500 text-white' 
-              : 'bg-green-500 text-white'
-          }`}>
+          <div
+            className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg ${
+              notification.type === "error"
+                ? "bg-red-500 text-white"
+                : "bg-green-500 text-white"
+            }`}
+          >
             <div className="flex items-center gap-2">
-              {notification.type === 'error' ? (
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              {notification.type === "error" ? (
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               ) : (
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               )}
               <span className="font-medium">{notification.message}</span>
@@ -247,24 +280,6 @@ const Home = observer(() => {
                   backgroundImage: `url('${store.imgUrl}bg_house_people.jpg')`,
                 }}
               />
-            </div>
-          </div>
-          
-          {/* Отображение баланса */}
-          <div className="fixed top-4 right-4 z-30 bg-black bg-opacity-70 text-white px-4 py-2 rounded-lg">
-            <div className="flex items-center gap-2">
-              <img
-                src={`${store.imgUrl}icon_dollar.png`}
-                alt="pdollar"
-                className="w-6 h-6"
-              />
-              <span className="font-bold text-lg">{store.currentBalance}</span>
-              <span className="text-sm">pdollar</span>
-            </div>
-            <div className="flex items-center gap-1 mt-1 text-xs">
-              <span>pizza: {store.pizza}</span>
-              <span>•</span>
-              <span>pcoin: {store.pcoin}</span>
             </div>
           </div>
 
@@ -297,9 +312,9 @@ const Home = observer(() => {
                       <button
                         onClick={() => handleBuyFloor(index)}
                         className={`absolute inset-0 flex items-center justify-center z-30 transition-opacity ${
-                          canBuy 
-                            ? 'cursor-pointer hover:opacity-90' 
-                            : 'cursor-not-allowed opacity-80'
+                          canBuy
+                            ? "cursor-pointer hover:opacity-90"
+                            : "cursor-not-allowed opacity-80"
                         }`}
                       >
                         <div className="flex items-center relative">
@@ -362,13 +377,17 @@ const Home = observer(() => {
                                 {renderStars(floorData.level)}
                               </div>
 
-                              <button 
-                                onClick={(e) => handleUpgradeFloor(floorData.floorId, e)}
-                                disabled={!store.canUpgradeFloor(floorData.floorId)}
+                              <button
+                                onClick={(e) =>
+                                  handleUpgradeFloor(floorData.floorId, e)
+                                }
+                                disabled={
+                                  !store.canUpgradeFloor(floorData.floorId)
+                                }
                                 className={`relative translate-x-[40px] ${
-                                  store.canUpgradeFloor(floorData.floorId) 
-                                    ? 'cursor-pointer hover:opacity-90 transition-opacity' 
-                                    : 'opacity-50 cursor-not-allowed'
+                                  store.canUpgradeFloor(floorData.floorId)
+                                    ? "cursor-pointer hover:opacity-90 transition-opacity"
+                                    : "opacity-50 cursor-not-allowed"
                                 }`}
                               >
                                 <img
@@ -383,7 +402,8 @@ const Home = observer(() => {
                                     className="w-8 sm:w-10"
                                   />
                                   <span className="text-white text-md sm:text-lg shantell">
-                                    {store.getUpgradeCost(floorData.floorId) || 0}
+                                    {store.getUpgradeCost(floorData.floorId) ||
+                                      0}
                                   </span>
                                   <img
                                     src={`${store.imgUrl}icon_arrow.png`}
@@ -433,27 +453,57 @@ const Home = observer(() => {
           />
         </div>
 
-        <div className="fixed bottom-40 left-1/2 w-20 transform -translate-x-1/2 z-20 hover:opacity-90 transition-opacity">
-          <img src={`${store.imgUrl}b_red_mini.png`} alt="red" />
-          <div className="absolute inset-0 flex items-center justify-center text-md text-white shantell">
-            0%
+        {/* Кнопка CLAIM_DO и статистика */}
+        <div className="fixed bottom-24 left-[5%] w-20 z-20 hover:opacity-90 transition-opacity">
+          <img src={`${store.imgUrl}b_white.png`} alt="red" />
+          <div className="absolute inset-0 flex items-center ml-2 text-xs text-amber-800 shantell">
             <span>
               <img
-                src={`${store.imgUrl}icon_dollar.png`}
+                src={`${store.imgUrl}icon_dollar_coin.png`}
                 alt="icon_dollar"
-                className="w-10"
+                className="w-4"
+              />
+            </span>
+            {store.pcoin}
+            <span className="absolute -right-14">
+              <img
+                src={`${store.imgUrl}b_red_plus.png`}
+                alt="icon_dollar"
+                className="w-1/2"
               />
             </span>
           </div>
         </div>
-
-        {/* Кнопка CLAIM_DO */}
         <button
           onClick={handleClaimDo}
-          className="fixed bottom-20 left-1/2 w-50 sm:w-80 transform -translate-x-1/2 z-20 hover:opacity-90 transition-opacity"
+          className="fixed bottom-4 left-1/2 w-30 sm:w-50 transform -translate-x-1/2 z-50 hover:opacity-90 transition-opacity"
         >
-          <img src={`${store.imgUrl}b_zabrat.png`} alt="Claim" />
+          <div className="absolute top-8 left-1/2 transform -translate-x-1/2 flex items-center justify-center text-2xl md:text-4xl text-blue-900 shantell">
+            0%
+          </div>
+          <img src={`${store.imgUrl}b_zabrat2.png`} alt="Claim" />
         </button>
+
+        <div className="fixed bottom-24 left-[70%] w-20 z-20 hover:opacity-90 transition-opacity">
+          <img src={`${store.imgUrl}b_white.png`} alt="red" />
+          <div className="absolute inset-0 flex items-center ml-1 text-xs text-amber-800 shantell">
+            <span>
+              <img
+                src={`${store.imgUrl}icon_dollar.png`}
+                alt="icon_dollar"
+                className="w-6"
+              />
+            </span>
+            {store.currentBalance}
+            <span className="absolute -right-14">
+              <img
+                src={`${store.imgUrl}b_red_minus.png`}
+                alt="icon_dollar"
+                className="w-1/2"
+              />
+            </span>
+          </div>
+        </div>
 
         {/* Модальное окно улучшения этажа */}
         {isModalOpen && selectedFloor && (
@@ -475,7 +525,8 @@ const Home = observer(() => {
                   {/* Заголовок с номером этажа и текущим уровнем */}
                   <div className="text-center mb-4 mt-2 sm:mt-4">
                     <div className="absolute -top-0 left-1/2 transform -translate-x-1/2 shantell text-center text-sm sm:text-md text-amber-800 font-bold py-1 inline-block">
-                      ЭТАЖ {selectedFloor.floorId} - УРОВЕНЬ {selectedFloor.level}
+                      ЭТАЖ {selectedFloor.floorId} - УРОВЕНЬ{" "}
+                      {selectedFloor.level}
                     </div>
                   </div>
 
@@ -575,13 +626,13 @@ const Home = observer(() => {
 
                   {/* Кнопка улучшения */}
                   <div className="mt-auto px-2">
-                    <button 
+                    <button
                       onClick={handleUpgradeFromModal}
                       disabled={!store.canUpgradeFloor(selectedFloor.floorId)}
                       className={`relative w-full transition-opacity ${
-                        store.canUpgradeFloor(selectedFloor.floorId) 
-                          ? 'hover:opacity-90' 
-                          : 'opacity-50 cursor-not-allowed'
+                        store.canUpgradeFloor(selectedFloor.floorId)
+                          ? "hover:opacity-90"
+                          : "opacity-50 cursor-not-allowed"
                       }`}
                     >
                       <img
@@ -592,7 +643,8 @@ const Home = observer(() => {
 
                       <div className="absolute inset-0 flex items-center justify-between ">
                         <div className="text-white text-sm sm:text-base shantell flex-1 text-center">
-                          Этаж {selectedFloor.floorId} - Улучшить <br></br>до уровня {selectedFloor.level + 1}
+                          Этаж {selectedFloor.floorId} - Улучшить <br></br>до
+                          уровня {selectedFloor.level + 1}
                         </div>
 
                         <div className="flex items-center gap-1 sm:gap-2 mx-2">
@@ -627,9 +679,19 @@ const Home = observer(() => {
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                   >
-                    <circle cx="12" cy="12" r="12" fill="white"/>
-                    <path d="M8 8L16 16" stroke="#FFBC6B" strokeWidth="2" strokeLinecap="round"/>
-                    <path d="M16 8L8 16" stroke="#FFBC6B" strokeWidth="2" strokeLinecap="round"/>
+                    <circle cx="12" cy="12" r="12" fill="white" />
+                    <path
+                      d="M8 8L16 16"
+                      stroke="#FFBC6B"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M16 8L8 16"
+                      stroke="#FFBC6B"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 </button>
               </div>
@@ -637,7 +699,7 @@ const Home = observer(() => {
           </>
         )}
       </div>
-      <Footer />
+      <FooterHome />
       <WebSocketComponent />
     </>
   );
