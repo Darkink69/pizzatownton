@@ -203,13 +203,13 @@ class Store {
     });
   }
 
-  // Обновление данных этажей из FLOORS_GET или FLOORS_BUY
   setFloorsData(payload: any) {
     try {
       const response = payload || {};
       const data = response.data || {};
 
       runInAction(() => {
+        // Создаем полностью новый объект для реактивности
         this.userFloors = {
           success: !!response.success,
           message: response.message ?? "",
@@ -217,14 +217,16 @@ class Store {
           requestId: response.requestId ?? "",
           data: {
             userFloorList: Array.isArray(data.userFloorList)
-              ? data.userFloorList
+              ? data.userFloorList.map((floor: any) => ({ ...floor })) // глубокое копирование
               : [],
-            floorList: Array.isArray(data.floorList) ? data.floorList : [],
+            floorList: Array.isArray(data.floorList)
+              ? data.floorList.map((floor: any) => ({ ...floor })) // глубокое копирование
+              : [],
             pdollarAmount: Number(data.pdollarAmount ?? 0),
           },
         };
 
-        // баланс обновляем, если есть
+        // Принудительно обновляем балансы
         if (typeof data.pdollarAmount === "number") {
           this.pdollar = data.pdollarAmount;
         }
@@ -235,22 +237,10 @@ class Store {
           this.pizza = data.pizzaAmount;
         }
       });
+
+      console.log("Floors data updated:", this.safeUserFloorList);
     } catch (e) {
       console.warn("setFloorsData failed:", e);
-      runInAction(() => {
-        // безопасная пустая структура
-        this.userFloors = {
-          success: false,
-          message: "invalid data",
-          type: "FLOORS_GET",
-          requestId: "",
-          data: {
-            userFloorList: [],
-            floorList: [],
-            pdollarAmount: 0,
-          },
-        };
-      });
     }
   }
 
