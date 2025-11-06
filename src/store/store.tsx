@@ -209,7 +209,6 @@ class Store {
       const data = response.data || {};
 
       runInAction(() => {
-        // Создаем полностью новый объект для реактивности
         this.userFloors = {
           success: !!response.success,
           message: response.message ?? "",
@@ -227,14 +226,14 @@ class Store {
         };
 
         // Принудительно обновляем балансы
-        if (typeof data.pdollarAmount === "number") {
-          this.pdollar = data.pdollarAmount;
+        if (typeof data.user.pdollar === "number") {
+          this.pdollar = data.user.pdollar;
         }
-        if (typeof data.pcoinAmount === "number") {
-          this.pcoin = data.pcoinAmount;
+        if (typeof data.user.pcoin === "number") {
+          this.pcoin = data.user.pcoin;
         }
-        if (typeof data.pizzaAmount === "number") {
-          this.pizza = data.pizzaAmount;
+        if (typeof data.user.pizza === "number") {
+          this.pizza = data.user.pizza;
         }
       });
 
@@ -313,7 +312,7 @@ class Store {
   }
 
   // Отправка CLAIM_DO запроса
-  sendClaimDo() {
+  sendClaimDo(floorId: number) {
     try {
       this.ensureWs();
       const tgId = this.user?.telegramId ?? this.user?.id ?? 0;
@@ -321,7 +320,9 @@ class Store {
         type: "CLAIM_DO",
         requestId: genId(),
         session: this.sessionId!,
-        claimDoRq: { telegramId: tgId },
+        claimDoRq: { 
+          telegramId: tgId, 
+          floorId: floorId },
       });
       return true;
     } catch (e) {

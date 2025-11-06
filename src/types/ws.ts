@@ -63,6 +63,7 @@ export interface UpdateFloorRq {
 // Фарм — клейм
 export interface ClaimDoRq {
   telegramId: number;
+  floorId: number;
 }
 
 export interface ClaimRefreshRq {

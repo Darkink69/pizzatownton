@@ -3,7 +3,6 @@ import { observer } from "mobx-react-lite";
 import store from "../store/store";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
-import FooterHome from "../components/FooterHome";
 import { Link } from "react-router-dom";
 
 const Home = observer(() => {
@@ -44,6 +43,16 @@ const Home = observer(() => {
     setTimeout(() => {
       setNotification(null);
     }, 3000);
+  };
+
+  // Обработчик кнопки CLAIM_DO для конкретного этажа
+  const handleClaimDo = (floorId: number) => {
+    const success = store.sendClaimDo(floorId);
+    if (success) {
+      showNotification(`Запрос на получение награды для этажа ${floorId} отправлен!`, "success");
+    } else {
+      showNotification("Ошибка при отправке запроса");
+    }
   };
 
   // Показываем загрузку пока данные не получены
@@ -165,16 +174,6 @@ const Home = observer(() => {
     }
 
     handleCloseModal();
-  };
-
-  // Обработчик кнопки CLAIM_DO
-  const handleClaimDo = () => {
-    const success = store.sendClaimDo();
-    if (success) {
-      showNotification("Запрос на получение награды отправлен!", "success");
-    } else {
-      showNotification("Ошибка при отправке запроса");
-    }
   };
 
   const getFloorIdByIndex = (index: number): number => {
@@ -413,6 +412,19 @@ const Home = observer(() => {
                                   />
                                 </div>
                               </button>
+
+                              {/* Кнопка CLAIM_DO для этажа */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleClaimDo(floorData.floorId);
+                                }}
+                                className="relative ml-2 w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-full flex items-center justify-center hover:opacity-90 transition-opacity shadow-md"
+                              >
+                                <span className="text-xs sm:text-sm text-amber-800 shantell font-bold">
+                                  0%
+                                </span>
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -454,14 +466,14 @@ const Home = observer(() => {
           />
         </div>
 
-        {/* Кнопка CLAIM_DO и статистика */}
+        {/* Кнопка статистики */}
         <div className="fixed bottom-24 left-[5%] w-20 z-20 hover:opacity-90 transition-opacity">
           <img src={`${store.imgUrl}b_white.png`} alt="red" />
           <div className="absolute inset-0 flex items-center ml-2 text-xs text-amber-800 shantell">
             <span>
               <img
                 src={`${store.imgUrl}icon_dollar_coin.png`}
-                alt="icon_dollar"
+                alt="icon_dollar_coin"
                 className="w-4"
               />
             </span>
@@ -477,17 +489,8 @@ const Home = observer(() => {
             </Link>
           </div>
         </div>
-        <button
-          onClick={handleClaimDo}
-          className="fixed bottom-4 left-1/2 w-30 sm:w-50 transform -translate-x-1/2 z-50 hover:opacity-90 transition-opacity"
-        >
-          <div className="absolute top-8 left-1/2 transform -translate-x-1/2 flex items-center justify-center text-2xl md:text-4xl text-blue-900 shantell">
-            0%
-          </div>
-          <img src={`${store.imgUrl}b_zabrat2.png`} alt="Claim" />
-        </button>
 
-        <div className="fixed bottom-24 left-[70%] w-20 z-20 hover:opacity-90 transition-opacity">
+        <div className="fixed bottom-24 left-[60%] w-20 z-20 hover:opacity-90 transition-opacity">
           <img src={`${store.imgUrl}b_white.png`} alt="red" />
           <div className="absolute inset-0 flex items-center ml-1 text-xs text-amber-800 shantell">
             <span>
@@ -497,7 +500,7 @@ const Home = observer(() => {
                 className="w-6"
               />
             </span>
-            {store.currentBalance}
+            {store.pdollar}
             <Link to="/bank">
               <span className="absolute -top-0.5 -right-14">
                 <img
@@ -704,7 +707,7 @@ const Home = observer(() => {
           </>
         )}
       </div>
-      <FooterHome />
+      <Footer />
       <WebSocketComponent />
     </>
   );
