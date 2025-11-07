@@ -134,7 +134,7 @@ const Home = observer(() => {
 
         const success: any = store.upgradeFloor(selectedFloor.floorId);
 
-        if (!success) {
+        if (success) {
             setTimeout(() => {
                 showNotification(
                     `✅ Этаж ${selectedFloor.floorId} улучшен до уровня ${
@@ -156,33 +156,35 @@ const Home = observer(() => {
     };
 
     const getFloorIdByIndex = (index: number): number => {
-        if (index === 0) return 1;
-        if (index === floors - 1) return 1;
+        if (index === 0) return 10;
+        if (index === floors - 1) return 0;
         return floors - index;
     };
 
     const getFloorImage = (index: number) => {
         if (index === 0) return "img_roof.png";
-        if (getFloorIdByIndex(index) === 1) return "img_basement_floor.png";
+        const floorId = getFloorIdByIndex(index);
+        if (floorId === 1) return "img_basement_floor.png";
         if (index === floors - 1) return "img_first_floor.png";
 
-        const floorData = getFloorData(index);
-        if (floorData) {
-            return "img_floor_empty.png";
-        }
+        const floor = store.getFloorById(floorId);
 
-        return "img_floor_dark.png";
+        // ✅ если этаж куплен — рисуем "пустой", иначе "тёмный"
+        return floor?.owned ? "img_floor_empty.png" : "img_floor_dark.png";
     };
 
     const isFilledFloor = (index: number) => {
-        const img = getFloorImage(index);
-        return img === 'img_floor_empty.png' || img === 'img_basement_floor.png';
+        const floorId = getFloorIdByIndex(index);
+        const floor = store.getFloorById(floorId);
+        // ✅ купленные + Basement
+        return floor?.owned || floorId === 1;
     };
 
     const isEmptyFloor = (index: number) => {
-        const id = getFloorIdByIndex(index);
-        const img = getFloorImage(index);
-        return img === 'img_floor_dark.png' && id !== 1;
+        const floorId = getFloorIdByIndex(index);
+        const floor = store.getFloorById(floorId);
+        // ✅ не купленные, кроме Basement
+        return !floor?.owned && floorId !== 1;
     };
 
     const getFloorNameByIndex = (index: number): string => {
@@ -313,6 +315,7 @@ const Home = observer(() => {
                                 const floorId = getFloorIdByIndex(index);
                                 const floorName = getFloorNameByIndex(index);
                                 const canBuy = store.canBuyFloor(floorId);
+                                console.log("🧾", floorId, { canBuy, floorName});
                                 const floorCost = store.getFloorCost(floorId);
 
                                 return (
@@ -451,7 +454,7 @@ const Home = observer(() => {
                                                                 className="relative ml-2 w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-full flex items-center justify-center hover:opacity-90 transition-opacity shadow-md"
                                                             >
                                 <span className="text-xs sm:text-sm text-amber-800 shantell font-bold">
-                                  0%
+                                  {Math.floor(floorData.earned ?? 0)}
                                 </span>
                                                             </button>
                                                         </div>

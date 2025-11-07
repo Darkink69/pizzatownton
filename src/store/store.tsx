@@ -130,6 +130,7 @@ class Store {
                     ? data.userFloorList.map((f: any) => ({
                         ...f,
                         owned: f.owned ?? f.isOwned ?? false,
+                        earned: f.earned ?? 0
                     }))
                     : [];
 
@@ -157,6 +158,7 @@ class Store {
 
 
             console.group("📊 Floors after normalization");
+            console.log("💰 pcoin сейчас:", this.pcoin);
             this.safeUserFloorList.forEach(f => {
                 console.log(
                     `id=${f.floorId} | owned=${f.owned} | cost=${f.purchaseCost} | cur=${f.upgradeCurrency}`
@@ -169,6 +171,19 @@ class Store {
             console.warn("setFloorsData failed:", e);
         }
     }
+
+    claimAnimations: { floorId: number; amount: number; currency: string }[] = [];
+
+    addClaimAnimation(floorId: number, amount: number, currency: string) {
+        this.claimAnimations.push({ floorId, amount, currency });
+        // автоматически удалить через пару секунд
+        setTimeout(() => {
+            runInAction(() => {
+                this.claimAnimations = this.claimAnimations.filter(a => a.floorId !== floorId);
+            });
+        }, 2000);
+    }
+
 
     // -------------------------------------------------------------------------
     // WEBSOCKET / AUTH

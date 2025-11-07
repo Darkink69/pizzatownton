@@ -141,9 +141,21 @@ const WebSocketComponent = observer(() => {
 
             /** ------------------ CLAIM_DO ------------------ */
           case "CLAIM_DO": {
-            if (parsed.success && parsed.data?.user) {
-              store.updateUserData?.(parsed.data.user);
+            const user = parsed.data?.user || parsed.data?.userResponse;
+            const earned = parsed.data?.earnedPDollar ?? parsed.data?.earned ?? 0;
+            const floorId = parsed.data?.floorId ?? null; // если сервер передаёт
+            const currency = parsed.data?.currency ?? "pdollar";
+            if (parsed.success && user) {
+              store.updateUserData?.(user);
               toast.success("💰 Доход успешно собран!");
+
+              if (floorId && earned > 0) {
+                store.addClaimAnimation(floorId, earned, currency);
+              }
+              // Если в ответе также есть обновлённый список этажей — обновляем их:
+              if (parsed.data.userFloorList) {
+                store.setFloorsData(parsed);
+              }
             } else {
               toast.error(parsed.message || "Ошибка при сборе дохода");
             }
@@ -211,7 +223,7 @@ const WebSocketComponent = observer(() => {
 
     ws.onerror = (e) => {
       console.error("❌ WS error:", e);
-      store.resetSession();
+     //store.resetSession();
       setStatus("error");
     };
 

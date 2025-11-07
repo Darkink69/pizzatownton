@@ -30,6 +30,7 @@ export interface UserFloor {
   upgradeAmount: number | null;
   upgradeCurrency: string | null;
   purchaseCost: number | null;
+  earned?: number;
   owned: boolean;
 }
 
