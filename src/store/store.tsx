@@ -4,7 +4,7 @@ import { bankStore } from "./BankStore";
 
 class Store {
   imgUrl =
-    "https://s3.twcstorage.ru/c6bae09a-a5938890-9b68-453c-9c54-76c439a70d3e/Pizzatownton/";
+      "https://s3.twcstorage.ru/c6bae09a-a5938890-9b68-453c-9c54-76c439a70d3e/Pizzatownton/";
 
   initDataRaw = "";
   referrerId: string | null = null;
@@ -154,9 +154,9 @@ class Store {
   get areFloorsLoaded() {
     const data = this.userFloors?.data;
     return (
-      data != null &&
-      Array.isArray(data.userFloorList) &&
-      Array.isArray(data.floorList)
+        data != null &&
+        Array.isArray(data.userFloorList) &&
+        Array.isArray(data.floorList)
     );
   }
 
@@ -216,11 +216,11 @@ class Store {
           requestId: response.requestId ?? "",
           data: {
             userFloorList: Array.isArray(data.userFloorList)
-              ? data.userFloorList.map((floor: any) => ({ ...floor })) // глубокое копирование
-              : [],
+                ? data.userFloorList.map((floor: any) => ({ ...floor })) // глубокое копирование
+                : [],
             floorList: Array.isArray(data.floorList)
-              ? data.floorList.map((floor: any) => ({ ...floor })) // глубокое копирование
-              : [],
+                ? data.floorList.map((floor: any) => ({ ...floor })) // глубокое копирование
+                : [],
             pdollarAmount: Number(data.pdollarAmount ?? 0),
           },
         };
@@ -320,8 +320,8 @@ class Store {
         type: "CLAIM_DO",
         requestId: genId(),
         session: this.sessionId!,
-        claimDoRq: { 
-          telegramId: tgId, 
+        claimDoRq: {
+          telegramId: tgId,
           floorId: floorId },
       });
       return true;
@@ -367,7 +367,7 @@ class Store {
   buyNewFloor(floorId: number) {
     runInAction(() => {
       const existingFloor = this.safeUserFloorList.find(
-        (floor) => floor.floorId === floorId
+          (floor) => floor.floorId === floorId
       );
 
       if (existingFloor) {
@@ -376,7 +376,7 @@ class Store {
       }
 
       const floorTemplate = this.safeFloorList.find(
-        (floor) => floor.floorId === floorId
+          (floor) => floor.floorId === floorId
       );
 
       if (!floorTemplate) {
@@ -422,7 +422,7 @@ class Store {
 
         // Удаляем купленный этаж из списка доступных
         const newFloorList = this.safeFloorList.filter(
-          (f) => f.floorId !== floorId
+            (f) => f.floorId !== floorId
         );
 
         this.userFloors = {
@@ -504,7 +504,7 @@ class Store {
 
   canBuyFloor(floorId: number): boolean {
     const existingFloor = this.safeUserFloorList.find(
-      (floor) => floor.floorId === floorId
+        (floor) => floor.floorId === floorId
     );
 
     if (existingFloor) {
@@ -512,7 +512,7 @@ class Store {
     }
 
     const floorTemplate = this.safeFloorList.find(
-      (floor) => floor.floorId === floorId
+        (floor) => floor.floorId === floorId
     );
 
     if (!floorTemplate) {
@@ -524,14 +524,14 @@ class Store {
 
   getFloorCost(floorId: number): number {
     const floorTemplate = this.safeFloorList.find(
-      (floor) => floor.floorId === floorId
+        (floor) => floor.floorId === floorId
     );
     return floorTemplate ? floorTemplate.costAmount : 0;
   }
 
   canUpgradeFloor(floorId: number): boolean {
     const floor = this.safeUserFloorList.find(
-      (floor) => floor.floorId === floorId
+        (floor) => floor.floorId === floorId
     );
 
     if (!floor) {
