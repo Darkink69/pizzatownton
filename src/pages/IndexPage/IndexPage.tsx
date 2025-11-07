@@ -53,7 +53,7 @@ export const IndexPage: FC = observer(() => {
       type: "AUTH_INIT",
       requestId: generateRequestId(),
       session: "",
-      authInitRq: {
+      authReq: {
         initData: initDataRaw,
         referralCode: store.referrerId ?? null,
       },

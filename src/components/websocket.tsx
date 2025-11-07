@@ -81,6 +81,11 @@ const WebSocketComponent = observer(() => {
       const raw = event.data;
       setLastMessage(raw);
 
+      if (raw === "ping") {
+        ws.send("pong");
+        return;
+      }
+
       try {
         const parsed: WsResponse<any> = JSON.parse(raw);
         console.debug("📩 WS response:", parsed);
@@ -91,6 +96,7 @@ const WebSocketComponent = observer(() => {
             if (parsed.success) {
               const { user, sessionId } = (parsed.data || {}) as AuthData;
               store.setUser?.(user);
+
               store.setSessionId?.(sessionId);
               sendFloorsGetRequest();
             } else {
@@ -205,11 +211,13 @@ const WebSocketComponent = observer(() => {
 
     ws.onerror = (e) => {
       console.error("❌ WS error:", e);
+      store.resetSession();
       setStatus("error");
     };
 
     ws.onclose = () => {
       console.warn("⚠️ WS closed, reconnecting...");
+      store.resetSession();
       setStatus("disconnected");
       reconnectTimeout.current = setTimeout(connectWebSocket, 10000);
     };

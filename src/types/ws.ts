@@ -20,6 +20,19 @@ export interface WsBase {
   session: string;
 }
 
+export interface UserFloor {
+  floorId: number;
+  level: number;
+  yieldPerHour: number;
+  yieldCurrency: string;
+  floorName: string;
+  floorType: string;
+  upgradeAmount: number | null;
+  upgradeCurrency: string | null;
+  purchaseCost: number | null;
+  owned: boolean;
+}
+
 // -------------------- Пользователь --------------------
 export interface TgUser {
   id?: number;

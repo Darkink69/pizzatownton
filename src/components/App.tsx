@@ -98,7 +98,7 @@ export const App = observer(() => {
 
     const loadingTimer = setTimeout(() => setShowLoading(true), 3000);
 
-    store.authenticateUser(rawInitData, referrerId).catch((e) => {
+    store.authenticateUser(rawInitData, referrerId).catch((e: unknown) => {
       console.error("Auth error:", e);
       clearTimeout(loadingTimer);
     });
