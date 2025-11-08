@@ -15,7 +15,7 @@ const Home = observer(() => {
     const [isMusicPlaying, setIsMusicPlaying] = useState(true);
     const [claimRewards, setClaimRewards] = useState<{[key: number]: string}>({});
     const audioRef = useRef<HTMLAudioElement | null>(null);
-    const floors = 11;
+    const floors = 11; // basement + 9 этажей + крыша
 
     // Инициализация аудио
     useEffect(() => {
@@ -53,7 +53,6 @@ const Home = observer(() => {
     const toggleMusic = () => {
         setIsMusicPlaying(!isMusicPlaying);
     };
-
 
     // Используем безопасные геттеры
     const areFloorsLoaded = store.areFloorsLoaded;
@@ -106,7 +105,7 @@ const Home = observer(() => {
     if (!areFloorsLoaded) {
         return (
             <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B] flex items-center justify-center">
-                <div className="text-white text-xl">Загрузка этажей...</div>
+                <div className="text-white text-xl shantell">Загрузка этажей...</div>
                 <Footer/>
                 <WebSocketComponent/>
             </div>
@@ -115,12 +114,17 @@ const Home = observer(() => {
 
     const getFloorData = (index: number) => {
         const visualIndexToFloorId = (visualIndex: number): number => {
-            if (visualIndex === 0) return 1;
-            if (visualIndex === floors - 1) return 1;
-            return floors - visualIndex;
+            // Самый нижний (index = floors - 1) - basement (просто картинка)
+            if (visualIndex === floors - 1) return -1; // basement картинка
+            if (visualIndex === 0) return -2; // Крыша (просто картинка)
+            // Остальные этажи: 1, 2, 3, ..., 9
+            return visualIndex;
         };
 
         const floorId = visualIndexToFloorId(index);
+
+        // Для basement и крыши не ищем данные
+        if (floorId === -1 || floorId === -2) return null;
 
         const floorData = userFloorList.find((floor) => floor.floorId === floorId);
 
@@ -203,17 +207,20 @@ const Home = observer(() => {
     };
 
     const getFloorIdByIndex = (index: number): number => {
-        if (index === 0) return 10;
-        if (index === floors - 1) return 0;
-        return floors - index;
+        // Самый нижний (index = floors - 1) - basement (просто картинка)
+        if (index === floors - 1) return -1; // basement картинка
+        if (index === 0) return -2; // Крыша (просто картинка)
+        // Остальные этажи: 1, 2, 3, ..., 9
+        return index;
     };
 
     const getFloorImage = (index: number) => {
+        // Самый нижний - basement картинка
+        if (index === floors - 1) return "img_basement_floor.png";
+        // Крыша
         if (index === 0) return "img_roof.png";
-        const floorId = getFloorIdByIndex(index);
-        if (floorId === 1) return "img_basement_floor.png";
-        if (index === floors - 1) return "img_first_floor.png";
 
+        const floorId = getFloorIdByIndex(index);
         const floor = store.getFloorById(floorId);
 
         // ✅ если этаж куплен — рисуем "пустой", иначе "тёмный"
@@ -222,24 +229,28 @@ const Home = observer(() => {
 
     const isFilledFloor = (index: number) => {
         const floorId = getFloorIdByIndex(index);
+        // basement и крыша всегда заполнены (просто картинки)
+        if (floorId === -1 || floorId === -2) return true;
+        
         const floor = store.getFloorById(floorId);
-        // ✅ купленные + Basement
-        return floor?.owned || floorId === 1;
+        return floor?.owned;
     };
 
     const isEmptyFloor = (index: number) => {
         const floorId = getFloorIdByIndex(index);
+        // basement и крыша никогда не пустые
+        if (floorId === -1 || floorId === -2) return false;
+        
         const floor = store.getFloorById(floorId);
-        // ✅ не купленные, кроме Basement
-        return !floor?.owned && floorId !== 1;
+        return !floor?.owned;
     };
 
     const getFloorNameByIndex = (index: number): string => {
         const floorId = getFloorIdByIndex(index);
 
         if (index === 0) return "Крыша";
-        if (floorId === 1) return "Basement";
-        if (index === floors - 1) return "1 этаж";
+        if (floorId === -1) return "Basement"; // basement картинка
+        if (floorId === 1) return "Basement"; // 1 этаж отображается как "Basement"
 
         return `${floorId} этаж`;
     };
@@ -297,7 +308,7 @@ const Home = observer(() => {
                 {/* Кнопка звука в левом верхнем углу */}
                 <button
                     onClick={toggleMusic}
-                    className="fixed top-4 left-4 z-50 w-4 h-4 sm:w-4 scale-30 sm:h-4 hover:scale-110 transition-transform"
+                    className="fixed top-4 left-4 z-50 w-12 h-12 sm:w-14 sm:h-14 hover:scale-110 transition-transform"
                     aria-label={isMusicPlaying ? "Выключить звук" : "Включить звук"}
                 >
                     {isMusicPlaying ? (
@@ -386,8 +397,10 @@ const Home = observer(() => {
                                 const floorId = getFloorIdByIndex(index);
                                 const floorName = getFloorNameByIndex(index);
                                 const canBuy = store.canBuyFloor(floorId);
-                                console.log("🧾", floorId, { canBuy, floorName});
                                 const floorCost = store.getFloorCost(floorId);
+                                const isBasementImage = floorId === -1; // basement картинка
+                                const isRoof = floorId === -2; // крыша
+                                const isFirstFloor = floorId === 1; // 1 этаж (отображается как Basement)
 
                                 return (
                                     <div
@@ -403,7 +416,8 @@ const Home = observer(() => {
                                             className="w-full max-w-md object-contain"
                                         />
 
-                                        {isEmpty && floorId !== 1 && (  // ⛔ Basement не покупаем
+                                        {/* Кнопка покупки для пустых этажей (кроме basement картинки и крыши) */}
+                                        {isEmpty && !isBasementImage && !isRoof && (
                                             <button
                                                 onClick={() => handleBuyFloor(index)}
                                                 disabled={!canBuy}
@@ -440,7 +454,8 @@ const Home = observer(() => {
                                             </button>
                                         )}
 
-                                        {isFilled && floorData && (
+                                        {/* Блок с данными для заполненных этажей (кроме basement картинки и крыши) */}
+                                        {isFilled && floorData && !isBasementImage && !isRoof && (
                                             <>
                                                 <div
                                                     className="absolute inset-0 flex items-center justify-center -z-10">
@@ -505,9 +520,9 @@ const Home = observer(() => {
                                                                     />
                                                                     <span
                                                                         className="text-white text-md sm:text-lg shantell">
-                                    {store.getUpgradeCost(floorData.floorId) ||
-                                        0}
-                                  </span>
+                                                                      {store.getUpgradeCost(floorData.floorId) ||
+                                                                          0}
+                                                                    </span>
                                                                     <img
                                                                         src={`${store.imgUrl}icon_arrow.png`}
                                                                         alt="Upgrade"
@@ -516,23 +531,42 @@ const Home = observer(() => {
                                                                 </div>
                                                             </button>
 
-                                                            {/* Кнопка CLAIM_DO для этажа */}
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleClaimDo(floorData.floorId);
-                                                                }}
-                                                                className="relative ml-6 w-auto p-2 pl-4 pr-4 bg-white rounded-full flex items-center justify-center gap-1 hover:opacity-90 transition-opacity shadow-md"
-                                                            >
-                                      <span className="text-md sm:text-lg text-amber-800 shantell font-bold whitespace-nowrap">
-                                        {claimRewards[floorData.floorId] || "0"}
-                                      </span>
-                                                                <img
-                                                                    src={`${store.imgUrl}icon_dollar.png`}
-                                                                    alt="pdollar"
-                                                                    className="w-6 h-4 sm:w-9 sm:h-5"
-                                                                />
-                                                            </button>
+                                                            {/* Кнопка CLAIM_DO для обычных этажей */}
+                                                            {!isFirstFloor && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleClaimDo(floorData.floorId);
+                                                                    }}
+                                                                    className="relative ml-6 w-auto p-2 pl-4 pr-4 bg-white rounded-full flex items-center justify-center gap-1 hover:opacity-90 transition-opacity shadow-md"
+                                                                >
+                                                                    <span className="text-md sm:text-lg text-amber-800 shantell font-bold whitespace-nowrap">
+                                                                        {claimRewards[floorData.floorId] || "0"}
+                                                                    </span>
+                                                                    <img
+                                                                        src={`${store.imgUrl}icon_dollar.png`}
+                                                                        alt="pdollar"
+                                                                        className="w-6 h-4 sm:w-9 sm:h-5"
+                                                                    />
+                                                                </button>
+                                                            )}
+
+                                                            {/* Специальная кнопка для 1 этажа (Basement) с пиццей */}
+                                                            {isFirstFloor && (
+                                                                <button
+                                                                    className="relative ml-6 w-auto p-2 pl-4 pr-4 bg-white rounded-full flex items-center justify-center gap-1 opacity-50 cursor-not-allowed shadow-md"
+                                                                    disabled
+                                                                >
+                                                                    <span className="text-md sm:text-lg text-amber-800 shantell font-bold whitespace-nowrap">
+                                                                        0
+                                                                    </span>
+                                                                    <img
+                                                                        src={`${store.imgUrl}pizza_California.png`}
+                                                                        alt="pizza"
+                                                                        className="w-6 h-6 sm:w-8 sm:h-8"
+                                                                    />
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
