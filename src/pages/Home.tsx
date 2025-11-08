@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {observer} from "mobx-react-lite";
 import store from "../store/store";
 import Footer from "../components/Footer";
@@ -12,7 +12,48 @@ const Home = observer(() => {
         message: string;
         type: "error" | "success";
     } | null>(null);
-    const floors = 10;
+    const [isMusicPlaying, setIsMusicPlaying] = useState(true);
+    const [claimRewards, setClaimRewards] = useState<{[key: number]: string}>({});
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const floors = 11;
+
+    // Инициализация аудио
+    useEffect(() => {
+        audioRef.current = new Audio(`${store.imgUrl}pizza.mp3`);
+        audioRef.current.loop = true;
+        audioRef.current.volume = 0.2;
+
+        if (isMusicPlaying) {
+            audioRef.current.play().catch((e) => {
+                console.log("Autoplay prevented:", e);
+            });
+        }
+
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+            }
+        };
+    }, []);
+
+    // Управление музыкой
+    useEffect(() => {
+        if (audioRef.current) {
+            if (isMusicPlaying) {
+                audioRef.current.play().catch((e) => {
+                    console.log("Play failed:", e);
+                });
+            } else {
+                audioRef.current.pause();
+            }
+        }
+    }, [isMusicPlaying]);
+
+    const toggleMusic = () => {
+        setIsMusicPlaying(!isMusicPlaying);
+    };
+
 
     // Используем безопасные геттеры
     const areFloorsLoaded = store.areFloorsLoaded;
@@ -49,6 +90,12 @@ const Home = observer(() => {
     const handleClaimDo = (floorId: number) => {
         const success = store.sendClaimDo(floorId);
         if (success) {
+            // Генерируем случайную награду для демонстрации
+            const randomReward = Math.floor(Math.random() * 200) + 50;
+            setClaimRewards(prev => ({
+                ...prev,
+                [floorId]: `+${randomReward}`
+            }));
             showNotification(`Запрос на получение награды для этажа ${floorId} отправлен!`, "success");
         } else {
             showNotification("Ошибка при отправке запроса");
@@ -247,6 +294,30 @@ const Home = observer(() => {
     return (
         <>
             <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B]">
+                {/* Кнопка звука в левом верхнем углу */}
+                <button
+                    onClick={toggleMusic}
+                    className="fixed top-4 left-4 z-50 w-4 h-4 sm:w-4 scale-30 sm:h-4 hover:scale-110 transition-transform"
+                    aria-label={isMusicPlaying ? "Выключить звук" : "Включить звук"}
+                >
+                    {isMusicPlaying ? (
+                        <svg width="108" height="108" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="54" cy="54" r="52" fill="#FEDB9F" stroke="#0E0E0E" strokeWidth="4"></circle>
+                            <path d="M32.1461 29.7167C25.0892 37.8855 24.898 51.2557 18.5327 45.7568C12.1673 40.2579 12.7279 29.178 19.7848 21.0092C26.8417 12.8404 37.7226 10.676 44.088 16.1749C50.4533 21.6738 41.0156 23.2123 32.1461 29.7167Z" fill="white"></path>
+                            <path d="M47.87 70.6202C46.95 69.8402 45.76 68.3002 44.55 68.0202C41.22 67.7802 30.66 69.9402 29.13 66.2902L29 43.3202C30.21 39.1702 42.24 41.8602 45.64 40.7802C51.41 36.1202 56.8 29.9902 62.6 25.4902C65.08 23.5702 67.27 23.1202 68.53 26.4802L68.33 83.4602C66.51 86.6002 64.62 85.3802 62.39 83.6502C57.5 79.8602 52.69 74.7102 47.87 70.6202Z" fill="black"></path>
+                            <path d="M76.57 33.7301C78.68 33.1001 81.65 35.4001 83.22 36.7101C92.29 44.2601 94.29 57.5701 87.8 67.4201C85.94 70.2401 79.02 78.0801 75.65 74.9001C72.47 71.9101 77.8 70.0101 79.56 68.5601C88.43 61.2501 88.12 47.8401 79.33 40.6001C77.71 39.2601 73.8 38.1301 74.95 35.4001C75.17 34.8801 76.02 33.8901 76.57 33.7301Z" fill="black"></path>
+                            <path d="M75.8691 64.2599V45.0799C77.1891 44.9299 78.5691 46.5799 79.2991 47.5699C81.9991 51.1899 82.4991 56.0199 80.4291 60.0499C79.6391 61.5899 77.6991 64.2399 75.8691 64.2699V64.2599Z" fill="black"></path>
+                        </svg>
+                    ) : (
+                        <svg width="108" height="108" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="54" cy="54" r="52" fill="#FEDB9F" stroke="#0E0E0E" strokeWidth="4"></circle>
+                            <path d="M32.1461 29.7167C25.0892 37.8855 24.898 51.2557 18.5327 45.7568C12.1673 40.2579 12.7279 29.178 19.7848 21.0092C26.8417 12.8404 37.7226 10.676 44.088 16.1749C50.4533 21.6738 41.0156 23.2123 32.1461 29.7167Z" fill="white"></path>
+                            <path d="M28.13 42.3304C30.42 39.5704 40.84 41.8904 44.32 40.7604L61.92 24.9004C64.54 22.6704 67.76 24.9004 67.62 28.1204C66.4 45.1904 69.19 64.4004 67.62 81.2204C67.29 84.7204 65.09 86.6404 61.92 84.4404L43.54 68.1004C39.98 68.1804 36.29 68.6504 32.72 68.3404C31.18 68.2104 28.8 67.9604 28 66.5304L28.14 42.3404L28.13 42.3304Z" fill="black"></path>
+                            <path d="M86.9302 46.8607C88.3902 45.5407 89.7602 44.7807 91.4902 46.3007C94.6702 49.1007 88.7802 52.6407 87.2002 54.6807C88.8402 56.8407 94.2002 59.7807 91.6902 62.8607C88.8502 66.3407 85.4302 60.2007 83.3102 58.9507C80.7202 60.1007 78.4802 65.5207 75.1902 63.4107C71.6402 61.1307 76.9902 56.6307 78.9302 55.2207L79.0402 54.3107C77.1302 52.4107 72.6702 49.5707 74.5802 46.5607C77.2702 42.3207 81.7502 50.4107 83.3102 50.4107C84.9002 49.9507 85.8602 47.8307 86.9302 46.8707V46.8607Z" fill="black"></path>
+                        </svg>
+                    )}
+                </button>
+
                 {/* Уведомление */}
                 {notification && (
                     <div
@@ -451,11 +522,16 @@ const Home = observer(() => {
                                                                     e.stopPropagation();
                                                                     handleClaimDo(floorData.floorId);
                                                                 }}
-                                                                className="relative ml-2 w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-full flex items-center justify-center hover:opacity-90 transition-opacity shadow-md"
+                                                                className="relative ml-6 w-auto p-2 pl-4 pr-4 bg-white rounded-full flex items-center justify-center gap-1 hover:opacity-90 transition-opacity shadow-md"
                                                             >
-                                <span className="text-xs sm:text-sm text-amber-800 shantell font-bold">
-                                  {Math.floor(floorData.earned ?? 0)}
-                                </span>
+                                      <span className="text-md sm:text-lg text-amber-800 shantell font-bold whitespace-nowrap">
+                                        {claimRewards[floorData.floorId] || "0"}
+                                      </span>
+                                                                <img
+                                                                    src={`${store.imgUrl}icon_dollar.png`}
+                                                                    alt="pdollar"
+                                                                    className="w-6 h-4 sm:w-9 sm:h-5"
+                                                                />
                                                             </button>
                                                         </div>
                                                     </div>

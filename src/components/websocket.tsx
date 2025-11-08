@@ -172,6 +172,7 @@ const WebSocketComponent = observer(() => {
             break;
           }
 
+
             /** ---------------- BANK_BUY_PCOIN ---------------- */
           case "BANK_BUY_PCOIN": {
             if (parsed.success && parsed.data) {
