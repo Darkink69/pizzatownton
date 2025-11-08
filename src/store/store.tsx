@@ -172,6 +172,8 @@ class Store {
         }
     }
 
+    lastClaimRewards: { floorId: number; amount: number; currency: string } | null = null;
+
     claimAnimations: { floorId: number; amount: number; currency: string }[] = [];
 
     addClaimAnimation(floorId: number, amount: number, currency: string) {

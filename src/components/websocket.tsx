@@ -10,6 +10,7 @@ import type {
   BankOrderViewData,
 } from "../types/ws";
 import { bankStore } from "../store/BankStore.ts";
+import {runInAction} from "mobx";
 
 function generateRequestId() {
   return Math.random().toString(36).substring(2, 10);
@@ -139,12 +140,22 @@ const WebSocketComponent = observer(() => {
             break;
           }
 
+
+
             /** ------------------ CLAIM_DO ------------------ */
           case "CLAIM_DO": {
             const user = parsed.data?.user || parsed.data?.userResponse;
             const earned = parsed.data?.earnedPDollar ?? parsed.data?.earned ?? 0;
-            const floorId = parsed.data?.floorId ?? null; // если сервер передаёт
+            const floorId = parsed.data?.floorId ?? null;
             const currency = parsed.data?.currency ?? "pdollar";
+
+            // 🔹 сохраняем последнее начисление в store, чтобы Home мог его отобразить
+            if (floorId && earned >= 0) {
+              runInAction(() => {
+                (store as any).lastClaimRewards = { floorId, amount: earned, currency };
+              });
+            }
+
             if (parsed.success && user) {
               store.updateUserData?.(user);
               toast.success("💰 Доход успешно собран!");
@@ -152,7 +163,6 @@ const WebSocketComponent = observer(() => {
               if (floorId && earned > 0) {
                 store.addClaimAnimation(floorId, earned, currency);
               }
-              // Если в ответе также есть обновлённый список этажей — обновляем их:
               if (parsed.data.userFloorList) {
                 store.setFloorsData(parsed);
               }
@@ -165,9 +175,26 @@ const WebSocketComponent = observer(() => {
             /** ------------------ CLAIM_REFRESH ------------------ */
           case "CLAIM_REFRESH": {
             if (parsed.success && parsed.data) {
-              const total = parsed.data?.totalEarned ?? 0;
-              // store.setClaimAmount?.(total);
-              toast.info(`🔄 Накоплено: ${total} P$`);
+              const total = Number(parsed.data.totalEarned ?? 0);
+
+              // если есть список этажей — обновим store.userFloors.data.userFloorList
+              if (Array.isArray(parsed.data.floors)) {
+                const earnedMap = new Map<number, number>();
+                parsed.data.floors.forEach((f: any) => {
+                  earnedMap.set(f.floorId, Number(f.earnedPDollar ?? 0));
+                });
+
+                runInAction(() => {
+                  store.userFloors.data.userFloorList =
+                      store.safeUserFloorList.map(f => ({
+                        ...f,
+                        earned: earnedMap.get(f.floorId) ?? f.earned ?? 0
+                      }));
+                  store.userFloors.data.pdollarAmount = total;
+                });
+              }
+
+              toast.info(`🔄 Накоплено: ${total.toFixed(2)} P$`);
             }
             break;
           }
