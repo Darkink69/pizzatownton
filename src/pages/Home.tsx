@@ -109,22 +109,13 @@ const Home = observer(() => {
     }
 
     const getFloorData = (index: number) => {
-        const visualIndexToFloorId = (visualIndex: number): number => {
-            // Самый нижний (index = floors - 1) - basement (просто картинка)
-            if (visualIndex === floors - 1) return -1; // basement картинка
-            if (visualIndex === 0) return -2; // Крыша (просто картинка)
-            // Остальные этажи: 1, 2, 3, ..., 9
-            return visualIndex;
-        };
 
-        const floorId = visualIndexToFloorId(index);
+        if (index === 0) return null;
+        if (index === floors - 1) return null;
 
-        // Для basement и крыши не ищем данные
-        if (floorId === -1 || floorId === -2) return null;
-
-        const floorData = userFloorList.find((floor) => floor.floorId === floorId);
-
-        return floorData || null;
+        const realFloorId = floors - 1 - index;
+        console.log(index, "→ floorId", realFloorId);
+        return store.safeUserFloorList.find(f => f.floorId === realFloorId) || null;
     };
 
     const renderStars = (level: number) => {
@@ -203,11 +194,9 @@ const Home = observer(() => {
     };
 
     const getFloorIdByIndex = (index: number): number => {
-        // Самый нижний (index = floors - 1) - basement (просто картинка)
-        if (index === floors - 1) return -1; // basement картинка
-        if (index === 0) return -2; // Крыша (просто картинка)
-        // Остальные этажи: 1, 2, 3, ..., 9
-        return index;
+        if (index === 0) return -2;               // крыша
+        if (index === floors - 1) return -1;      // basement‑фон
+        return floors - 1 - index;                // 9→1
     };
 
     const getFloorImage = (index: number) => {
@@ -584,12 +573,14 @@ const Home = observer(() => {
                                                                     }}
                                                                     className="relative ml-6 w-auto p-2 pl-4 pr-4 bg-white rounded-full flex items-center justify-center gap-1 hover:opacity-90 transition-opacity shadow-md"
                                                                 >
-                                  <span
-                                      className="text-md sm:text-lg text-amber-800 shantell font-bold whitespace-nowrap">
-                                        {store.lastClaimRewards?.floorId === floorData.floorId
-                                            ? `+${store.lastClaimRewards.amount}`
-                                            : "0"}
-                                  </span>
+                                 <span
+                                     className="text-md sm:text-lg text-amber-800 shantell font-bold whitespace-nowrap">
+                                    {store.lastClaimRewards?.floorId === floorData.floorId
+                                        ? `+${store.lastClaimRewards.amount.toFixed?.(0) ?? store.lastClaimRewards.amount}`
+                                        : (floorData.earned && Number(floorData.earned) > 0
+                                            ? `${Number(floorData.earned.toFixed?.(0) ?? floorData.earned)}`
+                                            : "0")}
+                                 </span>
                                                                     <img
                                                                         src={`${store.imgUrl}icon_dollar.png`}
                                                                         alt="pdollar"

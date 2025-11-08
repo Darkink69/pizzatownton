@@ -97,9 +97,31 @@ const WebSocketComponent = observer(() => {
             if (parsed.success) {
               const { user, sessionId } = (parsed.data || {}) as AuthData;
               store.setUser?.(user);
-
               store.setSessionId?.(sessionId);
               sendFloorsGetRequest();
+
+              // 👉 ДОБАВЬ ЭТО
+              console.log("✅ Авторизация успешна, запускаем авто‑обновление клеймов");
+
+              // чтобы сразу увидеть цифры, первый вызов без ожидания
+              ws.send(JSON.stringify({
+                type: "CLAIM_REFRESH",
+                requestId: generateRequestId(),
+                claimRefreshRq: { telegramId: store.user.telegramId },
+                session: store.sessionId,
+              }));
+
+              // затем периодически обновляем каждые 30 сек
+              setInterval(() => {
+                if (ws.readyState === WebSocket.OPEN) {
+                  ws.send(JSON.stringify({
+                    type: "CLAIM_REFRESH",
+                    requestId: generateRequestId(),
+                    claimRefreshRq: { telegramId: store.user.telegramId },
+                    session: store.sessionId,
+                  }));
+                }
+              }, 30000); // 30 секунд, можно 15000 для более частого обновления
             } else {
               store.setAuthError?.(parsed.message || "AUTH_INIT failed");
               toast.error(parsed.message || "Ошибка авторизации");
