@@ -158,6 +158,7 @@ export interface ReferralInfoData {
   earnedPcoin: number;
   earnedPdollar: number;
   link: string;
+  referralLink?: string;
 }
 
 // -------------------- Банк --------------------

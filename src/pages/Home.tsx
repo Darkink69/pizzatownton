@@ -299,7 +299,7 @@ const Home = observer(() => {
         {/* Кнопка звука в левом верхнем углу */}
         <button
           onClick={toggleMusic}
-          className="fixed scale-30 top-2 left-2 z-50 w-12 h-12 sm:w-14 sm:h-14 hover:scale-50 transition-transform"
+          className="fixed scale-30 top-4 left-4 z-50 w-12 h-12 sm:w-14 sm:h-14 hover:scale-50 transition-transform"
           aria-label={isMusicPlaying ? "Выключить звук" : "Включить звук"}
         >
           {isMusicPlaying ? (
@@ -491,8 +491,7 @@ const Home = observer(() => {
                     )}
 
                     {/* Блок с данными для заполненных этажей (кроме basement картинки и крыши) */}
-                    {!isFilled && floorData && isBasementImage && isRoof && (
-                      // {isFilled && floorData && !isBasementImage && !isRoof && (
+                    {isFilled && floorData && !isBasementImage && !isRoof && (
                       <>
                         <div className="absolute inset-0 flex items-center justify-center -z-10">
                           <video
@@ -510,7 +509,7 @@ const Home = observer(() => {
                           </video>
                         </div>
 
-                        <div className="absolute top-20 left-1/3 transform -translate-x-1/2 translate-y-1/2 z-40 w-4/5 max-w-xs">
+                        <div className="absolute -top-10 left-1/3 transform -translate-x-1/2 translate-y-1/2 z-40 w-4/5 max-w-xs">
                           <div className="flex items-center relative">
                             <img
                               src={`${store.imgUrl}img_block_mini.png`}
@@ -520,7 +519,7 @@ const Home = observer(() => {
 
                             <div className="absolute inset-0 flex items-center">
                               <div className="flex-1 px-2 sm:px-4 text-xs sm:text-sm text-amber-800 shantell text-center leading-3">
-                                {floorName}
+                                {floorName} - Уровень {floorData.level}
                               </div>
 
                               <div className="flex items-center gap-1 ml-2 sm:ml-4">
@@ -531,15 +530,12 @@ const Home = observer(() => {
                                 onClick={(e) =>
                                   handleUpgradeFloor(floorData.floorId, e)
                                 }
-                                disabled={
-                                  floorData.floorId === 1 ||
-                                  !store.canUpgradeFloor(floorData.floorId)
+                                disabled={floorData.floorId === 1 || !store.canUpgradeFloor(floorData.floorId)
                                 }
                                 className={`relative translate-x-[40px] ${
-                                  floorData.floorId === 1 ||
-                                  !store.canUpgradeFloor(floorData.floorId)
-                                    ? "opacity-50 cursor-not-allowed"
-                                    : "cursor-pointer hover:opacity-90 transition-opacity"
+                                    floorData.floorId === 1 || !store.canUpgradeFloor(floorData.floorId)
+                                        ? "opacity-50 cursor-not-allowed"
+                                        : "cursor-pointer hover:opacity-90 transition-opacity"
                                 }`}
                               >
                                 <img
@@ -573,7 +569,7 @@ const Home = observer(() => {
                                   e.stopPropagation();
                                   handleClaimDo(floorData.floorId);
                                 }}
-                                className="absolute ml-10 mt-42 w-auto p-2 pl-4 pr-4 bg-white rounded-full flex items-center justify-center gap-1 hover:opacity-90 transition-opacity shadow-md"
+                                className="relative ml-6 w-auto p-2 pl-4 pr-4 bg-white rounded-full flex items-center justify-center gap-1 hover:opacity-90 transition-opacity shadow-md"
                               >
                                 <span className="text-md sm:text-lg text-amber-800 shantell font-bold whitespace-nowrap">
                                   {store.lastClaimRewards?.floorId ===
@@ -602,16 +598,15 @@ const Home = observer(() => {
                             {/* Специальная кнопка для 1 этажа (Basement) с пиццей */}
                             {isFirstFloor && (
                               <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleClaimDo(floorData.floorId);
-                                }}
-                                className="absolute ml-10 mt-42 w-auto p-2 pl-4 pr-4 bg-white rounded-full flex items-center justify-center gap-1 opacity-70 cursor-not-allowed shadow-md"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleClaimDo(floorData.floorId);
+                                  }}
+                                className="relative ml-6 w-auto p-2 pl-4 pr-4 bg-white rounded-full flex items-center justify-center gap-1 opacity-70 cursor-not-allowed shadow-md"
+
                               >
                                 <span className="text-md sm:text-lg text-amber-800 shantell font-bold whitespace-nowrap">
-                                  {floorData.earned?.toFixed?.(0) ??
-                                    floorData.earned ??
-                                    0}
+                                  {floorData.earned?.toFixed?.(0) ?? floorData.earned ?? 0}
                                 </span>
                                 <img
                                   src={`${store.imgUrl}pizza_California.png`}

@@ -165,19 +165,19 @@ const WebSocketComponent = observer(() => {
             /** ------------------ REFERRAL_GET ------------------ */
           case "REFERRAL_GET": {
             if (parsed.success && parsed.data) {
-              const d = parsed.data as ReferralInfoData;
+              const referralInfoData = parsed.data as ReferralInfoData;
 
               // сохраняем реферальные данные в store
               runInAction(() => {
                 store.referral = {
-                  totalReferrals: d.totalReferrals ?? 0,
-                  earnedPcoin: d.earnedPcoin ?? 0,
-                  earnedPdollar: d.earnedPdollar ?? 0,
-                  link: d.link || "",
+                  totalReferrals: referralInfoData.totalReferrals ?? 0,
+                  earnedPcoin: referralInfoData.earnedPcoin ?? 0,
+                  earnedPdollar: referralInfoData.earnedPdollar ?? 0,
+                  link: referralInfoData.link ?? referralInfoData.referralLink ?? "",
                 };
               });
 
-              console.log("👥 Referral info loaded:", d);
+              console.log("👥 Referral info loaded:", referralInfoData);
             } else {
               toast.error(parsed.message || "Ошибка загрузки реферальных данных");
             }
