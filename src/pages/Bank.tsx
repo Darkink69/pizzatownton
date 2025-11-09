@@ -64,25 +64,25 @@ function Bank() {
               {/* Пицца */}
               <div className="flex items-center gap-2 mb-2 sm:mb-0">
                 <img
-                    src={`${store.imgUrl}pizza_California.png`}
-                    alt="pizza"
-                    className="w-6 h-6 sm:w-8 sm:h-8"
+                  src={`${store.imgUrl}pizza_California.png`}
+                  alt="pizza"
+                  className="w-6 h-6 sm:w-8 sm:h-8"
                 />
                 <span className="font-bold text-base sm:text-lg">
-          🍕{store.pizza.toFixed?.(1) ?? store.pizza}
-        </span>
+                  🍕{store.pizza.toFixed?.(1) ?? store.pizza}
+                </span>
               </div>
 
               {/* PDollar */}
               <div className="flex items-center gap-2">
                 <img
-                    src={`${store.imgUrl}icon_dollar.png`}
-                    alt="pdollar"
-                    className="w-6 h-4 sm:w-8 sm:h-6"
+                  src={`${store.imgUrl}icon_dollar.png`}
+                  alt="pdollar"
+                  className="w-6 h-4 sm:w-8 sm:h-6"
                 />
                 <span className="font-bold text-base sm:text-lg">
-          💵{store.pdollar.toFixed?.(1) ?? store.pdollar}
-        </span>
+                  💵{store.pdollar.toFixed?.(1) ?? store.pdollar}
+                </span>
               </div>
             </div>
           </div>
@@ -367,6 +367,22 @@ function Bank() {
                       </div>
                     </button>
                   </div>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center mb-2">
+                <div className="flex items-center gap-2">
+                  <img
+                    src={`${store.imgUrl}pizza_California.png`}
+                    alt="Pizza"
+                    className="w-6 h-auto sm:w-8 inline-block"
+                  />
+                  <span className="font-bold text-lg sm:text-xl text-white shantell mr-2">
+                    Pizza
+                  </span>
+                </div>
+                <div className="font-bold text-base sm:text-lg text-white shantell">
+                  {store.pizza}
                 </div>
               </div>
             </div>
