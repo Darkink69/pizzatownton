@@ -88,6 +88,11 @@ const BankOrderModal: React.FC = () => {
   // 👉 Безопасное приведение amountTon
   const numericAmountTon = Number(order?.amountTon ?? 0);
 
+  // Функция закрытия модального окна
+  const closeModal = () => {
+    store.bank.order = null;
+  };
+
   // Таймер до истечения срока действия
   useEffect(() => {
     if (!order?.expiresAt || isPaid || isExpired) return;
@@ -121,6 +126,17 @@ const BankOrderModal: React.FC = () => {
 
     return () => clearInterval(interval);
   }, [order?.orderId, order?.status]);
+
+  // Автоматическое закрытие модалки при успешной оплате или истечении времени
+  useEffect(() => {
+    if (isPaid || isExpired) {
+      // Закрываем через 2 секунды после успешной оплаты или истечения времени
+      const timer = setTimeout(() => {
+        closeModal();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isPaid, isExpired]);
 
   if (!order) return null;
 
@@ -162,11 +178,11 @@ const BankOrderModal: React.FC = () => {
           <strong className="text-blue-700">{numericAmountTon} TON</strong>
         </div>
 
-          {merchantAddr && (
-              <div className="mb-1 text-sm break-all text-gray-800">
-                Адрес: <strong>{merchantAddr}</strong>
-              </div>
-          )}
+        {merchantAddr && (
+          <div className="mb-1 text-sm break-all text-gray-800">
+            Адрес: <strong>{merchantAddr}</strong>
+          </div>
+        )}
 
         {tonComment && (
           <div className="mb-2 text-sm text-gray-800 break-all">
@@ -178,7 +194,7 @@ const BankOrderModal: React.FC = () => {
           Курс: 1 TON = {rate} PCoin
         </div>
 
-          {/* QR-код */}
+        {/* QR-код */}
         {/* <div className="my-4 flex justify-center">
           {merchantAddress && numericAmountTon > 0 ? (
             <QRCodeCanvas

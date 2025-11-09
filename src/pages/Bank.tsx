@@ -22,10 +22,26 @@ function Bank() {
 
     try {
       setBuying(true);
+
+      // Сбрасываем предыдущий заказ
+      bankStore.order = null;
+
       await bankStore.createOrder(parsed);
+
+      // Ждем появления заказа с таймаутом
+      let attempts = 0;
+      const checkOrder = () => {
+        attempts++;
+        if (bankStore.order || attempts > 10) {
+          setBuying(false);
+          return;
+        }
+        setTimeout(checkOrder, 100);
+      };
+
+      checkOrder();
     } catch (e) {
       console.warn("Ошибка создания заказа:", e);
-    } finally {
       setBuying(false);
     }
   };
@@ -244,7 +260,7 @@ function Bank() {
                           </span>
                         </div>
                         <div className="font-bold text-base sm:text-lg text-amber-800 shantell">
-                          Баланс: 150
+                          Баланс: {store.pdollar}
                         </div>
                       </div>
                       <div className="relative">
