@@ -53,6 +53,41 @@ function Bank() {
   return (
     <>
       <div className="relative min-h-screen w-full overflow-hidden">
+        {/* Блок общей собранной суммы */}
+        <div className="w-11/12 max-w-md mt-6">
+          <div className="bg-white/70 border-2 border-amber-800 rounded-2xl shadow-md p-4 flex flex-col items-start">
+            <div className="font-bold text-lg sm:text-xl text-amber-800 shantell mb-2">
+              Всего собрано:
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-6 text-amber-800 shantell">
+              {/* Пицца */}
+              <div className="flex items-center gap-2 mb-2 sm:mb-0">
+                <img
+                    src={`${store.imgUrl}pizza_California.png`}
+                    alt="pizza"
+                    className="w-6 h-6 sm:w-8 sm:h-8"
+                />
+                <span className="font-bold text-base sm:text-lg">
+          🍕{store.pizza.toFixed?.(1) ?? store.pizza}
+        </span>
+              </div>
+
+              {/* PDollar */}
+              <div className="flex items-center gap-2">
+                <img
+                    src={`${store.imgUrl}icon_dollar.png`}
+                    alt="pdollar"
+                    className="w-6 h-4 sm:w-8 sm:h-6"
+                />
+                <span className="font-bold text-base sm:text-lg">
+          💵{store.pdollar.toFixed?.(1) ?? store.pdollar}
+        </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="absolute inset-0 bg-[#FFBC6B]">
           <div
             className="w-full h-full bg-cover bg-center bg-no-repeat sm:bg-auto sm:bg-center md:bg-auto md:bg-center lg:bg-contain lg:bg-center"

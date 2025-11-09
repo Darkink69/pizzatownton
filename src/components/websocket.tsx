@@ -180,7 +180,9 @@ const WebSocketComponent = observer(() => {
 
             if (parsed.success && user) {
               store.updateUserData?.(user);
-              toast.success("💰 Доход успешно собран!");
+              toast.success(currency === "pizza"
+                  ? "🍕 Пицца успешно собрана!"
+                  : "💰 Доход успешно собран!");
 
               if (floorId && earned > 0) {
                 store.addClaimAnimation(floorId, earned, currency);
@@ -197,26 +199,34 @@ const WebSocketComponent = observer(() => {
             /** ------------------ CLAIM_REFRESH ------------------ */
           case "CLAIM_REFRESH": {
             if (parsed.success && parsed.data) {
-              const total = Number(parsed.data.totalEarned ?? 0);
+              const totalPdollar = Number(parsed.data.totalPdollar ?? 0);
+              const totalPizza = Number(parsed.data.totalPizza ?? 0);
 
               // если есть список этажей — обновим store.userFloors.data.userFloorList
               if (Array.isArray(parsed.data.floors)) {
-                const earnedMap = new Map<number, number>();
+                const earnedMap = new Map<number, { pd: number; pizza: number }>();
                 parsed.data.floors.forEach((f: any) => {
-                  earnedMap.set(f.floorId, Number(f.earnedPDollar ?? 0));
+                  earnedMap.set(f.floorId, {
+                    pd: Number(f.earnedPDollar ?? 0),
+                    pizza: Number(f.earnedPizza ?? 0),
+                  });
                 });
 
                 runInAction(() => {
-                  store.userFloors.data.userFloorList =
-                      store.safeUserFloorList.map(f => ({
-                        ...f,
-                        earned: earnedMap.get(f.floorId) ?? f.earned ?? 0
-                      }));
-                  store.userFloors.data.pdollarAmount = total;
+                  store.userFloors.data.userFloorList = store.safeUserFloorList.map(f => {
+                    const v = earnedMap.get(f.floorId);
+                    // выбираем метрику по типу валюты
+                    const earned =
+                        f.yieldCurrency === "pizza"
+                            ? v?.pizza ?? f.earned ?? 0
+                            : v?.pd ?? f.earned ?? 0;
+                    return { ...f, earned };
+                  });
+
+                  store.userFloors.data.pdollarAmount = totalPdollar;
+                  (store as any).userFloors.data.pizzaAmount = totalPizza;
                 });
               }
-
-              toast.info(`🔄 Накоплено: ${total.toFixed(2)} P$`);
             }
             break;
           }

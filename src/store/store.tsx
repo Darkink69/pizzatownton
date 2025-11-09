@@ -34,6 +34,7 @@ class Store {
     data: {
       userFloorList: [] as UserFloor[],
       pdollarAmount: 0,
+      pizzaAmount: 0,
       user: {} as TgUser,
     },
   };
@@ -157,6 +158,7 @@ class Store {
           data: {
             userFloorList: list,
             pdollarAmount: Number(data.pdollarAmount ?? 0),
+            pizzaAmount: Number(data.pizzaAmount ?? 0),
             user: data.user ?? {},
           },
         };
@@ -443,7 +445,7 @@ class Store {
       this.pizza = 0;
       this.userFloors = {
         ...this.userFloors,
-        data: { userFloorList: [], pdollarAmount: 0, user: {} },
+        data: { userFloorList: [], pdollarAmount: 0, pizzaAmount: 0, user: {} },
       };
     });
     this.bank.reset();

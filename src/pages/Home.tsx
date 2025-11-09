@@ -259,7 +259,11 @@ const Home = observer(() => {
   // Обработчик улучшения этажа (открывает модальное окно)
   const handleUpgradeFloor = (floorId: number, event: React.MouseEvent) => {
     event.stopPropagation();
-
+    if (floorId === 1) {
+      // 🧱 basement временно не апгрейдится
+      showNotification("Basement сейчас нельзя улучшить — ждём звёздный апгрейд!", "error");
+      return;
+    }
     const floor = store.getFloorById(floorId);
     if (!floor) return;
 
@@ -523,13 +527,12 @@ const Home = observer(() => {
                                 onClick={(e) =>
                                   handleUpgradeFloor(floorData.floorId, e)
                                 }
-                                disabled={
-                                  !store.canUpgradeFloor(floorData.floorId)
+                                disabled={floorData.floorId === 1 || !store.canUpgradeFloor(floorData.floorId)
                                 }
                                 className={`relative translate-x-[40px] ${
-                                  store.canUpgradeFloor(floorData.floorId)
-                                    ? "cursor-pointer hover:opacity-90 transition-opacity"
-                                    : "opacity-50 cursor-not-allowed"
+                                    floorData.floorId === 1 || !store.canUpgradeFloor(floorData.floorId)
+                                        ? "opacity-50 cursor-not-allowed"
+                                        : "cursor-pointer hover:opacity-90 transition-opacity"
                                 }`}
                               >
                                 <img
@@ -591,11 +594,15 @@ const Home = observer(() => {
                             {/* Специальная кнопка для 1 этажа (Basement) с пиццей */}
                             {isFirstFloor && (
                               <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleClaimDo(floorData.floorId);
+                                  }}
                                 className="relative ml-6 w-auto p-2 pl-4 pr-4 bg-white rounded-full flex items-center justify-center gap-1 opacity-70 cursor-not-allowed shadow-md"
-                                disabled
+
                               >
                                 <span className="text-md sm:text-lg text-amber-800 shantell font-bold whitespace-nowrap">
-                                  {store.pizza} || 0
+                                  {floorData.earned?.toFixed?.(0) ?? floorData.earned ?? 0}
                                 </span>
                                 <img
                                   src={`${store.imgUrl}pizza_California.png`}
