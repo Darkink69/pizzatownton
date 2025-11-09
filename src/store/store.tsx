@@ -26,6 +26,43 @@ class Store {
 
   floorsLoaded = false;
 
+  referral = {
+    totalReferrals: 0,
+    earnedPcoin: 0,
+    earnedPdollar: 0,
+    link: "",
+  };
+
+  setReferralData(data: {
+    totalReferrals?: number;
+    earnedPcoin?: number;
+    earnedPdollar?: number;
+    link?: string;
+  }) {
+    runInAction(() => {
+      this.referral.totalReferrals = Number(data.totalReferrals ?? 0);
+      this.referral.earnedPcoin = Number(data.earnedPcoin ?? 0);
+      this.referral.earnedPdollar = Number(data.earnedPdollar ?? 0);
+      this.referral.link = data.link ?? "";
+    });
+  }
+
+  requestReferralInfo() {
+    if (this.wsSend && this.sessionId && this.user?.telegramId) {
+      const rq: WsRequest = {
+        type: "REFERRAL_GET",
+        requestId: genId(),
+        session: this.sessionId,
+        referralGetRq: { telegramId: this.user.telegramId },
+      };
+      this.wsSend(rq);
+      console.log("📨 REFERRAL_GET запрос отправлен:", rq);
+      return true;
+    }
+    console.warn("⚠️ Не удалось отправить REFERRAL_GET");
+    return false;
+  }
+
   userFloors = {
     success: false,
     message: "",

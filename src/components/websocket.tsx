@@ -7,7 +7,7 @@ import type {
   WsRequest,
   WsResponse,
   BankCreateOrderData,
-  BankOrderViewData,
+  BankOrderViewData, ReferralInfoData,
 } from "../types/ws";
 import { bankStore } from "../store/BankStore.ts";
 import {runInAction} from "mobx";
@@ -158,6 +158,28 @@ const WebSocketComponent = observer(() => {
               toast.success("🔼 Этаж успешно улучшен!");
             } else {
               toast.error(parsed.message || "Ошибка апгрейда");
+            }
+            break;
+          }
+
+            /** ------------------ REFERRAL_GET ------------------ */
+          case "REFERRAL_GET": {
+            if (parsed.success && parsed.data) {
+              const d = parsed.data as ReferralInfoData;
+
+              // сохраняем реферальные данные в store
+              runInAction(() => {
+                store.referral = {
+                  totalReferrals: d.totalReferrals ?? 0,
+                  earnedPcoin: d.earnedPcoin ?? 0,
+                  earnedPdollar: d.earnedPdollar ?? 0,
+                  link: d.link || "",
+                };
+              });
+
+              console.log("👥 Referral info loaded:", d);
+            } else {
+              toast.error(parsed.message || "Ошибка загрузки реферальных данных");
             }
             break;
           }

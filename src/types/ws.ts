@@ -115,6 +115,9 @@ export interface WsRequest extends WsBase {
   claimDoRq?: ClaimDoRq;
   claimRefreshRq?: ClaimRefreshRq;
 
+  //рефка
+  referralGetRq?: ReferralGetRq;
+
   // банк
   createOrderRq?: CreateOrderRq;        // BANK_BUY_PCOIN
   confirmOrderRq?: ConfirmOrderRq;      // BANK_CONFIRM
@@ -144,6 +147,17 @@ export interface AuthData {
 export interface ClaimData {
   userResponse?: UserState;
   userState?: UserState;
+}
+
+export interface ReferralGetRq {
+  telegramId: number;
+}
+
+export interface ReferralInfoData {
+  totalReferrals: number;
+  earnedPcoin: number;
+  earnedPdollar: number;
+  link: string;
 }
 
 // -------------------- Банк --------------------
