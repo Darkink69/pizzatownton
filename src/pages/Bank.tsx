@@ -47,211 +47,218 @@ function Bank() {
   const { pizza, pdollar, pcoin } = store;
 
   return (
-      <>
-        <div className="relative min-h-screen w-full overflow-hidden">
-          {/* 🌄 Фон */}
-          <div className="absolute inset-0 bg-[#FFBC6B]">
-            <div
-                className="w-full h-full bg-cover bg-center bg-no-repeat"
-                style={{ backgroundImage: `url('${store.imgUrl}bg_pizza.png')` }}
-            />
-          </div>
+    <>
+      <div className="relative min-h-screen w-full overflow-hidden">
+        {/* Фон */}
+        <div className="absolute inset-0 bg-[#FFBC6B]">
+          <div
+            className="w-full h-full bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: `url('${store.imgUrl}bg_pizza.png')` }}
+          />
+        </div>
 
-          {/* 💰 Панель валют */}
-          <div className="absolute top-20 md:top-24 left-1/2 -translate-x-1/2 z-40 w-10/12 max-w-md flex justify-between gap-2 sm:gap-3">
-            <CurrencyCard
-                icon={`${store.imgUrl}icon_pizza.png`}
-                value={pizza}
-                label="Pizza"
-            />
-            <CurrencyCard
-                icon={`${store.imgUrl}icon_dollar_coin.png`}
-                value={pcoin}
-                label="PCoin"
-            />
-            <CurrencyCard
-                icon={`${store.imgUrl}icon_dollar.png`}
-                value={pdollar}
-                label="PDollar"
-            />
-          </div>
+        {/* 💰 Панель валют */}
+        <div className="absolute top-22 md:top-24 left-1/2 -translate-x-1/2 z-40 w-10/12 max-w-md flex justify-between gap-2 sm:gap-3">
+          <CurrencyCard
+            icon={`${store.imgUrl}pizza_California.png`}
+            value={pizza}
+            label="Pizza"
+          />
+          <CurrencyCard
+            icon={`${store.imgUrl}icon_dollar_coin.png`}
+            value={pcoin}
+            label="PCoin"
+          />
+          <CurrencyCard
+            icon={`${store.imgUrl}icon_dollar.png`}
+            value={pdollar}
+            label="PDollar"
+          />
+        </div>
 
-          {/* 🍞 Верхняя шапка */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 w-full max-w-[1550px]">
-            <img src={`${store.imgUrl}testo.png`} alt="Testo" className="w-full h-auto" />
-          </div>
+        {/* 🍞 Верхняя шапка */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 w-full max-w-[1550px]">
+          <img
+            src={`${store.imgUrl}testo.png`}
+            alt="Testo"
+            className="w-full h-auto"
+          />
+        </div>
 
-          {/* 🏦 Логотип банка */}
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20">
-            <img src={`${store.imgUrl}img_bank.png`} alt="bank" />
-          </div>
+        {/* 🏦 Логотип банка */}
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20">
+          <img src={`${store.imgUrl}img_bank.png`} alt="bank" />
+        </div>
 
-          {/* Кнопка подключения ton connect */}
-          <div className="absolute top-12 right-4 flex items-center space-x-3 z-40">
-            <Link to="/ton-connect">
-              <div className="rounded-full w-10 flex items-center justify-center">
-                <img
-                    src={`${store.imgUrl}icon_ton.png`}
-                    alt="TON connect"
-                    className="w-8 h-8"
-                />
-              </div>
-            </Link>
-          </div>
+        {/* Кнопка подключения ton connect */}
+        <div className="absolute top-12 right-4 flex items-center space-x-3 z-40">
+          <Link to="/ton-connect">
+            <div className="rounded-full w-10 flex items-center justify-center">
+              <img
+                src={`${store.imgUrl}icon_ton.png`}
+                alt="TON connect"
+                className="w-8 h-8"
+              />
+            </div>
+          </Link>
+        </div>
 
-          {/* Контейнер для содержимого */}
-          <div className="relative z-30 h-screen flex flex-col pt-36 sm:pt-44 pb-20">
-            <div className="flex-1 overflow-y-auto">
-              <div className="flex flex-col items-center gap-8 sm:gap-10 py-4">
-                {/* 🪙 Первый блок — Покупка PCoin */}
-                <div className="w-11/12 max-w-md">
-                  <div className="relative">
-                    <img
-                        src={`${store.imgUrl}img_window2.png`}
-                        alt="Modal background"
-                        className="w-full h-auto object-contain"
+        {/* Контейнер для содержимого */}
+        <div className="relative z-30 h-screen flex flex-col pt-36 sm:pt-44 pb-20">
+          <div className="flex-1 overflow-y-auto">
+            <div className="flex flex-col items-center gap-8 sm:gap-10 py-4">
+              {/* 🪙 Первый блок — Покупка PCoin */}
+              <div className="w-11/12 max-w-md">
+                <div className="relative">
+                  <img
+                    src={`${store.imgUrl}img_window2.png`}
+                    alt="Modal background"
+                    className="w-full h-auto scale-y-110 object-contain"
+                  />
+                  <div className="absolute inset-0 flex flex-col p-4 sm:p-5">
+                    <div className="text-base text-center sm:text-lg text-amber-800 shantell mb-2 font-bold">
+                      Сколько PCoin вы хотите купить
+                    </div>
+
+                    {/* Поле PCoin */}
+                    <CurrencyInput
+                      icon={`${store.imgUrl}icon_dollar_coin.png`}
+                      label="PCoin"
+                      balance={store.pcoin}
+                      value={pcoinAmount}
+                      onChange={(v) => {
+                        setPcoinAmount(v);
+                        setTonAmount(Number(v) / 1000);
+                      }}
+                      placeholder="500"
+                      min={100}
                     />
-                    <div className="absolute inset-0 flex flex-col p-4 sm:p-5">
-                      <div className="text-base text-center sm:text-lg text-amber-800 shantell mb-2 font-bold">
-                        Сколько PCoin вы хотите купить
-                      </div>
 
-                      {/* Поле PCoin */}
-                      <CurrencyInput
-                          icon={`${store.imgUrl}icon_dollar_coin.png`}
-                          label="PCoin"
-                          balance={store.pcoin}
-                          value={pcoinAmount}
-                          onChange={(v) => {
-                            setPcoinAmount(v);
-                            setTonAmount(Number(v) / 1000);
-                          }}
-                          placeholder="500"
-                          min={100}
-                      />
+                    {/* Стрелка */}
+                    <ArrowDown />
 
-                      {/* Стрелка */}
-                      <ArrowDown />
+                    {/* Поле TON */}
+                    <CurrencyInput
+                      icon={`${store.imgUrl}icon_ton.png`}
+                      label="TON"
+                      balance={0}
+                      value={String(tonAmount)}
+                      onChange={(v) => setTonAmount(Number(v))}
+                    />
 
-                      {/* Поле TON */}
-                      <CurrencyInput
-                          icon={`${store.imgUrl}icon_ton.png`}
-                          label="TON"
-                          balance={0}
-                          value={String(tonAmount)}
-                          onChange={(v) => setTonAmount(Number(v))}
-                      />
-
-                      {/* Курс */}
-                      <div className="text-center mb-4 sm:mb-6 font-bold text-base sm:text-lg text-amber-800 shantell flex items-center justify-center">
-                        Курс: 1 TON = 1000 PCoin
-                        <img
-                            src={`${store.imgUrl}icon_dollar_coin.png`}
-                            alt="PCoin"
-                            className="w-6 h-6 sm:w-8 sm:h-8 ml-1"
-                        />
-                      </div>
-
-                      {/* Кнопка покупки */}
-                      <ActionButton
-                          label={buying ? "Создание заказа..." : "Купить"}
-                          onClick={handleBuy}
-                          disabled={buying}
-                          img={`${store.imgUrl}b_blue2.png`}
-                          textColor="text-blue-900"
+                    {/* Курс */}
+                    <div className="text-center mb-4 sm:mb-6 font-bold text-base sm:text-lg text-amber-800 shantell flex items-center justify-center">
+                      Курс: 1 TON = 1000 PCoin
+                      <img
+                        src={`${store.imgUrl}icon_dollar_coin.png`}
+                        alt="PCoin"
+                        className="w-6 h-6 sm:w-8 sm:h-8 ml-1"
                       />
                     </div>
+
+                    {/* Кнопка покупки */}
+                    <ActionButton
+                      label={buying ? "Создание заказа..." : "Купить"}
+                      onClick={handleBuy}
+                      disabled={buying}
+                      img={`${store.imgUrl}b_blue2.png`}
+                      textColor="text-blue-900"
+                    />
                   </div>
                 </div>
+              </div>
 
-                {/* 💱 Второй блок — Обмен */}
-                <div className="w-11/12 max-w-md">
-                  <div className="relative">
-                    <img
-                        src={`${store.imgUrl}img_window2.png`}
-                        alt="Exchange"
-                        className="w-full h-auto object-contain"
-                    />
-                    <div className="absolute inset-0 flex flex-col p-4 sm:p-5">
-                      <div className="text-center text-lg sm:text-2xl mb-3 text-amber-800 shantell font-bold">
-                        ОБМЕННИК
-                      </div>
-
-                      <CurrencyInput
-                          icon={`${store.imgUrl}icon_dollar.png`}
-                          label="PDollar"
-                          balance={store.pdollar}
-                          value={pdollarAmount}
-                          onChange={setPdollarAmount}
-                      />
-                      <ArrowDown />
-                      <CurrencyInput
-                          icon={`${store.imgUrl}icon_ton.png`}
-                          label="TON"
-                          balance={0}
-                          value={tonExchangeAmount}
-                          onChange={setTonExchangeAmount}
-                      />
-
-                      <div className="text-center mb-4 sm:mb-6 font-bold text-base sm:text-lg text-amber-800 shantell">
-                        0.5 PDOLLAR за 1 TON
-                      </div>
-
-                      <ActionButton
-                          label="ОБМЕНЯТЬ"
-                          onClick={handleExchange}
-                          img={`${store.imgUrl}b_blue2.png`}
-                          textColor="text-blue-900"
-                      />
+              {/* 💱 Второй блок — Обмен */}
+              <div className="w-11/12 max-w-md mt-4">
+                <div className="relative">
+                  <img
+                    src={`${store.imgUrl}img_window2.png`}
+                    alt="Exchange"
+                    className="w-full h-auto scale-y-110 object-contain"
+                  />
+                  <div className="absolute inset-0 flex flex-col p-4 sm:p-5">
+                    <div className="text-center text-lg sm:text-2xl mb-3 text-amber-800 shantell font-bold">
+                      ОБМЕННИК
                     </div>
+
+                    <CurrencyInput
+                      icon={`${store.imgUrl}icon_dollar.png`}
+                      label="PDollar"
+                      balance={store.pdollar}
+                      value={pdollarAmount}
+                      onChange={setPdollarAmount}
+                    />
+                    <ArrowDown />
+                    <CurrencyInput
+                      icon={`${store.imgUrl}icon_ton.png`}
+                      label="TON"
+                      balance={0}
+                      value={tonExchangeAmount}
+                      onChange={setTonExchangeAmount}
+                    />
+
+                    <div className="text-center mb-4 sm:mb-6 font-bold text-base sm:text-lg text-amber-800 shantell">
+                      0.5 PDOLLAR за 1 TON
+                    </div>
+
+                    <ActionButton
+                      label="ОБМЕНЯТЬ"
+                      onClick={handleExchange}
+                      img={`${store.imgUrl}b_blue2.png`}
+                      textColor="text-blue-900"
+                    />
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* модалка заказа */}
-        {bankStore.order && <BankOrderModal />}
-        <Footer />
-        <WebSocketComponent />
-      </>
+      {/* модалка заказа */}
+      {bankStore.order && <BankOrderModal />}
+      <Footer />
+      <WebSocketComponent />
+    </>
   );
 }
 
 /* ====== Подкомпоненты ====== */
 
 function CurrencyCard({
-                        icon,
-                        value,
-                        label,
-                      }: {
+  icon,
+  value,
+  label,
+}: {
   icon: string;
   value: number;
   label: string;
 }) {
   return (
-      <div className="relative flex-1 max-w-[32%] drop-shadow-md transition-all">
-        <img src={`${store.imgUrl}b_white.png`} alt={label} className="w-full h-auto rounded-lg" />
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-          <img src={icon} alt={label} className="w-5 sm:w-7" />
-          <span className="font-bold text-amber-800 shantell text-xs sm:text-sm leading-tight">
+    <div className="relative flex-1 max-w-[32%] drop-shadow-md transition-all">
+      <img
+        src={`${store.imgUrl}b_white.png`}
+        alt={label}
+        className="w-full h-14 rounded-lg"
+      />
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+        <img src={icon} alt={label} className="w-5 sm:w-7 h-4" />
+        <span className="font-bold text-amber-800 shantell text-sm sm:text-lg leading-tight">
           {value.toLocaleString()}
         </span>
-        </div>
       </div>
+    </div>
   );
 }
 
 function CurrencyInput({
-                         icon,
-                         label,
-                         balance,
-                         value,
-                         onChange,
-                         placeholder,
-                         min,
-                       }: {
+  icon,
+  label,
+  value,
+  onChange,
+  placeholder,
+  min,
+}: {
   icon: string;
   label: string;
   balance: number;
@@ -261,53 +268,50 @@ function CurrencyInput({
   min?: number;
 }) {
   return (
-      <div>
-        <div className="flex justify-between items-center mb-2">
-          <div className="flex items-center gap-2">
-            <img src={icon} alt={label} className="w-6 h-6 sm:w-8 sm:h-8" />
-            <span className="font-bold text-lg sm:text-xl text-amber-800 shantell">
+    <div>
+      <div className="flex justify-center items-center mb-1">
+        <div className="flex items-center gap-2">
+          <img src={icon} alt={label} className="w-6 h-6 sm:w-8 sm:h-8" />
+          <span className="font-bold text-lg sm:text-xl text-amber-800 shantell">
             {label}
           </span>
-          </div>
-          <div className="font-bold text-base sm:text-lg text-amber-800 shantell">
-            Баланс: {balance.toLocaleString()}
-          </div>
-        </div>
-        <div className="relative">
-          <div className="bg-white rounded-xl px-4 py-4 mb-3 border-2 border-amber-800 shadow-inner text-center">
-            <input
-                type="number"
-                min={min}
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                placeholder={placeholder}
-                className="absolute inset-0 bg-transparent w-full px-4 py-2 text-center font-bold text-lg sm:text-xl text-amber-800 shantell border-none outline-none"
-            />
-          </div>
         </div>
       </div>
+      <div className="relative">
+        <div className="bg-white rounded-xl px-4 py-4 mb-3 border-2 border-amber-800 shadow-inner text-center">
+          <input
+            type="number"
+            min={min}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            className="absolute inset-0 bg-transparent w-full px-4 py-2 text-center font-bold text-lg sm:text-xl text-amber-800 shantell border-none outline-none"
+          />
+        </div>
+      </div>
+    </div>
   );
 }
 
 function ArrowDown() {
   return (
-      <div className="text-center mb-2">
-        <img
-            src={`${store.imgUrl}icon_arrow_down.png`}
-            alt="down"
-            className="w-6 h-auto sm:w-8 inline-block"
-        />
-      </div>
+    <div className="text-center mb-2">
+      <img
+        src={`${store.imgUrl}icon_arrow_down.png`}
+        alt="down"
+        className="w-6 h-auto sm:w-8 inline-block"
+      />
+    </div>
   );
 }
 
 function ActionButton({
-                        label,
-                        onClick,
-                        disabled,
-                        img,
-                        textColor,
-                      }: {
+  label,
+  onClick,
+  disabled,
+  img,
+  textColor,
+}: {
   label: string;
   onClick: () => void;
   disabled?: boolean;
@@ -315,18 +319,22 @@ function ActionButton({
   textColor?: string;
 }) {
   return (
-      <button
-          onClick={onClick}
-          disabled={disabled}
-          className="relative w-full flex justify-center hover:opacity-90 transition-opacity cursor-pointer"
-      >
-        <img src={img} alt={label} className="w-1/3 h-auto" />
-        <div className="absolute inset-0 flex items-center justify-center">
-        <span className={`${textColor || "text-amber-800"} text-md sm:text-lg shantell`}>
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="relative w-full flex justify-center hover:opacity-90 transition-opacity cursor-pointer"
+    >
+      <img src={img} alt={label} className="w-1/3 h-auto" />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span
+          className={`${
+            textColor || "text-amber-800"
+          } text-md sm:text-lg shantell`}
+        >
           {label}
         </span>
-        </div>
-      </button>
+      </div>
+    </button>
   );
 }
 
