@@ -48,81 +48,83 @@ const Friends = observer(() => {
     const link = store.referral.link;
     if (!link) return;
 
+
     let ok = tryExecCommandCopy(link);
 
     if (!ok) ok = await tryClipboardCopy(link);
     if (ok) alert("Ссылка скопирована ✅");
   };
 
+
   const { link, earnedPcoin, earnedPdollar, totalReferrals } = store.referral;
 
   return (
-    <>
-      <div className="relative min-h-screen w-full overflow-hidden">
-        {/* фон */}
-        <div className="absolute inset-0 bg-[#FFBC6B]">
-          <div
-            className="w-full h-full bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: `url('${store.imgUrl}bg_pizza.png')` }}
-          />
-        </div>
-
-        {/* «тесто» шапка */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 w-full max-w-[1550px]">
-          <img
-            src={`${store.imgUrl}testo.png`}
-            alt="Testo"
-            className="w-full h-auto"
-          />
-        </div>
-
-        {/* картинка друзей */}
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20">
-          <img src={`${store.imgUrl}img_friends.png`} alt="friends" />
-        </div>
-
-        {/* окно */}
-        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-11/12 max-w-md">
-          <div className="relative">
-            <img
-              src={`${store.imgUrl}img_window2.png`}
-              alt="Modal background"
-              className="w-full h-auto object-contain scale-y-110"
+      <>
+        <div className="relative min-h-screen w-full overflow-hidden">
+          {/* фон */}
+          <div className="absolute inset-0 bg-[#FFBC6B]">
+            <div
+                className="w-full h-full bg-cover bg-center bg-no-repeat"
+                style={{ backgroundImage: `url('${store.imgUrl}bg_pizza.png')` }}
             />
+          </div>
 
-            <div className="absolute inset-0 flex flex-col p-4 sm:p-5">
-              {/* заголовок */}
-              <div className="text-center text-lg sm:text-2xl mb-2 text-amber-800 shantell font-bold">
-                ВАША ССЫЛКА
-              </div>
+          {/* «тесто» шапка */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 w-full max-w-[1550px]">
+            <img
+                src={`${store.imgUrl}testo.png`}
+                alt="Testo"
+                className="w-full h-auto"
+            />
+          </div>
 
-              {/* ссылка */}
-              <input
-                ref={inputRef}
-                type="text"
-                value={link || "Загрузка..."}
-                readOnly
-                onFocus={(e) => e.currentTarget.select()}
-                className="bg-white rounded-xl px-4 py-1 mb-4 border-2 border-amber-800 shadow-inner text-center font-bold text-base sm:text-lg text-amber-800 shantell truncate"
+          {/* картинка друзей */}
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20">
+            <img src={`${store.imgUrl}img_friends.png`} alt="friends" />
+          </div>
+
+          {/* окно */}
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-11/12 max-w-md">
+            <div className="relative">
+              <img
+                  src={`${store.imgUrl}img_window2.png`}
+                  alt="Modal background"
+                  className="w-full h-auto object-contain"
               />
 
-              {/* кнопка копировать */}
-              <button
-                className="relative w-full flex justify-center mb-4 hover:opacity-90 transition-opacity"
-                onClick={handleCopy}
-                disabled={!link}
-              >
-                <img
-                  src={`${store.imgUrl}b_yellow.png`}
-                  alt="copy"
-                  className="w-1/2 h-auto"
+              <div className="absolute inset-0 flex flex-col p-4 sm:p-5">
+                {/* заголовок */}
+                <div className="text-center text-lg sm:text-2xl mb-2 text-amber-800 shantell font-bold">
+                  ВАША ССЫЛКА
+                </div>
+
+                {/* ссылка */}
+                <input
+                    ref={inputRef}
+                    type="text"
+                    value={link || "Загрузка..."}
+                    readOnly
+                    onFocus={(e) => e.currentTarget.select()}
+                    className="bg-white rounded-xl px-4 py-1 mb-4 border-2 border-amber-800 shadow-inner text-center font-bold text-base sm:text-lg text-amber-800 shantell truncate"
                 />
-                <div className="absolute inset-0 flex items-center justify-center">
+
+                {/* кнопка копировать */}
+                <button
+                    className="relative w-full flex justify-center mb-4 hover:opacity-90 transition-opacity"
+                    onClick={handleCopy}
+                    disabled={!link}
+                >
+                  <img
+                      src={`${store.imgUrl}b_yellow.png`}
+                      alt="copy"
+                      className="w-1/2 h-auto"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
                   <span className="text-amber-800 text-lg sm:text-xl shantell">
                     Копировать
                   </span>
-                </div>
-              </button>
+                  </div>
+                </button>
 
               {/* описание */}
               <div className="text-center mb-5 text-amber-800 font-bold text-base sm:text-lg shantell leading-tight">
@@ -172,21 +174,18 @@ const Friends = observer(() => {
   );
 });
 
+
 function StatBlock({ icon, value }: { icon: string; value: string }) {
   return (
-    <div className="relative flex-1">
-      <img
-        src={`${store.imgUrl}b_white.png`}
-        alt="bg"
-        className="w-full h-auto"
-      />
-      <div className="absolute inset-0 flex items-center justify-center gap-2 sm:gap-3 px-2 py-1">
-        <img src={icon} alt="icon" className="w-8 sm:w-10 inline-block" />
-        <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
+      <div className="relative flex-1">
+        <img src={`${store.imgUrl}b_white.png`} alt="bg" className="w-full h-auto" />
+        <div className="absolute inset-0 flex items-center justify-center gap-2 sm:gap-3 px-2 py-1">
+          <img src={icon} alt="icon" className="w-8 sm:w-10 inline-block" />
+          <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
           {value}
         </span>
+        </div>
       </div>
-    </div>
   );
 }
 
