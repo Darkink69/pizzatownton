@@ -6,12 +6,160 @@ import store from "../store/store";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
 
+// Новый компонент модального окна для обмена
+function ExchangeModal({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  const [walletAddress, setWalletAddress] = useState("");
+  const [exchangeAmount, setExchangeAmount] = useState("");
+
+  // Получаем текущий баланс PDollar из store
+  const userPdollarBalance = store.pdollar;
+
+  // Проверяем, достаточно ли средств у пользователя
+  const hasSufficientBalance = userPdollarBalance >= 100000;
+
+  // Проверяем, можно ли отправить форму (все поля валидны)
+  const canSubmit =
+    walletAddress.trim() &&
+    exchangeAmount &&
+    Number(exchangeAmount) >= 100000 &&
+    Number(exchangeAmount) <= userPdollarBalance;
+
+  const handleSubmit = () => {
+    if (!walletAddress.trim()) {
+      alert("Пожалуйста, введите адрес кошелька TON");
+      return;
+    }
+    if (!exchangeAmount || Number(exchangeAmount) < 100000) {
+      alert("Нельзя вывести сумму менее 100000 Pdollars");
+      return;
+    }
+    if (Number(exchangeAmount) > userPdollarBalance) {
+      alert("Недостаточно средств для вывода");
+      return;
+    }
+
+    alert("Ваша заявка на вывод принята");
+    setWalletAddress("");
+    setExchangeAmount("");
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[60] bg-black bg-opacity-70 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full text-center shadow-lg border-2 border-amber-800 shantell text-amber-800 relative">
+        <h2 className="text-xl mb-4 font-bold">Заявка на вывод</h2>
+
+        {/* Информация о балансе */}
+        <div className="mb-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+          <div className="flex items-center justify-center gap-2 text-sm">
+            <span className="font-semibold">Ваш баланс PDollar:</span>
+            <span
+              className={`font-bold ${
+                hasSufficientBalance ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              {userPdollarBalance.toLocaleString()}
+            </span>
+            <img
+              src={`${store.imgUrl}icon_dollar_coin.png`}
+              alt="PDollar"
+              className="w-4 h-4"
+            />
+          </div>
+          {!hasSufficientBalance && (
+            <div className="text-xs text-red-600 mt-1">
+              ❌ Недостаточно средств для вывода (минимум 100,000)
+            </div>
+          )}
+        </div>
+
+        {/* Поле для адреса кошелька */}
+        <div className="mb-4">
+          <label className="block text-left text-sm font-medium text-amber-800 mb-2">
+            Введите адрес кошелька TON
+          </label>
+          <input
+            type="text"
+            value={walletAddress}
+            onChange={(e) => setWalletAddress(e.target.value)}
+            placeholder="UQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+            className="w-full px-3 py-2 border-2 border-amber-800 rounded-lg text-amber-800 placeholder-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+          />
+        </div>
+
+        {/* Поле для суммы */}
+        <div className="mb-6">
+          <label className="block text-left text-sm font-medium text-amber-800 mb-2">
+            Введите сумму в Pdollars{" "}
+            <span>
+              <img
+                src={`${store.imgUrl}icon_dollar_coin.png`}
+                alt="Coin"
+                className="w-4 sm:w-5 inline"
+              />
+            </span>{" "}
+            которую хотите обменять. Минимальная сумма вывода - 100000 Pdollars.
+          </label>
+          <input
+            type="number"
+            value={exchangeAmount}
+            onChange={(e) => setExchangeAmount(e.target.value)}
+            placeholder={`${Math.min(
+              100000,
+              userPdollarBalance
+            ).toLocaleString()}`}
+            min="100000"
+            max={userPdollarBalance}
+            step="1000"
+            className="w-full px-3 py-2 border-2 border-amber-800 rounded-lg text-amber-800 placeholder-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+          />
+          {/* Подсказка о доступной сумме */}
+          <div className="text-xs text-gray-600 mt-1 text-left">
+            Доступно для вывода: {userPdollarBalance.toLocaleString()} PDollar
+          </div>
+        </div>
+
+        {/* Кнопка подтверждения */}
+        <button
+          onClick={handleSubmit}
+          disabled={!canSubmit}
+          className={`w-full font-bold py-3 px-6 rounded-lg transition ${
+            canSubmit
+              ? "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+              : "bg-gray-400 text-gray-200 cursor-not-allowed"
+          }`}
+        >
+          {canSubmit ? "Подтвердить" : "Введите данные для вывода"}
+        </button>
+
+        {/* Кнопка закрытия */}
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-2 text-[20px] text-gray-700 hover:text-red-900"
+          title="Закрыть"
+        >
+          X
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Bank() {
   const [tonAmount, setTonAmount] = useState(0.5);
   const [pdollarAmount, setPdollarAmount] = useState("100");
   const [tonExchangeAmount, setTonExchangeAmount] = useState("0.02");
   const [pcoinAmount, setPcoinAmount] = useState("500");
   const [buying, setBuying] = useState(false);
+  const [isExchangeModalOpen, setIsExchangeModalOpen] = useState(false);
 
   const handleBuy = async () => {
     const parsed = parseInt(pcoinAmount);
@@ -41,7 +189,7 @@ function Bank() {
   };
 
   const handleExchange = () => {
-    alert(`Вы обменяли ${pdollarAmount} PDOLLAR на ${tonExchangeAmount} TON`);
+    setIsExchangeModalOpen(true);
   };
 
   const { pizza, pdollar, pcoin } = store;
@@ -217,6 +365,13 @@ function Bank() {
 
       {/* модалка заказа */}
       {bankStore.order && <BankOrderModal />}
+
+      {/* модалка обмена */}
+      <ExchangeModal
+        isOpen={isExchangeModalOpen}
+        onClose={() => setIsExchangeModalOpen(false)}
+      />
+
       <Footer />
       <WebSocketComponent />
     </>
