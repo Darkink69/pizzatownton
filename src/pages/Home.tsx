@@ -4,6 +4,7 @@ import store from "../store/store";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
 import { Link } from "react-router-dom";
+import FooterHome from "../components/FooterHome";
 
 const Home = observer(() => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -58,6 +59,7 @@ const Home = observer(() => {
   const areFloorsLoaded = store.areFloorsLoaded;
   const userFloorList = store.safeUserFloorList;
   if (!Array.isArray(userFloorList)) return null;
+
   // Принудительный запрос данных при монтировании
   useEffect(() => {
     if (!areFloorsLoaded && store.sessionId && store.user?.telegramId) {
@@ -519,23 +521,80 @@ const Home = observer(() => {
 
                             <div className="absolute inset-0 flex items-center">
                               <div className="flex-1 px-2 sm:px-4 text-xs sm:text-sm text-amber-800 shantell text-center leading-3">
-                                {floorName} - Уровень {floorData.level}
+                                {floorName}
                               </div>
 
-                              <div className="flex items-center gap-1 ml-2 sm:ml-4">
+                              <div className="flex items-center gap-1">
                                 {renderStars(floorData.level)}
                               </div>
+                              {/* Кнопка CLAIM_DO для обычных этажей */}
+                              {!isFirstFloor && (
+                                <div
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleClaimDo(floorData.floorId);
+                                  }}
+                                  className="pl-4 flex items-center"
+                                >
+                                  <span className="text-md sm:text-lg text-amber-800 shantell font-bold whitespace-nowrap">
+                                    {store.lastClaimRewards?.floorId ===
+                                    floorData.floorId
+                                      ? `+${
+                                          store.lastClaimRewards.amount.toFixed?.(
+                                            0
+                                          ) ?? store.lastClaimRewards.amount
+                                        }`
+                                      : floorData.earned &&
+                                        Number(floorData.earned) > 0
+                                      ? `${Number(
+                                          floorData.earned.toFixed?.(0) ??
+                                            floorData.earned
+                                        )}`
+                                      : "0"}
+                                  </span>
+                                  <img
+                                    src={`${store.imgUrl}icon_dollar.png`}
+                                    alt="pdollar"
+                                    className="w-6 h-4 sm:w-9 sm:h-5 ml-1"
+                                  />
+                                </div>
+                              )}
+
+                              {/* Специальная кнопка для 1 этажа (Basement) с пиццей */}
+                              {isFirstFloor && (
+                                <div
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleClaimDo(floorData.floorId);
+                                  }}
+                                  className="pl-4 flex items-centerd"
+                                >
+                                  <span className="text-md sm:text-lg text-amber-800 shantell font-bold whitespace-nowrap">
+                                    {floorData.earned?.toFixed?.(0) ??
+                                      floorData.earned ??
+                                      0}
+                                  </span>
+                                  <img
+                                    src={`${store.imgUrl}pizza_California.png`}
+                                    alt="pizza"
+                                    className="w-6 h-6 sm:w-8 sm:h-8 ml-1"
+                                  />
+                                </div>
+                              )}
 
                               <button
                                 onClick={(e) =>
                                   handleUpgradeFloor(floorData.floorId, e)
                                 }
-                                disabled={floorData.floorId === 1 || !store.canUpgradeFloor(floorData.floorId)
+                                disabled={
+                                  floorData.floorId === 1 ||
+                                  !store.canUpgradeFloor(floorData.floorId)
                                 }
                                 className={`relative translate-x-[40px] ${
-                                    floorData.floorId === 1 || !store.canUpgradeFloor(floorData.floorId)
-                                        ? "opacity-50 cursor-not-allowed"
-                                        : "cursor-pointer hover:opacity-90 transition-opacity"
+                                  floorData.floorId === 1 ||
+                                  !store.canUpgradeFloor(floorData.floorId)
+                                    ? "opacity-50 cursor-not-allowed"
+                                    : "cursor-pointer hover:opacity-90 transition-opacity"
                                 }`}
                               >
                                 <img
@@ -561,60 +620,6 @@ const Home = observer(() => {
                                 </div>
                               </button>
                             </div>
-
-                            {/* Кнопка CLAIM_DO для обычных этажей */}
-                            {!isFirstFloor && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleClaimDo(floorData.floorId);
-                                }}
-                                className="relative ml-6 w-auto p-2 pl-4 pr-4 bg-white rounded-full flex items-center justify-center gap-1 hover:opacity-90 transition-opacity shadow-md"
-                              >
-                                <span className="text-md sm:text-lg text-amber-800 shantell font-bold whitespace-nowrap">
-                                  {store.lastClaimRewards?.floorId ===
-                                  floorData.floorId
-                                    ? `+${
-                                        store.lastClaimRewards.amount.toFixed?.(
-                                          0
-                                        ) ?? store.lastClaimRewards.amount
-                                      }`
-                                    : floorData.earned &&
-                                      Number(floorData.earned) > 0
-                                    ? `${Number(
-                                        floorData.earned.toFixed?.(0) ??
-                                          floorData.earned
-                                      )}`
-                                    : "0"}
-                                </span>
-                                <img
-                                  src={`${store.imgUrl}icon_dollar.png`}
-                                  alt="pdollar"
-                                  className="w-6 h-4 sm:w-9 sm:h-5"
-                                />
-                              </button>
-                            )}
-
-                            {/* Специальная кнопка для 1 этажа (Basement) с пиццей */}
-                            {isFirstFloor && (
-                              <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleClaimDo(floorData.floorId);
-                                  }}
-                                className="relative ml-6 w-auto p-2 pl-4 pr-4 bg-white rounded-full flex items-center justify-center gap-1 opacity-70 cursor-not-allowed shadow-md"
-
-                              >
-                                <span className="text-md sm:text-lg text-amber-800 shantell font-bold whitespace-nowrap">
-                                  {floorData.earned?.toFixed?.(0) ?? floorData.earned ?? 0}
-                                </span>
-                                <img
-                                  src={`${store.imgUrl}pizza_California.png`}
-                                  alt="pizza"
-                                  className="w-6 h-6 sm:w-8 sm:h-8"
-                                />
-                              </button>
-                            )}
                           </div>
                         </div>
                       </>
@@ -656,49 +661,61 @@ const Home = observer(() => {
         </div>
 
         {/* Кнопка статистики */}
-        <div className="fixed bottom-24 left-[5%] w-20 z-20 hover:opacity-90 transition-opacity">
-          <img src={`${store.imgUrl}b_white.png`} alt="red" />
-          <div className="absolute inset-0 flex items-center ml-2 text-xs text-amber-800 shantell">
-            <span>
-              <img
-                src={`${store.imgUrl}icon_dollar_coin.png`}
-                alt="icon_dollar_coin"
-                className="w-4"
-              />
-            </span>
-            {store.pcoin}
-            <Link to="/bank">
-              <span className="absolute -top-0.5 -right-14">
+        <div className="">
+          <div className="fixed bottom-24 left-[5%] w-20 z-20 hover:opacity-90 transition-opacity">
+            <img src={`${store.imgUrl}b_white.png`} alt="red" />
+            <div className="absolute inset-0 flex items-center ml-2 text-xs text-amber-800 shantell">
+              <span>
                 <img
-                  src={`${store.imgUrl}b_red_plus.png`}
-                  alt="icon_dollar"
-                  className="w-1/2"
+                  src={`${store.imgUrl}icon_dollar_coin.png`}
+                  alt="icon_dollar_coin"
+                  className="w-4"
                 />
               </span>
-            </Link>
+              {store.pcoin}
+              <Link to="/bank">
+                <span className="absolute -top-0.5 -right-14">
+                  <img
+                    src={`${store.imgUrl}b_red_plus.png`}
+                    alt="icon_dollar"
+                    className="w-1/2"
+                  />
+                </span>
+              </Link>
+            </div>
           </div>
-        </div>
 
-        <div className="fixed bottom-24 left-[60%] w-20 z-20 hover:opacity-90 transition-opacity">
-          <img src={`${store.imgUrl}b_white.png`} alt="red" />
-          <div className="absolute inset-0 flex items-center ml-1 text-xs text-amber-800 shantell">
-            <span>
-              <img
-                src={`${store.imgUrl}icon_dollar.png`}
-                alt="icon_dollar"
-                className="w-6"
-              />
-            </span>
-            {store.pdollar}
-            <Link to="/bank">
-              <span className="absolute -top-0.5 -right-14">
+          <button
+            // onClick={handleClaimDo}
+            className="fixed bottom-4 left-1/2 w-30 sm:w-50 transform -translate-x-1/2 z-50 hover:opacity-90 transition-opacity"
+          >
+            <div className="absolute top-8 left-1/2 transform -translate-x-1/2 flex items-center justify-center text-2xl md:text-4xl text-blue-900 shantell">
+              0%
+            </div>
+            <img src={`${store.imgUrl}b_zabrat2.png`} alt="Claim" />
+          </button>
+
+          <div className="fixed bottom-24 left-[70%] w-20 z-20 hover:opacity-90 transition-opacity">
+            <img src={`${store.imgUrl}b_white.png`} alt="red" />
+            <div className="absolute inset-0 flex items-center ml-1 text-xs text-amber-800 shantell">
+              <span>
                 <img
-                  src={`${store.imgUrl}b_red_minus.png`}
+                  src={`${store.imgUrl}icon_dollar.png`}
                   alt="icon_dollar"
-                  className="w-1/2"
+                  className="w-6"
                 />
               </span>
-            </Link>
+              {store.pdollar}
+              <Link to="/bank">
+                <span className="absolute -top-0.5 -right-14">
+                  <img
+                    src={`${store.imgUrl}b_red_minus.png`}
+                    alt="icon_dollar"
+                    className="w-1/2"
+                  />
+                </span>
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -896,7 +913,7 @@ const Home = observer(() => {
           </>
         )}
       </div>
-      <Footer />
+      <FooterHome />
       <WebSocketComponent />
     </>
   );
