@@ -88,14 +88,14 @@ const Home = observer(() => {
   };
 
   // Обработчик кнопки CLAIM_DO для конкретного этажа
-  const handleClaimDo = (floorId: number) => {
-    if (store.sendClaimDo(floorId)) {
-      // Показываем уведомление, что запрос ушёл
-      showNotification(`🔄 Собираем доход с этажа ${floorId}...`, "success");
-    } else {
-      showNotification("❌ Ошибка при отправке запроса");
-    }
-  };
+  // const handleClaimDo = (floorId: number) => {
+  //   if (store.sendClaimDo(floorId)) {
+  //     // Показываем уведомление, что запрос ушёл
+  //     showNotification(`🔄 Собираем доход с этажа ${floorId}...`, "success");
+  //   } else {
+  //     showNotification("❌ Ошибка при отправке запроса");
+  //   }
+  // };
 
   // Показываем загрузку пока данные не получены
   if (!areFloorsLoaded) {
@@ -511,7 +511,7 @@ const Home = observer(() => {
                           </video>
                         </div>
 
-                        <div className="absolute -top-10 left-1/3 transform -translate-x-1/2 translate-y-1/2 z-40 w-4/5 max-w-xs">
+                        <div className="absolute -top-10 left-2/5 transform -translate-x-1/2 translate-y-1/2 z-40 w-4/5 max-w-xs">
                           <div className="flex items-center relative">
                             <img
                               src={`${store.imgUrl}img_block_mini.png`}
@@ -524,19 +524,19 @@ const Home = observer(() => {
                                 {floorName}
                               </div>
 
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-0.5">
                                 {renderStars(floorData.level)}
                               </div>
                               {/* Кнопка CLAIM_DO для обычных этажей */}
                               {!isFirstFloor && (
                                 <div
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleClaimDo(floorData.floorId);
-                                  }}
+                                  // onClick={(e) => {
+                                  //   e.stopPropagation();
+                                  //   handleClaimDo(floorData.floorId);
+                                  // }}
                                   className="pl-4 flex items-center"
                                 >
-                                  <span className="text-md sm:text-lg text-amber-800 shantell font-bold whitespace-nowrap">
+                                  {/* <span className="text-sm sm:text-md text-amber-800 shantell font-bold whitespace-nowrap">
                                     {store.lastClaimRewards?.floorId ===
                                     floorData.floorId
                                       ? `+${
@@ -551,7 +551,7 @@ const Home = observer(() => {
                                             floorData.earned
                                         )}`
                                       : "0"}
-                                  </span>
+                                  </span> */}
                                   <img
                                     src={`${store.imgUrl}icon_dollar.png`}
                                     alt="pdollar"
@@ -563,17 +563,17 @@ const Home = observer(() => {
                               {/* Специальная кнопка для 1 этажа (Basement) с пиццей */}
                               {isFirstFloor && (
                                 <div
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleClaimDo(floorData.floorId);
-                                  }}
+                                  // onClick={(e) => {
+                                  //   e.stopPropagation();
+                                  //   handleClaimDo(floorData.floorId);
+                                  // }}
                                   className="pl-4 flex items-centerd"
                                 >
-                                  <span className="text-md sm:text-lg text-amber-800 shantell font-bold whitespace-nowrap">
+                                  {/* <span className="text-sm sm:text-md text-amber-800 shantell font-bold whitespace-nowrap">
                                     {floorData.earned?.toFixed?.(0) ??
                                       floorData.earned ??
                                       0}
-                                  </span>
+                                  </span> */}
                                   <img
                                     src={`${store.imgUrl}pizza_California.png`}
                                     alt="pizza"
