@@ -14,6 +14,12 @@ const Home = observer(() => {
     type: "error" | "success";
   } | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(true);
+  // const [claimRewards, setClaimRewards] = useState<{ [key: number]: string }>(
+  //   {}
+  // );
+  const [staffModal, setStaffModal] = useState<
+    "manager" | "accountant" | "guard" | null
+  >(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const floors = 11; // basement + 9 этажей + крыша
@@ -95,7 +101,24 @@ const Home = observer(() => {
     }
   };
 
-  // Показываем загрузку пока данные не получены
+  const handleOpenManagerModal = () => {
+    setStaffModal("manager");
+  };
+
+  const handleOpenAccountantModal = () => {
+    setStaffModal("accountant");
+  };
+
+  const handleOpenGuardModal = () => {
+    setStaffModal("guard");
+  };
+
+  // Закрытие модального окна персонажа
+  const handleCloseStaffModal = () => {
+    setStaffModal(null);
+  };
+
+  // Показываем загрузку пока данные не получены ----------------------------------------------------------------------
   if (!areFloorsLoaded) {
     return (
       <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B] flex items-center justify-center">
@@ -407,7 +430,7 @@ const Home = observer(() => {
           </div>
         )}
 
-        <div className="relative min-h-[160vh]">
+        <div className="relative min-h-[200vh]">
           <div className="h-screen">
             <div className="absolute inset-0 bottom-0 bg-[#FFBC6B]">
               <div
@@ -425,7 +448,7 @@ const Home = observer(() => {
             </div>
           </div>
 
-          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-10 w-[90%] sm:w-[60%] md:w-[50%] lg:w-[40%] xl:w-[16%]">
+          <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-10 w-[90%] sm:w-[60%] md:w-[50%] lg:w-[40%] xl:w-[16%]">
             <div className="flex flex-col items-center relative">
               {Array.from({ length: floors }, (_, index) => {
                 const floorData = getFloorData(index);
@@ -659,11 +682,14 @@ const Home = observer(() => {
         </div>
 
         {/* Нижний блок */}
-        <div className="absolute bottom-28 left-1/2 transform -translate-x-1/2 w-full max-w-lg mx-auto z-30">
+        <div className="absolute bottom-26 left-1/2 transform -translate-x-1/2 w-full max-w-lg mx-auto z-30">
           {/* Блоки персонажей */}
           <div className="flex justify-between items-end px-4 mb-2">
             {/* Manager */}
-            <div className="flex flex-col items-center relative">
+            <div
+              className="flex flex-col items-center relative"
+              onClick={handleOpenManagerModal}
+            >
               <img
                 src={`${store.imgUrl}Manager.png`}
                 alt="Manager"
@@ -675,19 +701,25 @@ const Home = observer(() => {
             </div>
 
             {/* Accountant */}
-            <div className="flex flex-col items-center relative">
+            <div
+              className="flex flex-col items-center relative"
+              onClick={handleOpenAccountantModal}
+            >
               <img
                 src={`${store.imgUrl}Accountant.png`}
                 alt="Accountant"
                 className="w-28 sm:w-24 sm:h-24 object-contain"
               />
-              <div className="absolute -bottom-0 flex items-center gap-1">
-                {renderStars(1)}
+              <div className="absolute -bottom-0 flex items-center text-xs text-white shantell">
+                00:00:00
               </div>
             </div>
 
             {/* Guard */}
-            <div className="flex flex-col items-center relative">
+            <div
+              className="flex flex-col items-center relative"
+              onClick={handleOpenGuardModal}
+            >
               <img
                 src={`${store.imgUrl}Guard.png`}
                 alt="Guard"
@@ -751,19 +783,21 @@ const Home = observer(() => {
           </div>
         </div>
 
-        {/* Центральная кнопка - отдельно с fixed позиционированием */}
-          <button
-              onClick={handleClaimDo}
-              className="fixed bottom-4 left-1/2 w-30 sm:w-50 transform -translate-x-1/2
+        {/* Центральная кнопка handleClaimDo */}
+        <button
+          onClick={handleClaimDo}
+          className="fixed bottom-4 left-1/2 w-30 sm:w-50 transform -translate-x-1/2
              z-50 hover:opacity-90 transition-opacity active:scale-95"
-          >
-              <div className="absolute top-8 left-1/2 transform -translate-x-1/2
+        >
+          <div
+            className="absolute top-8 left-1/2 transform -translate-x-1/2
                   flex items-center justify-center text-2xl md:text-4xl
-                  text-blue-900 shantell">
-                  {store.claimProgress.toFixed(0)}%
-              </div>
-              <img src={`${store.imgUrl}b_zabrat2.png`} alt="Claim" />
-          </button>
+                  text-blue-900 shantell"
+          >
+            {store.claimProgress.toFixed(0)}%
+          </div>
+          <img src={`${store.imgUrl}b_zabrat2.png`} alt="Claim" />
+        </button>
 
         {/* Модальное окно улучшения этажа */}
         {isModalOpen && selectedFloor && (
@@ -952,6 +986,62 @@ const Home = observer(() => {
                       strokeWidth="2"
                       strokeLinecap="round"
                     />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Модальные окна персонажей */}
+        {staffModal && (
+          <>
+            {/* Затемненный фон с прозрачностью */}
+            <div
+              className="fixed inset-0 bg-black opacity-70 z-50"
+              onClick={handleCloseStaffModal}
+            />
+
+            {/* Модальное окно */}
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="relative w-full h-full max-w-4xl max-h-[90vh] flex items-center justify-center">
+                <img
+                  src={`${store.imgUrl}Component ${
+                    staffModal === "manager"
+                      ? "1"
+                      : staffModal === "accountant"
+                      ? "2"
+                      : "3"
+                  }.png`}
+                  alt={staffModal}
+                  className="w-full h-full object-contain"
+                />
+
+                {/* Кнопка закрытия */}
+                <button
+                  onClick={handleCloseStaffModal}
+                  className="absolute top-4 right-4 sm:top-6 sm:right-6 z-50 p-2 bg-white rounded-full hover:scale-110 transition-transform shadow-lg"
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle cx="12" cy="12" r="12" fill="white"></circle>
+                    <path
+                      d="M8 8L16 16"
+                      stroke="#FFBC6B"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    ></path>
+                    <path
+                      d="M16 8L8 16"
+                      stroke="#FFBC6B"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    ></path>
                   </svg>
                 </button>
               </div>
