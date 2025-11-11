@@ -87,17 +87,15 @@ const Home = observer(() => {
     }, 3000);
   };
 
-  // Обработчик кнопки CLAIM_DO для конкретного этажа
-  // const handleClaimDo = (floorId: number) => {
-  //   if (store.sendClaimDo(floorId)) {
-  //     // Показываем уведомление, что запрос ушёл
-  //     showNotification(`🔄 Собираем доход с этажа ${floorId}...`, "success");
-  //   } else {
-  //     showNotification("❌ Ошибка при отправке запроса");
-  //   }
-  // };
+  const handleClaimDo = () => {
+    if (store.sendClaimDo(0)) {
+      showNotification("💰 Доход собирается...", "success");
+    } else {
+      showNotification("❌ Ошибка при сборе дохода", "error");
+    }
+  };
 
-  // Показываем загрузку пока данные не получены ------------------------------------------------------------------------------
+  // Показываем загрузку пока данные не получены
   if (!areFloorsLoaded) {
     return (
       <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B] flex items-center justify-center">
@@ -754,12 +752,18 @@ const Home = observer(() => {
         </div>
 
         {/* Центральная кнопка - отдельно с fixed позиционированием */}
-        <button className="fixed bottom-4 left-1/2 w-30 sm:w-50 transform -translate-x-1/2 z-50 hover:opacity-90 transition-opacity">
-          <div className="absolute top-8 left-1/2 transform -translate-x-1/2 flex items-center justify-center text-2xl md:text-4xl text-blue-900 shantell">
-            0%
-          </div>
-          <img src={`${store.imgUrl}b_zabrat2.png`} alt="Claim" />
-        </button>
+          <button
+              onClick={handleClaimDo}
+              className="fixed bottom-4 left-1/2 w-30 sm:w-50 transform -translate-x-1/2
+             z-50 hover:opacity-90 transition-opacity active:scale-95"
+          >
+              <div className="absolute top-8 left-1/2 transform -translate-x-1/2
+                  flex items-center justify-center text-2xl md:text-4xl
+                  text-blue-900 shantell">
+                  {store.claimProgress.toFixed(0)}%
+              </div>
+              <img src={`${store.imgUrl}b_zabrat2.png`} alt="Claim" />
+          </button>
 
         {/* Модальное окно улучшения этажа */}
         {isModalOpen && selectedFloor && (

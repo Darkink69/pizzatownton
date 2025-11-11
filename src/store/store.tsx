@@ -24,6 +24,8 @@ class Store {
   pdollar = 0;
   pizza = 0;
 
+  claimProgress = 0;
+
   floorsLoaded = false;
 
   referral = {
@@ -32,6 +34,13 @@ class Store {
     earnedPdollar: 0,
     link: "",
   };
+
+  updateClaimProgress(percent: string | number) {
+    runInAction(() => {
+      this.claimProgress = Number(percent) || 0 ;
+    });
+  }
+
 
   setReferralData(data: {
     totalReferrals?: number;

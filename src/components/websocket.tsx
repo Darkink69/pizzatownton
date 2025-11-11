@@ -100,7 +100,7 @@ const WebSocketComponent = observer(() => {
               store.setSessionId?.(sessionId);
               sendFloorsGetRequest();
 
-              // 👉 ДОБАВЬ ЭТО
+
               console.log("✅ Авторизация успешна, запускаем авто‑обновление клеймов");
 
               // чтобы сразу увидеть цифры, первый вызов без ожидания
@@ -111,7 +111,7 @@ const WebSocketComponent = observer(() => {
                 session: store.sessionId,
               }));
 
-              // затем периодически обновляем каждые 30 сек
+              // затем периодически обновляем каждые 30сек
               setInterval(() => {
                 if (ws.readyState === WebSocket.OPEN) {
                   ws.send(JSON.stringify({
@@ -145,6 +145,8 @@ const WebSocketComponent = observer(() => {
             if (parsed.success) {
               store.setFloorsData(parsed);
               toast.success("🏗 Этаж куплен!");
+              store.updateClaimProgress(0);
+              toast.info("⏱ Новый цикл фарма запущен после улучшения этажа!");
             } else {
               toast.error(parsed.message || "Ошибка покупки этажа");
             }
@@ -156,6 +158,8 @@ const WebSocketComponent = observer(() => {
             if (parsed.success) {
               store.setFloorsData(parsed);
               toast.success("🔼 Этаж успешно улучшен!");
+              store.updateClaimProgress(0);
+              toast.info("⏱ Новый цикл фарма запущен после улучшения этажа!");
             } else {
               toast.error(parsed.message || "Ошибка апгрейда");
             }
@@ -221,34 +225,24 @@ const WebSocketComponent = observer(() => {
             /** ------------------ CLAIM_REFRESH ------------------ */
           case "CLAIM_REFRESH": {
             if (parsed.success && parsed.data) {
-              const totalPdollar = Number(parsed.data.totalPdollar ?? 0);
-              const totalPizza = Number(parsed.data.totalPizza ?? 0);
+              const percent = parsed.data.percent ?? "0";
+              const userResponse = parsed.data.userResponse;
 
-              // если есть список этажей — обновим store.userFloors.data.userFloorList
-              if (Array.isArray(parsed.data.floors)) {
-                const earnedMap = new Map<number, { pd: number; pizza: number }>();
-                parsed.data.floors.forEach((f: any) => {
-                  earnedMap.set(f.floorId, {
-                    pd: Number(f.earnedPDollar ?? 0),
-                    pizza: Number(f.earnedPizza ?? 0),
-                  });
-                });
+              //  Обновляем значение процентов
+              store.updateClaimProgress(percent);
 
-                runInAction(() => {
-                  store.userFloors.data.userFloorList = store.safeUserFloorList.map(f => {
-                    const v = earnedMap.get(f.floorId);
-                    // выбираем метрику по типу валюты
-                    const earned =
-                        f.yieldCurrency === "pizza"
-                            ? v?.pizza ?? f.earned ?? 0
-                            : v?.pd ?? f.earned ?? 0;
-                    return { ...f, earned };
-                  });
-
-                  store.userFloors.data.pdollarAmount = totalPdollar;
-                  (store as any).userFloors.data.pizzaAmount = totalPizza;
+              // Также обновляем балансы пользователя
+              if (userResponse) {
+                store.updateUserData({
+                  pcoin: userResponse.pcoin,
+                  pdollar: userResponse.pdollar,
+                  pizza: userResponse.pizza,
                 });
               }
+
+              console.log(`🔥 Claim progress: ${percent}%`);
+            } else {
+              console.warn("CLAIM_REFRESH failed:", parsed.message);
             }
             break;
           }
