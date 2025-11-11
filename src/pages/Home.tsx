@@ -97,7 +97,7 @@ const Home = observer(() => {
   //   }
   // };
 
-  // Показываем загрузку пока данные не получены
+  // Показываем загрузку пока данные не получены ------------------------------------------------------------------------------
   if (!areFloorsLoaded) {
     return (
       <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B] flex items-center justify-center">
@@ -575,7 +575,7 @@ const Home = observer(() => {
                                       0}
                                   </span> */}
                                   <img
-                                    src={`${store.imgUrl}pizza_California.png`}
+                                    src={`${store.imgUrl}icon_pizza.png`}
                                     alt="pizza"
                                     className="w-6 h-6 sm:w-8 sm:h-8 ml-1"
                                   />
@@ -660,64 +660,106 @@ const Home = observer(() => {
           />
         </div>
 
-        {/* Кнопка статистики */}
-        <div className="">
-          <div className="fixed bottom-24 left-[5%] w-20 z-20 hover:opacity-90 transition-opacity">
-            <img src={`${store.imgUrl}b_white.png`} alt="red" />
-            <div className="absolute inset-0 flex items-center ml-2 text-xs text-amber-800 shantell">
-              <span>
-                <img
-                  src={`${store.imgUrl}icon_dollar_coin.png`}
-                  alt="icon_dollar_coin"
-                  className="w-4"
-                />
-              </span>
-              {store.pcoin}
-              <Link to="/bank">
-                <span className="absolute -top-0.5 -right-14">
-                  <img
-                    src={`${store.imgUrl}b_red_plus.png`}
-                    alt="icon_dollar"
-                    className="w-1/2"
-                  />
-                </span>
-              </Link>
+        {/* Нижний блок */}
+        <div className="absolute bottom-28 left-1/2 transform -translate-x-1/2 w-full max-w-lg mx-auto z-30">
+          {/* Блоки персонажей */}
+          <div className="flex justify-between items-end px-4 mb-2">
+            {/* Manager */}
+            <div className="flex flex-col items-center relative">
+              <img
+                src={`${store.imgUrl}Manager.png`}
+                alt="Manager"
+                className="w-28 sm:w-24 sm:h-24 object-contain"
+              />
+              <div className="absolute -bottom-0 flex items-center gap-1">
+                {renderStars(4)}
+              </div>
+            </div>
+
+            {/* Accountant */}
+            <div className="flex flex-col items-center relative">
+              <img
+                src={`${store.imgUrl}Accountant.png`}
+                alt="Accountant"
+                className="w-28 sm:w-24 sm:h-24 object-contain"
+              />
+              <div className="absolute -bottom-0 flex items-center gap-1">
+                {renderStars(1)}
+              </div>
+            </div>
+
+            {/* Guard */}
+            <div className="flex flex-col items-center relative">
+              <img
+                src={`${store.imgUrl}Guard.png`}
+                alt="Guard"
+                className="w-28 sm:w-24 sm:h-24 object-contain"
+              />
+              <div className="absolute -bottom-0 flex items-center gap-1">
+                {renderStars(1)}
+              </div>
             </div>
           </div>
 
-          <button
-            // onClick={handleClaimDo}
-            className="fixed bottom-4 left-1/2 w-30 sm:w-50 transform -translate-x-1/2 z-50 hover:opacity-90 transition-opacity"
-          >
-            <div className="absolute top-8 left-1/2 transform -translate-x-1/2 flex items-center justify-center text-2xl md:text-4xl text-blue-900 shantell">
-              0%
-            </div>
-            <img src={`${store.imgUrl}b_zabrat2.png`} alt="Claim" />
-          </button>
-
-          <div className="fixed bottom-24 left-[70%] w-20 z-20 hover:opacity-90 transition-opacity">
-            <img src={`${store.imgUrl}b_white.png`} alt="red" />
-            <div className="absolute inset-0 flex items-center ml-1 text-xs text-amber-800 shantell">
-              <span>
-                <img
-                  src={`${store.imgUrl}icon_dollar.png`}
-                  alt="icon_dollar"
-                  className="w-6"
-                />
-              </span>
-              {store.pdollar}
-              <Link to="/bank">
-                <span className="absolute -top-0.5 -right-14">
+          {/* Блоки балансов */}
+          <div className="flex justify-between items-center px-4">
+            {/* Блок PCOIN */}
+            <div className="relative w-20 hover:opacity-90 transition-opacity">
+              <img src={`${store.imgUrl}b_white.png`} alt="pcoin" />
+              <div className="absolute inset-0 flex items-center ml-2 text-xs text-amber-800 shantell">
+                <span>
                   <img
-                    src={`${store.imgUrl}b_red_minus.png`}
-                    alt="icon_dollar"
-                    className="w-1/2"
+                    src={`${store.imgUrl}icon_dollar_coin.png`}
+                    alt="icon_dollar_coin"
+                    className="w-4"
                   />
                 </span>
-              </Link>
+                {store.pcoin}
+                <Link to="/bank">
+                  <span className="absolute -top-0.5 -right-14">
+                    <img
+                      src={`${store.imgUrl}b_red_plus.png`}
+                      alt="icon_dollar"
+                      className="w-1/2"
+                    />
+                  </span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Блок PDOLLAR под Guard */}
+            <div className="relative w-20 hover:opacity-90 transition-opacity mr-7">
+              <img src={`${store.imgUrl}b_white.png`} alt="pdollar" />
+              <div className="absolute inset-0 flex items-center ml-1 text-xs text-amber-800 shantell">
+                <span>
+                  <img
+                    src={`${store.imgUrl}icon_dollar.png`}
+                    alt="icon_dollar"
+                    className="w-6"
+                  />
+                </span>
+                {store.pdollar}
+                <Link to="/bank">
+                  <span className="absolute -top-0.5 -right-14">
+                    <img
+                      src={`${store.imgUrl}b_red_minus.png`}
+                      alt="icon_dollar"
+                      className="w-1/2"
+                    />
+                  </span>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Центральная кнопка - отдельно с fixed позиционированием */}
+        <button className="fixed bottom-4 left-1/2 w-30 sm:w-50 transform -translate-x-1/2 z-50 hover:opacity-90 transition-opacity">
+          <div className="absolute top-8 left-1/2 transform -translate-x-1/2 flex items-center justify-center text-2xl md:text-4xl text-blue-900 shantell">
+            0%
+          </div>
+          <img src={`${store.imgUrl}b_zabrat2.png`} alt="Claim" />
+        </button>
 
         {/* Модальное окно улучшения этажа */}
         {isModalOpen && selectedFloor && (
@@ -913,6 +955,7 @@ const Home = observer(() => {
           </>
         )}
       </div>
+
       <FooterHome />
       <WebSocketComponent />
     </>

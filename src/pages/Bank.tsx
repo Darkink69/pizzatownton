@@ -155,8 +155,8 @@ function ExchangeModal({
 
 function Bank() {
   const [tonAmount, setTonAmount] = useState(0.5);
-  const [pdollarAmount, setPdollarAmount] = useState("100");
-  const [tonExchangeAmount, setTonExchangeAmount] = useState("0.02");
+  const [pdollarAmount, setPdollarAmount] = useState("100000");
+  const [tonExchangeAmount, setTonExchangeAmount] = useState("50000");
   const [pcoinAmount, setPcoinAmount] = useState("500");
   const [buying, setBuying] = useState(false);
   const [isExchangeModalOpen, setIsExchangeModalOpen] = useState(false);
@@ -208,7 +208,7 @@ function Bank() {
         {/* 💰 Панель валют */}
         <div className="absolute top-22 md:top-24 left-1/2 -translate-x-1/2 z-40 w-10/12 max-w-md flex justify-between gap-2 sm:gap-3">
           <CurrencyCard
-            icon={`${store.imgUrl}pizza_California.png`}
+            icon={`${store.imgUrl}icon_pizza.png`}
             value={pizza}
             label="Pizza"
           />
@@ -392,9 +392,9 @@ function CurrencyCard({
   return (
     <div className="relative flex-1 max-w-[32%] drop-shadow-md transition-all">
       <img
-        src={`${store.imgUrl}b_white.png`}
+        src={`${store.imgUrl}img_block.png`}
         alt={label}
-        className="w-full h-14 rounded-lg"
+        className="w-full h-12 rounded-lg"
       />
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
         <img src={icon} alt={label} className="w-5 sm:w-7 h-4" />
