@@ -199,10 +199,9 @@ const WebSocketComponent = observer(() => {
                 pdollar: userResponse.pdollar,
                 pizza: userResponse.pizza,
               });
-
               store.updateClaimProgress(0);
-
               toast.success("💰 Доход успешно собран!");
+
               const lostChance = Math.random();
               if (lostChance < 0.3) {
                 toast.warning(
@@ -224,10 +223,10 @@ const WebSocketComponent = observer(() => {
               const percent = parsed.data.percent ?? "0";
               const userResponse = parsed.data.userResponse;
 
-              // обновляем процент фарма
+              // обновляем прогресс фарма
               store.updateClaimProgress(percent);
 
-              // обновляем балансы
+              // обновляем балансы пользователя
               if (userResponse) {
                 store.updateUserData({
                   pcoin: userResponse.pcoin,
