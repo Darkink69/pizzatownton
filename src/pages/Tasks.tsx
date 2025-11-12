@@ -209,7 +209,7 @@ function Tasks() {
                                   <span className="font-bold text-2xl sm:text-3xl text-amber-800 shantell ">
                                     1000
                                     <img
-                                      src={`${store.imgUrl}icon_dollar.png`}
+                                      src={`${store.imgUrl}icon_pizza.png`}
                                       alt="dollar"
                                       className="ml-2 inline-block w-12 h-auto sm:w-18"
                                     />

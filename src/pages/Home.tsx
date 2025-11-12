@@ -13,7 +13,7 @@ const Home = observer(() => {
     message: string;
     type: "error" | "success";
   } | null>(null);
-  const [isMusicPlaying, setIsMusicPlaying] = useState(true);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   // const [claimRewards, setClaimRewards] = useState<{ [key: number]: string }>(
   //   {}
   // );
@@ -169,7 +169,7 @@ const Home = observer(() => {
     if (index === floors - 1) return null;
 
     const realFloorId = floors - 1 - index;
-    console.log(index, "→ floorId", realFloorId);
+    // console.log(index, "→ floorId", realFloorId);
     return (
       store.safeUserFloorList.find((f) => f.floorId === realFloorId) || null
     );
@@ -761,7 +761,7 @@ const Home = observer(() => {
                 className="w-28 sm:w-24 sm:h-24 object-contain"
               />
               <div className="absolute -bottom-0 flex items-center gap-1">
-                {renderStars(1)}
+                {renderStars(2)}
               </div>
             </div>
           </div>

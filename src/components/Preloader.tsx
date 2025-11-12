@@ -1,17 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import store from "../store/store";
 
 const Preloader = () => {
   const [isVisible, _setIsVisible] = useState(true);
 
-  // useEffect(() => {
-  //   // Небольшая задержка перед началом анимации исчезновения
-  //   const timer = setTimeout(() => {
-  //     setIsVisible(false);
-  //   }, 1800);
-
-  //   return () => clearTimeout(timer);
-  // }, []);
+  useEffect(() => {
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: "auto",
+    });
+  }, []);
 
   return (
     <div
