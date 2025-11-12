@@ -192,13 +192,12 @@ const WebSocketComponent = observer(() => {
 
             /** ------------------ CLAIM_DO ------------------ */
           case "CLAIM_DO": {
-            if (parsed.success && parsed.data?.user) {
-              const user = parsed.data.user;
-
+            const userResponse = parsed.data?.userResponse;
+            if (parsed.success && userResponse) {
               store.updateUserData({
-                pcoin: user.pcoin,
-                pdollar: user.pdollar,
-                pizza: user.pizza,
+                pcoin: userResponse.pcoin,
+                pdollar: userResponse.pdollar,
+                pizza: userResponse.pizza,
               });
 
               store.updateClaimProgress(0);
@@ -225,15 +224,15 @@ const WebSocketComponent = observer(() => {
               const percent = parsed.data.percent ?? "0";
               const userResponse = parsed.data.userResponse;
 
-              //  Обновляем значение процентов
+              // обновляем процент фарма
               store.updateClaimProgress(percent);
 
-              // Также обновляем балансы пользователя
+              // обновляем балансы
               if (userResponse) {
                 store.updateUserData({
-                    pcoin: parsed.data.user.pcoin,
-                    pdollar: parsed.data.user.pdollar,
-                    pizza: parsed.data.user.pizza,
+                  pcoin: userResponse.pcoin,
+                  pdollar: userResponse.pdollar,
+                  pizza: userResponse.pizza,
                 });
               }
 
