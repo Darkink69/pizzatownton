@@ -113,6 +113,41 @@ const Home = observer(() => {
     setStaffModal("guard");
   };
 
+  // Обработчик найма персонажа
+  const handleHireStaff = () => {
+    // Здесь будет логика найма персонажа
+    showNotification(`${getStaffName(staffModal)} нанят!`, "success");
+    handleCloseStaffModal();
+  };
+
+  // Функция для получения названия персонажа
+  const getStaffName = (type: string | null) => {
+    switch (type) {
+      case "manager":
+        return "Manager";
+      case "accountant":
+        return "Accountant";
+      case "guard":
+        return "Guard";
+      default:
+        return "";
+    }
+  };
+
+  // Функция для получения описания персонажа
+  const getStaffDescription = (type: string | null) => {
+    switch (type) {
+      case "manager":
+        return "Менеджер. +% к PD/час всех этажей";
+      case "accountant":
+        return "Бухгалтер. Автоматически собирает прибыль каждые 12 часов";
+      case "guard":
+        return "Охранник. Снижает/исключает % потери дохода всех этажей";
+      default:
+        return "";
+    }
+  };
+
   // Закрытие модального окна персонажа
   const handleCloseStaffModal = () => {
     setStaffModal(null);
@@ -837,26 +872,6 @@ const Home = observer(() => {
 
                   {/* Статистика */}
                   <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6 px-2">
-                    {/* Повара */}
-                    <div className="flex items-center justify-between">
-                      <div className="font-bold text-base sm:text-lg text-amber-800 shantell flex-1">
-                        Поваров:
-                      </div>
-                      <div className="font-bold text-base sm:text-lg text-amber-800 shantell mx-2 sm:mx-4">
-                        0 / 5
-                      </div>
-                      <div className="relative w-16 sm:w-20">
-                        <img
-                          src={`${store.imgUrl}b_yellow.png`}
-                          alt="Добавить повара"
-                          className="w-full h-auto"
-                        />
-                        <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-amber-800 font-bold text-sm sm:text-base shantell">
-                          +1
-                        </span>
-                      </div>
-                    </div>
-
                     {/* Доходность Этажа */}
                     <div className="flex items-center justify-between">
                       <div className="font-bold text-base sm:text-lg text-amber-800 shantell flex-1 leading-4">
@@ -886,35 +901,59 @@ const Home = observer(() => {
                         </span>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Общая Доходность */}
-                    <div className="flex items-center justify-between">
-                      <div className="font-bold text-base sm:text-lg text-amber-800 shantell leading-4 flex-1">
-                        Общая доходность:
-                      </div>
-                      <div className="flex items-center gap-1 sm:gap-2 mx-2 sm:mx-4">
-                        <span className="ont-bold text-base sm:text-lg text-amber-800 shantell">
-                          0
-                        </span>
-                        <img
-                          src={`${store.imgUrl}icon_dollar.png`}
-                          alt="dollar"
-                          className="w-8 h-auto sm:w-10"
-                        />
-                        <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
-                          / час
-                        </span>
-                      </div>
-                      <div className="relative w-16 sm:w-20">
-                        <img
-                          src={`${store.imgUrl}b_yellow.png`}
-                          alt="Увеличить доходность"
-                          className="w-full h-auto"
-                        />
-                        <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-amber-800 font-bold text-sm sm:text-base shantell">
-                          +41
-                        </span>
-                      </div>
+                  {/* Блок звезд с ценами */}
+                  <div className="mb-4 sm:mb-6">
+                    <div className="flex justify-center items-center gap-2 sm:gap-4 mb-3">
+                      {Array.from({ length: 5 }, (_, index) => {
+                        const starLevel = index + 1;
+                        const isActive = starLevel <= selectedFloor.level;
+                        const upgradeCost = 1000;
+
+                        return (
+                          <div
+                            key={index}
+                            className="flex flex-col items-center"
+                          >
+                            {/* Звезда */}
+                            <img
+                              src={`${store.imgUrl}${
+                                isActive
+                                  ? "icon_star.png"
+                                  : "icon_star_empty.png"
+                              }`}
+                              alt={isActive ? "Active star" : "Empty star"}
+                              className="w-6 h-6 sm:w-8 sm:h-8 mb-1"
+                            />
+                            {/* Цена под звездой */}
+                            <div className="relative">
+                              <img
+                                src={`${store.imgUrl}b_white.png`}
+                                alt="Price background"
+                                className="w-12 h-6 sm:w-14 sm:h-7"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center gap-1 px-1">
+                                <span className="text-xs text-amber-800 shantell font-bold">
+                                  {upgradeCost}
+                                </span>
+                                <img
+                                  src={`${store.imgUrl}icon_dollar_coin.png`}
+                                  alt="coin"
+                                  className="w-3 h-3"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Текущий уровень текстом */}
+                    <div className="text-center">
+                      <span className="text-sm sm:text-base text-amber-800 shantell">
+                        Текущий уровень: {selectedFloor.level}/5
+                      </span>
                     </div>
                   </div>
 
@@ -1004,46 +1043,109 @@ const Home = observer(() => {
 
             {/* Модальное окно */}
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <div className="relative w-full h-full max-w-4xl max-h-[90vh] flex items-center justify-center">
-                <img
-                  src={`${store.imgUrl}Component ${
-                    staffModal === "manager"
-                      ? "1"
-                      : staffModal === "accountant"
-                      ? "2"
-                      : "3"
-                  }.png`}
-                  alt={staffModal}
-                  className="w-full h-full object-contain"
-                />
-
-                {/* Кнопка закрытия */}
-                <button
-                  onClick={handleCloseStaffModal}
-                  className="absolute top-4 right-4 sm:top-6 sm:right-6 z-50 p-2 bg-white rounded-full hover:scale-110 transition-transform shadow-lg"
-                >
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
+              <div className="relative bg-white rounded-2xl w-full max-w-md mx-auto shadow-2xl">
+                {/* Заголовок с кнопкой закрытия */}
+                <div className="relative p-4 border-b border-gray-200">
+                  <h2 className="text-center text-xl font-bold text-amber-800 shantell">
+                    {getStaffName(staffModal)}
+                  </h2>
+                  <button
+                    onClick={handleCloseStaffModal}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 p-1 hover:scale-110 transition-transform"
                   >
-                    <circle cx="12" cy="12" r="12" fill="white"></circle>
-                    <path
-                      d="M8 8L16 16"
-                      stroke="#FFBC6B"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                    ></path>
-                    <path
-                      d="M16 8L8 16"
-                      stroke="#FFBC6B"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                    ></path>
-                  </svg>
-                </button>
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <circle cx="12" cy="12" r="12" fill="#FFBC6B" />
+                      <path
+                        d="M8 8L16 16"
+                        stroke="white"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M16 8L8 16"
+                        stroke="white"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Контент модального окна */}
+                <div className="p-6">
+                  {/* Картинка персонажа */}
+                  <div className="flex justify-center mb-4">
+                    <img
+                      src={`${store.imgUrl}${getStaffName(staffModal)}_big.png`}
+                      alt={getStaffName(staffModal)}
+                      className="w-full object-contain"
+                    />
+                  </div>
+
+                  {/* Описание персонажа */}
+                  <div className="text-center mb-6">
+                    <p className="text-lg text-amber-800 shantell leading-tight">
+                      {getStaffDescription(staffModal)}
+                    </p>
+                  </div>
+
+                  {/* Дополнительные кнопки для бухгалтера */}
+                  {staffModal === "accountant" && (
+                    <div className="flex justify-between gap-2 mb-6">
+                      <button className="flex-1 relative hover:opacity-90 transition-opacity">
+                        <img
+                          src={`${store.imgUrl}b_white.png`}
+                          alt="7 дней"
+                          className="w-full"
+                        />
+                        <span className="absolute inset-0 flex items-center justify-center text-amber-800 shantell text-sm">
+                          7 дней
+                        </span>
+                      </button>
+                      <button className="flex-1 relative hover:opacity-90 transition-opacity">
+                        <img
+                          src={`${store.imgUrl}b_white.png`}
+                          alt="14 дней"
+                          className="w-full"
+                        />
+                        <span className="absolute inset-0 flex items-center justify-center text-amber-800 shantell text-sm">
+                          14 дней
+                        </span>
+                      </button>
+                      <button className="flex-1 relative hover:opacity-90 transition-opacity">
+                        <img
+                          src={`${store.imgUrl}b_white.png`}
+                          alt="30 дней"
+                          className="w-full"
+                        />
+                        <span className="absolute inset-0 flex items-center justify-center text-amber-800 shantell text-sm">
+                          30 дней
+                        </span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Кнопка "Нанять" */}
+                  <button
+                    onClick={handleHireStaff}
+                    className="w-full relative hover:opacity-90 transition-opacity"
+                  >
+                    <img
+                      src={`${store.imgUrl}b_blue_small.png`}
+                      alt="Нанять"
+                      className="w-full"
+                    />
+                    <span className="absolute inset-0 flex items-center justify-center text-blue-900 shantell text-lg font-bold">
+                      Нанять
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
           </>
