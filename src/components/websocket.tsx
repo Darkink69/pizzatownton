@@ -192,29 +192,26 @@ const WebSocketComponent = observer(() => {
 
             /** ------------------ CLAIM_DO ------------------ */
           case "CLAIM_DO": {
-            const user = parsed.data?.user || parsed.data?.userResponse;
-            const earned = parsed.data?.earnedPDollar ?? parsed.data?.earned ?? 0;
-            const floorId = parsed.data?.floorId ?? null;
-            const currency = parsed.data?.currency ?? "pdollar";
+            if (parsed.success && parsed.data?.user) {
+              const user = parsed.data.user;
 
-            // 🔹 сохраняем последнее начисление в store, чтобы Home мог его отобразить
-            if (floorId && earned >= 0) {
-              runInAction(() => {
-                (store as any).lastClaimRewards = { floorId, amount: earned, currency };
+              store.updateUserData({
+                pcoin: user.pcoin,
+                pdollar: user.pdollar,
+                pizza: user.pizza,
               });
-            }
 
-            if (parsed.success && user) {
-              store.updateUserData?.(user);
-              toast.success(currency === "pizza"
-                  ? "🍕 Пицца успешно собрана!"
-                  : "💰 Доход успешно собран!");
+              store.updateClaimProgress(0);
 
-              if (floorId && earned > 0) {
-                store.addClaimAnimation(floorId, earned, currency);
-              }
-              if (parsed.data.userFloorList) {
-                store.setFloorsData(parsed);
+              toast.success("💰 Доход успешно собран!");
+              const lostChance = Math.random();
+              if (lostChance < 0.3) {
+                toast.warning(
+                    "Некоторые посетители не заплатили за счёт 😕\n" +
+                    "Вы потеряли от 1 до 5% общего дохода.\n\n" +
+                    "Чтобы избежать потерь, наймите Охранника 👮🏼‍♂️",
+                    {autoClose: 7000}
+                );
               }
             } else {
               toast.error(parsed.message || "Ошибка при сборе дохода");
@@ -234,9 +231,9 @@ const WebSocketComponent = observer(() => {
               // Также обновляем балансы пользователя
               if (userResponse) {
                 store.updateUserData({
-                  pcoin: userResponse.pcoin,
-                  pdollar: userResponse.pdollar,
-                  pizza: userResponse.pizza,
+                    pcoin: parsed.data.user.pcoin,
+                    pdollar: parsed.data.user.pdollar,
+                    pizza: parsed.data.user.pizza,
                 });
               }
 
