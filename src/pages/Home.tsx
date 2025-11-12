@@ -186,7 +186,7 @@ const Home = observer(() => {
             key={i}
             src={`${store.imgUrl}icon_star.png`}
             alt="Star"
-            className="w-4 h-4 sm:w-5 sm:h-5"
+            className="w-4 h-4"
           />
         );
       } else {
@@ -195,7 +195,7 @@ const Home = observer(() => {
             key={i}
             src={`${store.imgUrl}icon_star_empty.png`}
             alt="Empty star"
-            className="w-4 h-4 sm:w-5 sm:h-5"
+            className="w-4 h-4"
           />
         );
       }
@@ -746,7 +746,7 @@ const Home = observer(() => {
                 className="w-28 sm:w-24 sm:h-24 object-contain"
               />
               <div className="absolute -bottom-0 flex items-center text-xs text-white shantell">
-                00:00:00
+                12:45:30
               </div>
             </div>
 
@@ -1037,7 +1037,7 @@ const Home = observer(() => {
           <>
             {/* Затемненный фон с прозрачностью */}
             <div
-              className="fixed inset-0 bg-black opacity-70 z-50"
+              className="fixed inset-0 bg-black bg-opacity-70 z-40"
               onClick={handleCloseStaffModal}
             />
 
@@ -1088,12 +1088,54 @@ const Home = observer(() => {
                     />
                   </div>
 
+                  {/* Звезды уровня или таймер */}
+                  <div className="flex justify-center mb-4">
+                    {staffModal === "accountant" ? (
+                      /* Таймер для бухгалтера */
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-amber-800 shantell mb-2">
+                          12:45:30
+                        </div>
+                        <div className="text-sm text-amber-600 shantell">
+                          Осталось времени найма
+                        </div>
+                      </div>
+                    ) : (
+                      /* Звезды для менеджера и охранника */
+                      <div className="flex items-center gap-2">
+                        {renderStars(staffModal === "manager" ? 2 : 3)}
+                      </div>
+                    )}
+                  </div>
+
                   {/* Описание персонажа */}
                   <div className="text-center mb-6">
                     <p className="text-lg text-amber-800 shantell leading-tight">
                       {getStaffDescription(staffModal)}
                     </p>
                   </div>
+
+                  {/* Блок улучшения для менеджера и охранника */}
+                  {(staffModal === "manager" || staffModal === "guard") && (
+                    <div className="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                      <div className="text-center text-amber-800 shantell">
+                        Улучшить до следующего уровня -
+                        <div className="flex items-center justify-center gap-2 mt-2">
+                          <span className="font-bold text-lg">
+                            {staffModal === "manager" ? "3320" : "9850"}
+                          </span>
+                          <img
+                            src={`${store.imgUrl}icon_dollar_coin.png`}
+                            alt="coin"
+                            className="w-6 h-6"
+                          />
+                          <span className="font-bold text-lg">
+                            {staffModal === "manager" ? "+1%" : "-5%"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Дополнительные кнопки для бухгалтера */}
                   {staffModal === "accountant" && (
