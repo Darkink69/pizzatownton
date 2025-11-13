@@ -719,7 +719,7 @@ const Home = observer(() => {
         </div>
 
         {/* Нижний блок */}
-        <div className="absolute bottom-26 left-1/2 transform -translate-x-1/2 w-full max-w-lg mx-auto z-30">
+        <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 w-full max-w-lg mx-auto z-30">
           {/* Блок только с бухгалтером */}
           <div className="flex justify-center items-end px-4 mb-2">
             {/* Accountant */}
@@ -739,9 +739,9 @@ const Home = observer(() => {
           </div>
 
           {/* Блоки балансов */}
-          <div className="flex justify-between items-center px-4">
+          <div className="flex-col justify-between items-center">
             {/* PCOIN */}
-            <div className="relative w-20 hover:opacity-90 transition-opacity">
+            <div className="relative w-20 hover:opacity-90 transition-opacity mb-4">
               <img src={`${store.imgUrl}b_white.png`} alt="pcoin" />
               <div className="absolute inset-0 flex items-center ml-2 text-xs text-amber-800 shantell">
                 <span>
