@@ -188,6 +188,38 @@ const WebSocketComponent = observer(() => {
             break;
           }
 
+            /** ------------------ STAFF ------------------ */
+          case "STAFF_GET": {
+            if (parsed.success && parsed.data) {
+              runInAction(() => {
+                store.staffData = parsed.data; // сохранение списка доступных персонажей
+              });
+              console.log("🧍 Получен список персонала:", parsed.data);
+            } else {
+              toast.error(parsed.message || "Ошибка загрузки персонала");
+            }
+            break;
+          }
+
+          case "PERSON_BUY": {
+            if (parsed.success && parsed.data) {
+              const d = parsed.data; // StaffBuyUpdateResponse
+              runInAction(() => {
+                store.updateUserData({
+                  pcoin: d.user?.pcoin,
+                  pdollar: d.user?.pdollar,
+                  pizza: d.user?.pizza,
+                });
+                store.userStaff = d.userStaff;
+                console.log("💼 PERSON_BUY response:", parsed.data);
+              });
+              toast.success("✅ Персонал успешно нанят / обновлён!");
+            } else {
+              toast.error(parsed.message || "Ошибка найма персонала");
+            }
+            break;
+          }
+
 
 
             /** ------------------ CLAIM_DO ------------------ */

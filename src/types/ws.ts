@@ -11,6 +11,9 @@ export type OperationType =
     | "BANK_EXCHANGE_PDOLLAR"
     | "BANK_ORDER_VIEW"
     | "BANK_ORDER_STATUS_CHANGED"
+    // --- новый функционал персонала ---
+    | "STAFF_GET"
+    | "PERSON_BUY"
     | (string & {}); // резерв на будущее
 
 // -------------------- База запроса --------------------
@@ -50,6 +53,21 @@ export interface TgUser {
 export interface UserState {
   [key: string]: any;
 }
+
+
+// -------------------- Новый блок: Персонал --------------------
+export interface StaffRq {
+  telegramId: number;
+}
+
+export interface BuyPersonRq {
+  telegramId: number;
+  staffId: number;         // 1 Guard | 2 Manager | 3 Accountant
+  floorId?: number;        // Guard/Manager targeting floor
+  level?: number;          // new level (1–5)
+  subscription?: number;   // days (7/30/90) for Accountant
+}
+
 
 // -------------------- Запросы (RQ) --------------------
 
@@ -187,4 +205,56 @@ export interface BankOrderViewData {
   createdAt?: string;
   updatedAt?: string;
   telegramId?: number;
+}
+
+
+// -------------------- Персонал (Staff) --------------------
+export interface LevelsDto {
+  id: number;
+  level: number;
+  description: string;
+  cost: number;
+}
+
+export interface SubscriptionsDto {
+  id: number;
+  durationDays: number;
+  cost: number;
+}
+
+export interface CharacterLevelDto {
+  id: number;
+  name: string;
+  description: string;
+  levels: LevelsDto[];
+}
+
+export interface CharacterSubscriptionDto {
+  id: number;
+  name: string;
+  description: string;
+  accountants: SubscriptionsDto[];
+}
+
+export interface StaffAllResponse {
+  managers: CharacterLevelDto;
+  guards: CharacterLevelDto;
+  accountant: CharacterSubscriptionDto;
+}
+
+export interface StaffBuyUpdateResponse {
+  user: {
+    tgId: number;
+    pcoin: number;
+    pizza: number;
+    pdollar: number;
+  };
+  userStaff: {
+    staffId: number;
+    staffName: string;
+    staffStartDate: string;
+    staffEndDate?: string;
+    staffLevel?: number;
+    floorId?: number;
+  };
 }

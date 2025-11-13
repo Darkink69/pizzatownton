@@ -9,7 +9,8 @@ const Friends = observer(() => {
 
   // -------------------- запросим статистику при загрузке --------------------
   useEffect(() => {
-    if (store.sessionId && store.user?.telegramId) {
+    if (store.sessionId && store.user?.telegramId && !store.staffData) {
+      console.log("📨 Requesting staff info...");
       store.requestReferralInfo();
     }
   }, [store.sessionId, store.user?.telegramId]);
