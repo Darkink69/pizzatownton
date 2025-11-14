@@ -35,15 +35,15 @@ class Store {
     link: "",
   };
 
-
   staffData: any = null;
   userStaff: any = null;
+  accountantEndTime: any;
 
   requestStaffData() {
     if (!this.wsSend || !this.sessionId || !this.user?.telegramId) return false;
     const rq = {
       type: "STAFF_GET",
-      requestId: Math.random().toString(36).substring(2,10),
+      requestId: Math.random().toString(36).substring(2, 10),
       session: this.sessionId,
       staffRq: { telegramId: this.user.telegramId },
     };
@@ -51,11 +51,16 @@ class Store {
     return true;
   }
 
-  sendHireStaff(staffId: number, level?: number, subscription?: number, floorId?: number) {
+  sendHireStaff(
+    staffId: number,
+    level?: number,
+    subscription?: number,
+    floorId?: number
+  ) {
     if (!this.wsSend || !this.sessionId || !this.user?.telegramId) return false;
     const rq = {
       type: "PERSON_BUY",
-      requestId: Math.random().toString(36).substring(2,10),
+      requestId: Math.random().toString(36).substring(2, 10),
       session: this.sessionId,
       buyPersonRq: {
         telegramId: this.user.telegramId,
@@ -72,10 +77,9 @@ class Store {
 
   updateClaimProgress(percent: string | number) {
     runInAction(() => {
-      this.claimProgress = Number(percent) || 0 ;
+      this.claimProgress = Number(percent) || 0;
     });
   }
-
 
   setReferralData(data: {
     totalReferrals?: number;

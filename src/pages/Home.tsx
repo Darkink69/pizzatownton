@@ -6,6 +6,23 @@ import WebSocketComponent from "../components/websocket";
 import { Link } from "react-router-dom";
 import FooterHome from "../components/FooterHome";
 
+// Локальные данные для тестирования
+const LOCAL_TEST_DATA = {
+  floors: [
+    { floorId: 1, level: 1, owned: true, yieldPerHour: 1000, balance: 2755 },
+    { floorId: 2, level: 2, owned: true, yieldPerHour: 1500, balance: 3200 },
+    { floorId: 3, level: 1, owned: false, yieldPerHour: 0, balance: 0 },
+  ],
+  pcoin: 1500,
+  pdollar: 2500,
+  claimProgress: 75,
+};
+
+// Фиксированная дата для тестирования таймера (2 дня вперед)
+const TEST_END_DATE = new Date();
+TEST_END_DATE.setDate(TEST_END_DATE.getDate() + 2);
+TEST_END_DATE.setHours(12, 45, 30, 0);
+
 const Home = observer(() => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedFloor, setSelectedFloor] = useState<any>(null);
@@ -14,12 +31,51 @@ const Home = observer(() => {
     type: "error" | "success";
   } | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
-  const [staffModal, setStaffModal] = useState<
-    "manager" | "accountant" | "guard" | null
-  >(null);
+  const [staffModal, setStaffModal] = useState<"accountant" | null>(null);
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const floors = 11; // basement + 9 этажей + крыша
+  const floors = 11;
+
+  // Флаг для локального тестирования
+  const isLocalTesting = !store.sessionId || !store.user?.telegramId;
+
+  // Таймер обратного отсчета
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const endDate = isLocalTesting
+        ? TEST_END_DATE
+        : new Date(store.accountantEndTime || TEST_END_DATE);
+      const now = new Date();
+      const difference = endDate.getTime() - now.getTime();
+
+      if (difference > 0) {
+        setTimeLeft({
+          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+          minutes: Math.floor((difference / 1000 / 60) % 60),
+          seconds: Math.floor((difference / 1000) % 60),
+        });
+      } else {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      }
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(timer);
+  }, [isLocalTesting, store.accountantEndTime]);
+
+  // Форматирование времени для отображения
+  const formatTime = (time: number) => {
+    return time < 10 ? `0${time}` : time;
+  };
 
   // Инициализация аудио
   useEffect(() => {
@@ -58,18 +114,13 @@ const Home = observer(() => {
     setIsMusicPlaying(!isMusicPlaying);
   };
 
-  // Используем безопасные геттеры
-  const areFloorsLoaded = store.areFloorsLoaded;
-  const userFloorList = store.safeUserFloorList;
-  if (!Array.isArray(userFloorList)) return null;
-
-  // Принудительный запрос данных при монтировании
+  // Запрос данных при монтировании
   useEffect(() => {
-    if (!areFloorsLoaded && store.sessionId && store.user?.telegramId) {
+    if (!isLocalTesting && !store.areFloorsLoaded) {
       console.log("Requesting floors data on component mount...");
       store.requestFloorsData();
     }
-  }, [areFloorsLoaded, store.sessionId, store.user?.telegramId]);
+  }, [isLocalTesting, store.areFloorsLoaded]);
 
   // Автоскролл при загрузке
   useEffect(() => {
@@ -91,58 +142,273 @@ const Home = observer(() => {
   };
 
   const handleClaimDo = () => {
-    if (store.sendClaimDo(0)) {
+    if (isLocalTesting) {
+      showNotification("💰 Доход собирается... (тестовый режим)", "success");
+    } else if (store.sendClaimDo(0)) {
       showNotification("💰 Доход собирается...", "success");
     } else {
       showNotification("❌ Ошибка при сборе дохода", "error");
     }
   };
 
-  // ------------------- Персонал -------------------
+  // Персонал
   const handleOpenAccountantModal = () => setStaffModal("accountant");
-
   const handleCloseStaffModal = () => setStaffModal(null);
 
-  const getStaffName = (type: string | null) =>
-    type === "manager"
-      ? "Manager"
-      : type === "accountant"
-      ? "Accountant"
-      : type === "guard"
-      ? "Guard"
-      : "";
-
-  // Обработчик найма персонажа
   const handleHireStaff = (option?: number) => {
     if (!staffModal) return;
-    let staffId = 0,
-      level: number | undefined,
-      subscription: number | undefined;
 
-    switch (staffModal) {
-      case "manager":
-        staffId = 2;
-        level = 1;
-        break;
-      case "guard":
-        staffId = 1;
-        level = 1;
-        break;
-      case "accountant":
-        staffId = 3;
-        subscription = option ?? 7;
-        break;
+    if (isLocalTesting) {
+      showNotification(
+        `Бухгалтер нанят на ${option || 7} дней! (тестовый режим)`,
+        "success"
+      );
+    } else {
+      const ok = store.sendHireStaff(3, undefined, option ?? 7, 0);
+      if (ok) showNotification("Бухгалтер нанят!", "success");
+      else showNotification("Ошибка при найме бухгалтера", "error");
     }
-
-    const ok = store.sendHireStaff(staffId, level, subscription, 0);
-    if (ok) showNotification(`${getStaffName(staffModal)} нанят!`, "success");
-    else
-      showNotification(`Ошибка при найме ${getStaffName(staffModal)}`, "error");
     handleCloseStaffModal();
   };
 
-  // Показываем загрузку пока данные не получены ----------------------------------------------------------------------
-  if (!areFloorsLoaded) {
+  // Получение данных этажа
+  const getFloorData = (index: number) => {
+    if (index === 0 || index === floors - 1) return null;
+    const realFloorId = floors - 1 - index;
+
+    if (isLocalTesting) {
+      return (
+        LOCAL_TEST_DATA.floors.find((f) => f.floorId === realFloorId) || null
+      );
+    }
+
+    return (
+      store.safeUserFloorList?.find((f) => f.floorId === realFloorId) || null
+    );
+  };
+
+  const renderStars = (level: number) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <img
+        key={i}
+        src={`${store.imgUrl}${
+          i < level ? "icon_star.png" : "icon_star_empty.png"
+        }`}
+        alt={i < level ? "Star" : "Empty star"}
+        className="w-4 h-4"
+      />
+    ));
+  };
+
+  // Модальное окно улучшения этажа
+  const handleOpenUpgradeModal = (floorData: any) => {
+    setSelectedFloor(floorData);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedFloor(null);
+  };
+
+  const handleUpgradeFromModal = () => {
+    if (!selectedFloor) return;
+
+    if (isLocalTesting) {
+      showNotification(
+        `✅ Этаж ${selectedFloor.floorId} улучшен до уровня ${
+          selectedFloor.level + 1
+        }! (тестовый режим)`,
+        "success"
+      );
+    } else {
+      showNotification(
+        `🚀 Отправляем запрос на улучшение этажа ${selectedFloor.floorId}...`,
+        "success"
+      );
+      const success = store.upgradeFloor(selectedFloor.floorId);
+
+      if (success) {
+        setTimeout(() => {
+          showNotification(
+            `✅ Этаж ${selectedFloor.floorId} улучшен до уровня ${
+              selectedFloor.level + 1
+            }!`,
+            "success"
+          );
+        }, 800);
+      } else {
+        setTimeout(() => {
+          showNotification(
+            `❌ Не удалось улучшить этаж ${selectedFloor.floorId}. Недостаточно средств!`,
+            "error"
+          );
+        }, 800);
+      }
+    }
+    handleCloseModal();
+  };
+
+  const getFloorIdByIndex = (index: number): number => {
+    if (index === 0) return -2;
+    if (index === floors - 1) return -1;
+    return floors - 1 - index;
+  };
+
+  const getFloorImage = (index: number) => {
+    if (index === floors - 1) return "img_basement_floor.png";
+    if (index === 0) return "img_roof.png";
+
+    const floorId = getFloorIdByIndex(index);
+    const floor = isLocalTesting
+      ? LOCAL_TEST_DATA.floors.find((f) => f.floorId === floorId)
+      : store.getFloorById(floorId);
+
+    return floor?.owned ? "img_floor_empty.png" : "img_floor_dark.png";
+  };
+
+  const isFilledFloor = (index: number) => {
+    const floorId = getFloorIdByIndex(index);
+    if (floorId === -1 || floorId === -2) return true;
+
+    const floor = isLocalTesting
+      ? LOCAL_TEST_DATA.floors.find((f) => f.floorId === floorId)
+      : store.getFloorById(floorId);
+
+    return floor?.owned;
+  };
+
+  const isEmptyFloor = (index: number) => {
+    const floorId = getFloorIdByIndex(index);
+    if (floorId === -1 || floorId === -2) return false;
+
+    const floor = isLocalTesting
+      ? LOCAL_TEST_DATA.floors.find((f) => f.floorId === floorId)
+      : store.getFloorById(floorId);
+
+    return !floor?.owned;
+  };
+
+  const getFloorNameByIndex = (index: number): string => {
+    const floorId = getFloorIdByIndex(index);
+    if (index === 0) return "Крыша";
+    if (floorId === -1) return "Basement";
+    if (floorId === 1) return "Basement";
+    return `${floorId} этаж`;
+  };
+
+  const handleBuyFloor = (index: number) => {
+    const floorId = getFloorIdByIndex(index);
+
+    if (isLocalTesting) {
+      showNotification(`🏗 Этаж ${floorId} куплен! (тестовый режим)`, "success");
+    } else {
+      const success = store.buyNewFloor(floorId);
+      if (success) {
+        showNotification(
+          `🏗 Запрос на покупку этажа ${floorId} отправлен!`,
+          "success"
+        );
+      } else {
+        showNotification(
+          `❌ Не удалось купить этаж ${floorId}. Проверь баланс или соединение.`,
+          "error"
+        );
+      }
+    }
+  };
+
+  const handleUpgradeFloor = (floorId: number, event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (floorId === 1) {
+      showNotification(
+        "Basement сейчас нельзя улучшить — ждём звёздный апгрейд!",
+        "error"
+      );
+      return;
+    }
+
+    const floor = isLocalTesting
+      ? LOCAL_TEST_DATA.floors.find((f) => f.floorId === floorId)
+      : store.getFloorById(floorId);
+
+    if (floor) {
+      handleOpenUpgradeModal(floor);
+    }
+  };
+
+  // Функции для персонала
+  const getStaffUpgradeCost = (
+    _floorId: number,
+    _staffType: "manager" | "guard"
+  ) => {
+    return 62.5; // Тестовая цена
+  };
+
+  const getStaffCurrentLevel = (
+    _floorId: number,
+    _staffType: "manager" | "guard"
+  ) => {
+    return 0; // Начальный уровень для тестирования
+  };
+
+  const handleStaffUpgrade = (
+    staffType: "manager" | "guard",
+    floorId: number
+  ) => {
+    if (isLocalTesting) {
+      showNotification(
+        `👔 ${
+          staffType === "manager" ? "Менеджер" : "Охранник"
+        } улучшен на этаже ${floorId}! (тестовый режим)`,
+        "success"
+      );
+    } else {
+      const staffId = staffType === "manager" ? 2 : 1;
+      const currentLevel = getStaffCurrentLevel(floorId, staffType);
+      store.sendHireStaff(staffId, currentLevel + 1, undefined, floorId);
+      showNotification(
+        `👔 ${
+          staffType === "manager" ? "Менеджер" : "Охранник"
+        } улучшен на этаже ${floorId}!`,
+        "success"
+      );
+    }
+  };
+
+  // Функция для отображения уровней персонала с звездочками
+  const renderStaffLevelWithStars = (
+    currentLevel: number,
+    labels: string[]
+  ) => {
+    return (
+      <div className="flex gap-1 mt-2">
+        {labels.map((label, index) => (
+          <div
+            key={index}
+            className={`w-10 h-10 flex flex-col items-center justify-center rounded text-xs shantell font-bold ${
+              index < currentLevel
+                ? "bg-green-500 text-white"
+                : "bg-gray-100 text-amber-800"
+            }`}
+          >
+            {/* Звездочка над процентом */}
+            <img
+              src={`${store.imgUrl}${
+                index < currentLevel ? "icon_star.png" : "icon_star_empty.png"
+              }`}
+              alt="Star"
+              className="w-3 h-3 mb-1"
+            />
+            <span>{label}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Показываем загрузку пока данные не получены (только в реальном режиме)
+  if (!isLocalTesting && !store.areFloorsLoaded) {
     return (
       <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B] flex items-center justify-center">
         <div className="text-white text-xl shantell">Загрузка этажей...</div>
@@ -152,233 +418,27 @@ const Home = observer(() => {
     );
   }
 
-  const getFloorData = (index: number) => {
-    if (index === 0) return null;
-    if (index === floors - 1) return null;
-
-    const realFloorId = floors - 1 - index;
-    // console.log(index, "→ floorId", realFloorId);
-    return (
-      store.safeUserFloorList.find((f) => f.floorId === realFloorId) || null
-    );
-  };
-
-  const renderStars = (level: number) => {
-    const stars = [];
-    const totalStars = 5;
-
-    for (let i = 0; i < totalStars; i++) {
-      if (i < level) {
-        stars.push(
-          <img
-            key={i}
-            src={`${store.imgUrl}icon_star.png`}
-            alt="Star"
-            className="w-4 h-4"
-          />
-        );
-      } else {
-        stars.push(
-          <img
-            key={i}
-            src={`${store.imgUrl}icon_star_empty.png`}
-            alt="Empty star"
-            className="w-4 h-4"
-          />
-        );
-      }
-    }
-    return stars;
-  };
-
-  // Открытие модального окна для улучшения этажа
-  const handleOpenUpgradeModal = (floorData: any) => {
-    setSelectedFloor(floorData);
-    setIsModalOpen(true);
-  };
-
-  // Закрытие модального окна
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedFloor(null);
-  };
-
-  // Улучшение этажа из модального окна
-  const handleUpgradeFromModal = () => {
-    if (!selectedFloor) return;
-
-    // const upgradeCost = store.getUpgradeCost(selectedFloor.floorId);
-
-    // Инстантное уведомление
-    showNotification(
-      `🚀 Отправляем запрос на улучшение этажа ${selectedFloor.floorId}...`,
-      "success"
-    );
-
-    const success: any = store.upgradeFloor(selectedFloor.floorId);
-
-    if (success) {
-      setTimeout(() => {
-        showNotification(
-          `✅ Этаж ${selectedFloor.floorId} улучшен до уровня ${
-            selectedFloor.level + 1
-          }!`,
-          "success"
-        );
-      }, 800);
-    } else {
-      setTimeout(() => {
-        showNotification(
-          `❌ Не удалось улучшить этаж ${selectedFloor.floorId}. Недостаточно средств!`,
-          "error"
-        );
-      }, 800);
-    }
-
-    handleCloseModal();
-  };
-
-  const getFloorIdByIndex = (index: number): number => {
-    if (index === 0) return -2; // крыша
-    if (index === floors - 1) return -1; // basement‑фон
-    return floors - 1 - index; // 9→1
-  };
-
-  const getFloorImage = (index: number) => {
-    // Самый нижний - basement картинка
-    if (index === floors - 1) return "img_basement_floor.png";
-    // Крыша
-    if (index === 0) return "img_roof.png";
-
-    const floorId = getFloorIdByIndex(index);
-    const floor = store.getFloorById(floorId);
-
-    // ✅ если этаж куплен — рисуем "пустой", иначе "тёмный"
-    return floor?.owned ? "img_floor_empty.png" : "img_floor_dark.png";
-  };
-
-  const isFilledFloor = (index: number) => {
-    const floorId = getFloorIdByIndex(index);
-    // basement и крыша всегда заполнены (просто картинки)
-    if (floorId === -1 || floorId === -2) return true;
-
-    const floor = store.getFloorById(floorId);
-    return floor?.owned;
-  };
-
-  const isEmptyFloor = (index: number) => {
-    const floorId = getFloorIdByIndex(index);
-    // basement и крыша никогда не пустые
-    if (floorId === -1 || floorId === -2) return false;
-
-    const floor = store.getFloorById(floorId);
-    return !floor?.owned;
-  };
-
-  const getFloorNameByIndex = (index: number): string => {
-    const floorId = getFloorIdByIndex(index);
-
-    if (index === 0) return "Крыша";
-    if (floorId === -1) return "Basement"; // basement картинка
-    if (floorId === 1) return "Basement"; // 1 этаж отображается как "Basement"
-
-    return `${floorId} этаж`;
-  };
-
-  const handleBuyFloor = (index: number) => {
-    const floorId = getFloorIdByIndex(index);
-    const success = store.buyNewFloor(floorId);
-
-    if (success) {
-      showNotification(
-        `🏗 Запрос на покупку этажа ${floorId} отправлен!`,
-        "success"
-      );
-    } else {
-      showNotification(
-        `❌ Не удалось купить этаж ${floorId}. Проверь баланс или соединение.`,
-        "error"
-      );
-    }
-  };
-
-  // Обработчик улучшения этажа (открывает модальное окно)
-  const handleUpgradeFloor = (floorId: number, event: React.MouseEvent) => {
-    event.stopPropagation();
-    if (floorId === 1) {
-      // 🧱 basement временно не апгрейдится
-      showNotification(
-        "Basement сейчас нельзя улучшить — ждём звёздный апгрейд!",
-        "error"
-      );
-      return;
-    }
-    const floor = store.getFloorById(floorId);
-    if (!floor) return;
-
-    // ВСЕГДА открываем модальное окно, даже если достигнут 5 уровень
-    handleOpenUpgradeModal(floor);
-  };
-
-  // Функция для отображения прогресса улучшений персонала
-  const renderStaffUpgradeProgress = (
-    currentLevel: number,
-    _totalLevels: number,
-    labels: string[]
-  ) => {
-    return (
-      <div className="flex gap-1 mt-2">
-        {labels.map((label, index) => (
-          <div
-            key={index}
-            className={`flex-1 text-center py-1 px-1 rounded text-xs shantell font-bold ${
-              index < currentLevel
-                ? "bg-green-500 text-white"
-                : "bg-white text-amber-800"
-            }`}
-          >
-            {label}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  // Функция для получения стоимости улучшения персонала (заглушка - нужно заменить на реальные данные с сервера)
-  const getStaffUpgradeCost = (
-    _floorId: number,
-    _staffType: "manager" | "guard"
-  ) => {
-    // Заглушка - в реальности эти данные должны приходить с сервера
-    return 40;
-  };
-
-  // Функция для получения текущего уровня персонала (заглушка - нужно заменить на реальные данные с сервера)
-  const getStaffCurrentLevel = (
-    _floorId: number,
-    _staffType: "manager" | "guard"
-  ) => {
-    // Заглушка - в реальности эти данные должны приходить с сервера
-    return 0;
-  };
+  // Получение балансов для отображения
+  // const displayPcoin = isLocalTesting ? LOCAL_TEST_DATA.pcoin : store.pcoin;
+  // const displayPdollar = isLocalTesting
+  //   ? LOCAL_TEST_DATA.pdollar
+  //   : store.pdollar;
+  const displayClaimProgress = isLocalTesting
+    ? LOCAL_TEST_DATA.claimProgress
+    : store.claimProgress;
 
   return (
     <>
       <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B]">
-        {/* Кнопка звука в левом верхнем углу */}
+        {/* Кнопка звука */}
         <button
           onClick={toggleMusic}
           className="fixed scale-30 top-4 left-4 z-50 w-12 h-12 sm:w-14 sm:h-14 hover:scale-50 transition-transform"
           aria-label={isMusicPlaying ? "Выключить звук" : "Включить звук"}
         >
+          {/* SVG иконки звука остаются без изменений */}
           {isMusicPlaying ? (
-            <svg
-              width="108"
-              height="108"
-              viewBox="0 0 108 108"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
+            <svg width="108" height="108" viewBox="0 0 108 108" fill="none">
               <circle
                 cx="54"
                 cy="54"
@@ -386,32 +446,26 @@ const Home = observer(() => {
                 fill="#FEDB9F"
                 stroke="#0E0E0E"
                 strokeWidth="4"
-              ></circle>
+              />
               <path
                 d="M32.1461 29.7167C25.0892 37.8855 24.898 51.2557 18.5327 45.7568C12.1673 40.2579 12.7279 29.178 19.7848 21.0092C26.8417 12.8404 37.7226 10.676 44.088 16.1749C50.4533 21.6738 41.0156 23.2123 32.1461 29.7167Z"
                 fill="white"
-              ></path>
+              />
               <path
                 d="M47.87 70.6202C46.95 69.8402 45.76 68.3002 44.55 68.0202C41.22 67.7802 30.66 69.9402 29.13 66.2902L29 43.3202C30.21 39.1702 42.24 41.8602 45.64 40.7802C51.41 36.1202 56.8 29.9902 62.6 25.4902C65.08 23.5702 67.27 23.1202 68.53 26.4802L68.33 83.4602C66.51 86.6002 64.62 85.3802 62.39 83.6502C57.5 79.8602 52.69 74.7102 47.87 70.6202Z"
                 fill="black"
-              ></path>
+              />
               <path
                 d="M76.57 33.7301C78.68 33.1001 81.65 35.4001 83.22 36.7101C92.29 44.2601 94.29 57.5701 87.8 67.4201C85.94 70.2401 79.02 78.0801 75.65 74.9001C72.47 71.9101 77.8 70.0101 79.56 68.5601C88.43 61.2501 88.12 47.8401 79.33 40.6001C77.71 39.2601 73.8 38.1301 74.95 35.4001C75.17 34.8801 76.02 33.8901 76.57 33.7301Z"
                 fill="black"
-              ></path>
+              />
               <path
                 d="M75.8691 64.2599V45.0799C77.1891 44.9299 78.5691 46.5799 79.2991 47.5699C81.9991 51.1899 82.4991 56.0199 80.4291 60.0499C79.6391 61.5899 77.6991 64.2399 75.8691 64.2699V64.2599Z"
                 fill="black"
-              ></path>
+              />
             </svg>
           ) : (
-            <svg
-              width="108"
-              height="108"
-              viewBox="0 0 108 108"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
+            <svg width="108" height="108" viewBox="0 0 108 108" fill="none">
               <circle
                 cx="54"
                 cy="54"
@@ -419,19 +473,19 @@ const Home = observer(() => {
                 fill="#FEDB9F"
                 stroke="#0E0E0E"
                 strokeWidth="4"
-              ></circle>
+              />
               <path
                 d="M32.1461 29.7167C25.0892 37.8855 24.898 51.2557 18.5327 45.7568C12.1673 40.2579 12.7279 29.178 19.7848 21.0092C26.8417 12.8404 37.7226 10.676 44.088 16.1749C50.4533 21.6738 41.0156 23.2123 32.1461 29.7167Z"
                 fill="white"
-              ></path>
+              />
               <path
                 d="M28.13 42.3304C30.42 39.5704 40.84 41.8904 44.32 40.7604L61.92 24.9004C64.54 22.6704 67.76 24.9004 67.62 28.1204C66.4 45.1904 69.19 64.4004 67.62 81.2204C67.29 84.7204 65.09 86.6404 61.92 84.4404L43.54 68.1004C39.98 68.1804 36.29 68.6504 32.72 68.3404C31.18 68.2104 28.8 67.9604 28 66.5304L28.14 42.3404L28.13 42.3304Z"
                 fill="black"
-              ></path>
+              />
               <path
                 d="M86.9302 46.8607C88.3902 45.5407 89.7602 44.7807 91.4902 46.3007C94.6702 49.1007 88.7802 52.6407 87.2002 54.6807C88.8402 56.8407 94.2002 59.7807 91.6902 62.8607C88.8502 66.3407 85.4302 60.2007 83.3102 58.9507C80.7202 60.1007 78.4802 65.5207 75.1902 63.4107C71.6402 61.1307 76.9902 56.6307 78.9302 55.2207L79.0402 54.3107C77.1302 52.4107 72.6702 49.5707 74.5802 46.5607C77.2702 42.3207 81.7502 50.4107 83.3102 50.4107C84.9002 49.9507 85.8602 47.8307 86.9302 46.8707V46.8607Z"
                 fill="black"
-              ></path>
+              />
             </svg>
           )}
         </button>
@@ -476,17 +530,20 @@ const Home = observer(() => {
           </div>
         )}
 
+        {/* Индикатор тестового режима */}
+        {isLocalTesting && (
+          <div className="fixed top-4 right-4 z-50 bg-yellow-500 text-white px-3 py-1 rounded-lg text-sm shantell">
+            Тестовый режим
+          </div>
+        )}
+
+        {/* Основной контент */}
         <div className="relative min-h-[200vh]">
+          {/* Фон здания */}
           <div className="h-screen">
             <div className="absolute inset-0 bottom-0 bg-[#FFBC6B]">
               <div
-                className="
-                  w-full h-full
-                  bg-cover bg-center bg-no-repeat
-                  sm:bg-auto sm:bg-center
-                  md:bg-auto md:bg-center
-                  lg:bg-contain lg:bg-center
-                  "
+                className="w-full h-full bg-cover bg-center bg-no-repeat"
                 style={{
                   backgroundImage: `url('${store.imgUrl}bg_house_people.jpg')`,
                 }}
@@ -494,6 +551,7 @@ const Home = observer(() => {
             </div>
           </div>
 
+          {/* Этажи */}
           <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-10 w-[90%] sm:w-[60%] md:w-[50%] lg:w-[40%] xl:w-[16%]">
             <div className="flex flex-col items-center relative">
               {Array.from({ length: floors }, (_, index) => {
@@ -502,11 +560,23 @@ const Home = observer(() => {
                 const isEmpty = isEmptyFloor(index);
                 const floorId = getFloorIdByIndex(index);
                 const floorName = getFloorNameByIndex(index);
-                const canBuy = store.canBuyFloor(floorId);
-                const floorCost = store.getFloorCost(floorId);
-                const isBasementImage = floorId === -1; // basement картинка
-                const isRoof = floorId === -2; // крыша
-                const isFirstFloor = floorId === 1; // 1 этаж (отображается как Basement)
+                const canBuy = isLocalTesting
+                  ? true
+                  : store.canBuyFloor(floorId);
+                const floorCost = isLocalTesting
+                  ? 1000
+                  : store.getFloorCost(floorId);
+                const isBasementImage = floorId === -1;
+                const isRoof = floorId === -2;
+                // const isFirstFloor = floorId === 1;
+
+                // Тестовые данные для персонала
+                const managerLevel = isLocalTesting
+                  ? floorId === 1
+                    ? 1
+                    : 0
+                  : 0;
+                const guardLevel = isLocalTesting ? (floorId === 2 ? 1 : 0) : 0;
 
                 return (
                   <div
@@ -522,17 +592,16 @@ const Home = observer(() => {
                       className="w-full max-w-md object-contain"
                     />
 
-                    {/* Кнопка покупки для пустых этажей (кроме basement картинки и крыши) */}
+                    {/* Кнопка покупки для пустых этажей */}
                     {isEmpty && !isBasementImage && !isRoof && (
                       <button
                         onClick={() => handleBuyFloor(index)}
                         disabled={!canBuy}
-                        className={`absolute inset-0 flex items-center justify-center z-30 transition-opacity
-                            ${
-                              canBuy
-                                ? "cursor-pointer hover:opacity-90"
-                                : "cursor-not-allowed opacity-70"
-                            }`}
+                        className={`absolute inset-0 flex items-center justify-center z-30 transition-opacity ${
+                          canBuy
+                            ? "cursor-pointer hover:opacity-90"
+                            : "cursor-not-allowed opacity-70"
+                        }`}
                       >
                         <div className="flex items-center relative">
                           <img
@@ -559,7 +628,7 @@ const Home = observer(() => {
                       </button>
                     )}
 
-                    {/* Блок с данными для заполненных этажей (кроме basement картинки и крыши) */}
+                    {/* Блок с данными для заполненных этажей */}
                     {isFilled && floorData && !isBasementImage && !isRoof && (
                       <>
                         <div className="absolute inset-0 flex items-center justify-center -z-10">
@@ -585,75 +654,13 @@ const Home = observer(() => {
                               alt="Background"
                               className="w-full h-auto object-contain"
                             />
-
                             <div className="absolute inset-0 flex items-center">
-                              <div className="flex-1 px-2 sm:px-4 text-xs sm:text-sm text-amber-800 shantell text-center leading-3">
-                                {floorName}
-                              </div>
-
-                              <div className="flex items-center gap-0.5">
-                                {renderStars(floorData.level)}
-                              </div>
-                              {/* Кнопка CLAIM_DO для обычных этажей */}
-                              {!isFirstFloor && (
-                                <div
-                                  // onClick={(e) => {
-                                  //   e.stopPropagation();
-                                  //   handleClaimDo(floorData.floorId);
-                                  // }}
-                                  className="pl-4 flex items-center"
-                                >
-                                  {/* <span className="text-sm sm:text-md text-amber-800 shantell font-bold whitespace-nowrap">
-                                    {store.lastClaimRewards?.floorId ===
-                                    floorData.floorId
-                                      ? `+${
-                                          store.lastClaimRewards.amount.toFixed?.(
-                                            0
-                                          ) ?? store.lastClaimRewards.amount
-                                        }`
-                                      : floorData.earned &&
-                                        Number(floorData.earned) > 0
-                                      ? `${Number(
-                                          floorData.earned.toFixed?.(0) ??
-                                            floorData.earned
-                                        )}`
-                                      : "0"}
-                                  </span> */}
-                                  <img
-                                    src={`${store.imgUrl}icon_dollar.png`}
-                                    alt="pdollar"
-                                    className="w-6 h-4 sm:w-9 sm:h-5 ml-1"
-                                  />
-                                </div>
-                              )}
-
-                              {/* Специальная кнопка для 1 этажа (Basement) с пиццей */}
-                              {isFirstFloor && (
-                                <div
-                                  // onClick={(e) => {
-                                  //   e.stopPropagation();
-                                  //   handleClaimDo(floorData.floorId);
-                                  // }}
-                                  className="pl-4 flex items-centerd"
-                                >
-                                  {/* <span className="text-sm sm:text-md text-amber-800 shantell font-bold whitespace-nowrap">
-                                    {floorData.earned?.toFixed?.(0) ??
-                                      floorData.earned ??
-                                      0}
-                                  </span> */}
-                                  <img
-                                    src={`${store.imgUrl}icon_pizza.png`}
-                                    alt="pizza"
-                                    className="w-6 h-6 sm:w-8 sm:h-8 ml-1"
-                                  />
-                                </div>
-                              )}
-
+                              {/* Кнопка улучшения этажа */}
                               <button
                                 onClick={(e) =>
                                   handleUpgradeFloor(floorData.floorId, e)
                                 }
-                                className="relative translate-x-[40px] cursor-pointer hover:opacity-90 transition-opacity"
+                                className="relative -translate-x-[24px] cursor-pointer hover:opacity-90 transition-opacity"
                               >
                                 <img
                                   src={`${store.imgUrl}b_red_mini.png`}
@@ -661,22 +668,66 @@ const Home = observer(() => {
                                   className="h-10 sm:h-12 w-auto"
                                 />
                                 <div className="absolute inset-0 flex items-center justify-center gap-0 px-1 sm:px-2">
-                                  <img
-                                    src={`${store.imgUrl}icon_dollar_coin.png`}
-                                    alt="Coin"
-                                    className="w-8 sm:w-10"
-                                  />
-                                  <span className="text-white text-md sm:text-lg shantell">
-                                    {store.getUpgradeCost(floorData.floorId) ||
-                                      0}
+                                  <span className="text-white text-sm sm:text-md shantell font-bold">
+                                    {floorData.floorId} этаж
                                   </span>
-                                  <img
-                                    src={`${store.imgUrl}icon_arrow.png`}
-                                    alt="Upgrade"
-                                    className="w-8 sm:w-12"
-                                  />
                                 </div>
                               </button>
+
+                              {/* Звезды уровня этажа */}
+                              <div className="flex items-center gap-0.5 -translate-x-[20px]">
+                                {renderStars(floorData.level)}
+                              </div>
+
+                              {/* Менеджер */}
+                              <div className="flex items-center gap-1 -translate-x-[6px]">
+                                <img
+                                  src={`${store.imgUrl}${
+                                    managerLevel > 0
+                                      ? "Manager_icon.png"
+                                      : "Manager_icon_0.png"
+                                  }`}
+                                  alt="Manager"
+                                  className="w-6 h-6 sm:w-8 sm:h-8"
+                                />
+                                <img
+                                  src={`${store.imgUrl}${
+                                    managerLevel > 0
+                                      ? "icon_star.png"
+                                      : "icon_star_empty.png"
+                                  }`}
+                                  alt="Star"
+                                  className="w-4 h-4 -translate-x-[2px]"
+                                />
+                                <span className="text-amber-800 text-xs sm:text-sm shantell font-bold -translate-x-[3px]">
+                                  {managerLevel}
+                                </span>
+                              </div>
+
+                              {/* Охранник */}
+                              <div className="flex items-center gap-1 ml-2 -translate-x-[4px]">
+                                <img
+                                  src={`${store.imgUrl}${
+                                    guardLevel > 0
+                                      ? "Guard_icon.png"
+                                      : "Guard_icon_0.png"
+                                  }`}
+                                  alt="Guard"
+                                  className="w-6 h-6 sm:w-8 sm:h-8"
+                                />
+                                <img
+                                  src={`${store.imgUrl}${
+                                    guardLevel > 0
+                                      ? "icon_star.png"
+                                      : "icon_star_empty.png"
+                                  }`}
+                                  alt="Star"
+                                  className="w-4 h-4 -translate-x-[2px]"
+                                />
+                                <span className="text-amber-800 text-xs sm:text-sm shantell -translate-x-[3px]">
+                                  {guardLevel}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -702,6 +753,7 @@ const Home = observer(() => {
           </div>
         </div>
 
+        {/* Верхние элементы */}
         <div className="fixed top-0 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-[600px] sm:max-w-[800px] md:max-w-[1000px] lg:max-w-[2000px] xl:max-w-[1550px]">
           <img
             src={`${store.imgUrl}testo.png`}
@@ -733,7 +785,8 @@ const Home = observer(() => {
                 className="w-28 sm:w-24 sm:h-24 object-contain"
               />
               <div className="absolute -bottom-0 flex items-center text-xs text-white shantell">
-                12:45:30
+                {formatTime(timeLeft.days)}:{formatTime(timeLeft.hours)}:
+                {formatTime(timeLeft.minutes)}:{formatTime(timeLeft.seconds)}
               </div>
             </div>
           </div>
@@ -793,407 +846,360 @@ const Home = observer(() => {
         {/* Центральная кнопка handleClaimDo */}
         <button
           onClick={handleClaimDo}
-          className="fixed bottom-4 left-1/2 w-30 sm:w-50 transform -translate-x-1/2
-             z-50 hover:opacity-90 transition-opacity active:scale-95"
+          className="fixed bottom-4 left-1/2 w-30 sm:w-50 transform -translate-x-1/2 z-50 hover:opacity-90 transition-opacity active:scale-95"
         >
-          <div
-            className="absolute top-8 left-1/2 transform -translate-x-1/2
-                  flex items-center justify-center text-2xl md:text-4xl
-                  text-blue-900 shantell"
-          >
-            {store.claimProgress.toFixed(0)}%
+          <div className="absolute top-8 left-1/2 transform -translate-x-1/2 flex items-center justify-center text-2xl md:text-4xl text-blue-900 shantell">
+            {displayClaimProgress.toFixed(0)}%
           </div>
           <img src={`${store.imgUrl}b_zabrat2.png`} alt="Claim" />
         </button>
 
         {/* Модальное окно улучшения этажа */}
         {isModalOpen && selectedFloor && (
-          <>
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={handleCloseModal}
+          >
             <div
-              className="fixed inset-0 bg-black opacity-70 z-40"
-              onClick={handleCloseModal}
-            />
-
-            <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-11/12 max-w-md">
-              <div className="relative bg-yellow-100 rounded-2xl p-6 shadow-2xl border-4 border-yellow-300">
-                {/* Заголовок с номером этажа и уровнем */}
-                <div className="text-center mb-4">
-                  <div className="shantell text-center text-lg text-amber-800 font-bold py-2">
-                    ЭТАЖ {selectedFloor.floorId} – УРОВЕНЬ {selectedFloor.level}
+              className="relative w-full max-w-md mx-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Заголовок над модальным окном */}
+              <div className="relative mb-2 flex justify-center translate-y-[8px]">
+                <div className="w-1/2 relative">
+                  <img
+                    src={`${store.imgUrl}img_window_header.png`}
+                    alt="Header"
+                    className="w-full h-auto "
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-amber-800 font-bold text-lg shantell">
+                      {selectedFloor.floorId} этаж
+                    </span>
                   </div>
                 </div>
+                {/* Кнопка закрытия */}
+                <button
+                  onClick={handleCloseModal}
+                  className="absolute -top-2 -right-2 w-8 h-8 bg-transparent hover:scale-110 transition-transform z-10"
+                >
+                  <img
+                    src={`${store.imgUrl}b_close.png`}
+                    alt="Закрыть"
+                    className="w-full h-full"
+                  />
+                </button>
+              </div>
 
-                {/* Картинка */}
-                <div className="mb-6 flex justify-center">
-                  <div className="w-full rounded-xl overflow-hidden">
-                    <img
-                      src={`${store.imgUrl}img_kitchen.png`}
-                      alt="Кухня"
-                      className="w-full h-auto object-cover"
-                    />
+              {/* Основное окно */}
+              <div
+                className="bg-cover bg-center rounded-lg shadow-2xl min-h-[600px]"
+                style={{
+                  backgroundImage: `url('${store.imgUrl}img_window_big.png')`,
+                }}
+              >
+                {/* Контент */}
+                <div className="p-4 space-y-2 pt-4">
+                  {/* Информация об этаже */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-amber-800 shantell">
+                        Доходность Этажа:
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className="font-bold text-amber-800 shantell">
+                          {selectedFloor.yieldPerHour || 1000}
+                        </span>
+                        <img
+                          src={`${store.imgUrl}icon_dollar.png`}
+                          alt="Доллар"
+                          className="w-5 h-5"
+                        />
+                        <span className="text-xs text-amber-800 shantell">
+                          / час
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-amber-800 shantell">
+                        Баланс Этажа:
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className="font-bold text-amber-800 shantell">
+                          {selectedFloor.balance || 2755}
+                        </span>
+                        <img
+                          src={`${store.imgUrl}icon_dollar.png`}
+                          alt="Доллар"
+                          className="w-5 h-5"
+                        />
+                        <span className="text-xs text-amber-800 shantell">
+                          / час
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                {/* Статистика дохода */}
-                <div className="space-y-4 mb-6 px-2">
-                  <div className="flex items-center justify-between">
-                    <div className="font-bold text-lg text-amber-800 shantell flex-1">
-                      Доходность этажа:
-                    </div>
-                    <div className="flex items-center gap-2 mx-4">
-                      <span className="font-bold text-lg text-amber-800 shantell">
-                        {selectedFloor.yieldPerHour}
-                      </span>
-                      <img
-                        src={`${store.imgUrl}icon_dollar.png`}
-                        alt="dollar"
-                        className="w-10 h-auto"
-                      />
-                      <span className="font-bold text-lg text-amber-800 shantell">
-                        / час
-                      </span>
-                    </div>
-                    <div className="relative w-20">
-                      <img
-                        src={`${store.imgUrl}b_yellow.png`}
-                        alt="Увеличить доходность"
-                        className="w-full h-auto"
-                      />
-                      <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-amber-800 font-bold text-base shantell">
-                        +41
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Уровни */}
-                <div className="mb-6">
-                  <div className="flex justify-center items-center gap-4 mb-3">
-                    {Array.from({ length: 5 }, (_, index) => {
-                      const starLevel = index + 1;
-                      const isActive = starLevel <= selectedFloor.level;
-                      const upgradeCost = 1000;
-
+                  {/* Звезды с бонусами */}
+                  <div className="flex justify-between items-center">
+                    {[1, 2, 3, 4, 5].map((star, index) => {
+                      const isActive = index < selectedFloor.level;
+                      const bonuses = [64, 104, 130, 164, 206];
                       return (
-                        <div key={index} className="flex flex-col items-center">
+                        <div key={star} className="flex flex-col items-center">
                           <img
                             src={`${store.imgUrl}${
                               isActive ? "icon_star.png" : "icon_star_empty.png"
                             }`}
-                            alt={isActive ? "Active star" : "Empty star"}
+                            alt="Звезда"
                             className="w-8 h-8 mb-1"
                           />
-                          <div className="relative">
+                          <div className="flex items-center gap-0 bg-white px-2 py-1 rounded border border-amber-800">
+                            <span className="text-xs font-bold text-amber-800 shantell">
+                              +{bonuses[index]}
+                            </span>
                             <img
-                              src={`${store.imgUrl}b_white.png`}
-                              alt="Price background"
-                              className="w-14 h-7"
+                              src={`${store.imgUrl}icon_dollar.png`}
+                              alt="Доллар"
+                              className="w-5"
                             />
-                            <div className="absolute inset-0 flex items-center justify-center gap-1 px-1">
-                              <span className="text-xs text-amber-800 shantell font-bold">
-                                {upgradeCost}
-                              </span>
-                              <img
-                                src={`${store.imgUrl}icon_dollar_coin.png`}
-                                alt="coin"
-                                className="w-3 h-3"
-                              />
-                            </div>
                           </div>
                         </div>
                       );
                     })}
                   </div>
 
-                  <div className="text-center">
-                    <span className="text-base text-amber-800 shantell">
-                      Текущий уровень: {selectedFloor.level}/5
-                    </span>
-                  </div>
-                </div>
-
-                {/* Новый блок персонала этажа */}
-                {(selectedFloor?.upgradeCurrency || selectedFloor?.currency) ===
-                  "pcoin" && (
-                  <div className="mb-6 p-4 bg-amber-50 rounded-xl border-2 border-amber-300 shadow-inner">
-                    <div className="text-center text-amber-800 shantell font-bold text-lg mb-4">
-                      Персонал этажа {selectedFloor.floorId}
-                    </div>
-
-                    <div className="flex flex-col gap-4">
-                      {/* Менеджер */}
-                      <div className="flex flex-col px-3 py-3 bg-white rounded-lg shadow">
-                        <div className="flex items-center gap-3 mb-2">
-                          <img
-                            src={`${store.imgUrl}Manager_small.png`}
-                            alt="Manager"
-                            className="w-14 h-14 object-contain"
-                          />
-                          <div className="flex flex-col leading-tight">
-                            <span className="text-amber-900 shantell font-bold text-base">
-                              Менеджер
-                            </span>
-                            <span className="text-xs text-amber-700 shantell">
-                              Повышает доход PDollar/час
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Проценты улучшения менеджера */}
-                        {renderStaffUpgradeProgress(
-                          getStaffCurrentLevel(
-                            selectedFloor.floorId,
-                            "manager"
-                          ),
-                          5,
-                          ["+1%", "+2%", "+3%", "+4%", "+5%"]
-                        )}
-
-                        {/* Кнопка улучшения менеджера */}
-                        <button
-                          onClick={() => {
-                            const staffId = 2; // Manager
-                            store.sendHireStaff(
-                              staffId,
-                              getStaffCurrentLevel(
-                                selectedFloor.floorId,
-                                "manager"
-                              ) + 1,
-                              undefined,
-                              selectedFloor.floorId
-                            );
-                            showNotification(
-                              `👔 Менеджер улучшен на этаже ${selectedFloor.floorId}!`,
-                              "success"
-                            );
-                          }}
-                          className="relative w-full mt-2 bg-yellow-400 hover:bg-yellow-300 transition-colors rounded-lg py-2"
-                        >
-                          <div className="flex items-center justify-between px-3">
-                            <span className="text-amber-900 shantell font-bold text-sm">
-                              Улучшить до{" "}
-                              {getStaffCurrentLevel(
-                                selectedFloor.floorId,
-                                "manager"
-                              ) + 1}{" "}
-                              уровня
-                            </span>
-                            <div className="flex items-center gap-1">
-                              <img
-                                src={`${store.imgUrl}icon_dollar_coin.png`}
-                                alt="coin"
-                                className="w-6 h-6"
-                              />
-                              <span className="text-amber-900 shantell font-bold text-sm">
-                                {getStaffUpgradeCost(
-                                  selectedFloor.floorId,
-                                  "manager"
-                                )}
-                              </span>
-                              <img
-                                src={`${store.imgUrl}icon_arrow.png`}
-                                alt="arrow"
-                                className="w-6 h-6"
-                              />
-                            </div>
-                          </div>
-                        </button>
-                      </div>
-
-                      {/* Охранник */}
-                      <div className="flex flex-col px-3 py-3 bg-white rounded-lg shadow">
-                        <div className="flex items-center gap-3 mb-2">
-                          <img
-                            src={`${store.imgUrl}Guard_small.png`}
-                            alt="Guard"
-                            className="w-14 h-14 object-contain"
-                          />
-                          <div className="flex flex-col leading-tight">
-                            <span className="text-amber-900 shantell font-bold text-base">
-                              Охранник
-                            </span>
-                            <span className="text-xs text-amber-700 shantell">
-                              Снижает потери дохода PDollar
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Проценты улучшения охранника */}
-                        {renderStaffUpgradeProgress(
-                          getStaffCurrentLevel(selectedFloor.floorId, "guard"),
-                          5,
-                          ["-4%", "-3%", "-2%", "-1%", "0%"]
-                        )}
-
-                        {/* Кнопка улучшения охранника */}
-                        <button
-                          onClick={() => {
-                            const staffId = 1; // Guard
-                            store.sendHireStaff(
-                              staffId,
-                              getStaffCurrentLevel(
-                                selectedFloor.floorId,
-                                "guard"
-                              ) + 1,
-                              undefined,
-                              selectedFloor.floorId
-                            );
-                            showNotification(
-                              `👮 Охранник улучшен на этаже ${selectedFloor.floorId}!`,
-                              "success"
-                            );
-                          }}
-                          className="relative w-full mt-2 bg-yellow-400 hover:bg-yellow-300 transition-colors rounded-lg py-2"
-                        >
-                          <div className="flex items-center justify-between px-3">
-                            <span className="text-amber-900 shantell font-bold text-sm">
-                              Улучшить до{" "}
-                              {getStaffCurrentLevel(
-                                selectedFloor.floorId,
-                                "guard"
-                              ) + 1}{" "}
-                              уровня
-                            </span>
-                            <div className="flex items-center gap-1">
-                              <img
-                                src={`${store.imgUrl}icon_dollar_coin.png`}
-                                alt="coin"
-                                className="w-6 h-6"
-                              />
-                              <span className="text-amber-900 shantell font-bold text-sm">
-                                {getStaffUpgradeCost(
-                                  selectedFloor.floorId,
-                                  "guard"
-                                )}
-                              </span>
-                              <img
-                                src={`${store.imgUrl}icon_arrow.png`}
-                                alt="arrow"
-                                className="w-6 h-6"
-                              />
-                            </div>
-                          </div>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Кнопка улучшения этажа */}
-                <div className="mt-auto px-2">
+                  {/* Кнопка улучшения этажа */}
                   <button
                     onClick={handleUpgradeFromModal}
-                    disabled={!store.canUpgradeFloor(selectedFloor.floorId)}
-                    className={`relative w-full transition-opacity ${
+                    disabled={
+                      !isLocalTesting &&
+                      !store.canUpgradeFloor(selectedFloor.floorId)
+                    }
+                    className={`w-full relative py-3 rounded-lg flex items-center justify-center gap-3 ${
+                      isLocalTesting ||
                       store.canUpgradeFloor(selectedFloor.floorId)
-                        ? "hover:opacity-90"
+                        ? "hover:opacity-90 cursor-pointer"
                         : "opacity-50 cursor-not-allowed"
                     }`}
                   >
                     <img
-                      src={`${store.imgUrl}b_red.png`}
-                      alt="Улучшить этаж"
-                      className="w-full h-auto"
+                      src={`${store.imgUrl}b_red_round.png`}
+                      alt="Button background"
+                      className="absolute inset-x-1 w-full"
                     />
-
-                    <div className="absolute inset-0 flex items-center justify-between">
-                      <div className="text-white text-base shantell flex-1 text-center">
-                        Этаж {selectedFloor.floorId} – Улучшить до уровня{" "}
-                        {selectedFloor.level + 1}
-                      </div>
-                      <div className="flex items-center gap-2 mx-2">
-                        <img
-                          src={`${store.imgUrl}icon_dollar_coin.png`}
-                          alt="dollar"
-                          className="w-10 h-auto"
-                        />
-                        <span className="text-white text-base shantell font-bold">
-                          {selectedFloor.level >= 5
-                            ? 0
-                            : store.getUpgradeCost(selectedFloor.floorId) || 0}
-                        </span>
-                        <img
-                          src={`${store.imgUrl}icon_arrow.png`}
-                          alt="arrow"
-                          className="w-10 h-auto"
-                        />
-                      </div>
+                    <img
+                      src={`${store.imgUrl}icon_arrow.png`}
+                      alt="Стрелка"
+                      className="w-5 h-5 relative z-10"
+                    />
+                    <span className="text-white font-bold shantell relative z-10">
+                      Улучшить до уровня {selectedFloor.level + 1}
+                    </span>
+                    <div className="flex items-center gap-1 relative z-10">
+                      <img
+                        src={`${store.imgUrl}icon_dollar_coin.png`}
+                        alt="Монетка"
+                        className="w-5 h-5"
+                      />
+                      <span className="text-white font-bold shantell">
+                        {selectedFloor.level >= 5
+                          ? 0
+                          : isLocalTesting
+                          ? 1000
+                          : store.getUpgradeCost(selectedFloor.floorId) || 1000}
+                      </span>
                     </div>
                   </button>
+
+                  {/* Персонал */}
+                  <div className="mt-2">
+                    <h3 className="text-lg font-bold mb-2 text-amber-800 shantell text-center">
+                      ПЕРСОНАЛ:
+                    </h3>
+
+                    {/* Менеджер */}
+                    <div className="bg-white rounded-lg p-2 mb-4 border border-amber-800 shadow-sm">
+                      <div className="flex items-start gap-0 mb-3">
+                        <img
+                          src={`${store.imgUrl}Manager_small.png`}
+                          alt="Менеджер"
+                          className="w-18 flex-shrink-0"
+                        />
+                        <div className="flex-1">
+                          <h4 className="font-bold text-amber-800 shantell">
+                            Менеджер
+                          </h4>
+                          <p className="text-xs text-amber-600 shantell mb-2">
+                            Повышает доход PDollar/час
+                          </p>
+                          {/* Проценты улучшения менеджера с звездочками */}
+                          {renderStaffLevelWithStars(
+                            getStaffCurrentLevel(
+                              selectedFloor.floorId,
+                              "manager"
+                            ),
+                            ["+1%", "+2%", "+3%", "+4%", "+5%"]
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() =>
+                          handleStaffUpgrade("manager", selectedFloor.floorId)
+                        }
+                        className="w-full relative py-2 rounded-lg flex items-center justify-between px-4 hover:opacity-90 transition-opacity"
+                      >
+                        <img
+                          src={`${store.imgUrl}b_red_round.png`}
+                          alt="Button background"
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                        <span className="text-white font-bold text-sm shantell relative z-10">
+                          {getStaffCurrentLevel(
+                            selectedFloor.floorId,
+                            "manager"
+                          ) === 0
+                            ? "Нанять"
+                            : `Улучшить до ${
+                                getStaffCurrentLevel(
+                                  selectedFloor.floorId,
+                                  "manager"
+                                ) + 1
+                              } уровня`}
+                        </span>
+                        <div className="flex items-center gap-1 relative z-10">
+                          <img
+                            src={`${store.imgUrl}icon_dollar_coin.png`}
+                            alt="Монетка"
+                            className="w-4 h-4"
+                          />
+                          <span className="text-white font-bold text-sm shantell">
+                            {getStaffUpgradeCost(
+                              selectedFloor.floorId,
+                              "manager"
+                            )}
+                          </span>
+                        </div>
+                      </button>
+                    </div>
+
+                    {/* Охранник */}
+                    <div className="bg-white rounded-lg p-2 border border-amber-800 shadow-sm">
+                      <div className="flex items-start gap-0 mb-3">
+                        <img
+                          src={`${store.imgUrl}Guard_small.png`}
+                          alt="Охранник"
+                          className="w-18 flex-shrink-0"
+                        />
+                        <div className="flex-1">
+                          <h4 className="font-bold text-amber-800 shantell">
+                            Охранник
+                          </h4>
+                          <p className="text-xs text-amber-600 shantell mb-2">
+                            Снижает потери дохода PDollar
+                          </p>
+                          {/* Проценты улучшения охранника с звездочками */}
+                          {renderStaffLevelWithStars(
+                            getStaffCurrentLevel(
+                              selectedFloor.floorId,
+                              "guard"
+                            ),
+                            ["-4%", "-3%", "-2%", "-1%", "0%"]
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() =>
+                          handleStaffUpgrade("guard", selectedFloor.floorId)
+                        }
+                        className="w-full relative py-2 rounded-lg flex items-center justify-between px-4 hover:opacity-90 transition-opacity"
+                      >
+                        <img
+                          src={`${store.imgUrl}b_red_round.png`}
+                          alt="Button background"
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                        <span className="text-white font-bold text-sm shantell relative z-10">
+                          {getStaffCurrentLevel(
+                            selectedFloor.floorId,
+                            "guard"
+                          ) === 0
+                            ? "Нанять"
+                            : `Улучшить до ${
+                                getStaffCurrentLevel(
+                                  selectedFloor.floorId,
+                                  "guard"
+                                ) + 1
+                              } уровня`}
+                        </span>
+                        <div className="flex items-center gap-1 relative z-10">
+                          <img
+                            src={`${store.imgUrl}icon_dollar_coin.png`}
+                            alt="Монетка"
+                            className="w-4 h-4"
+                          />
+                          <span className="text-white font-bold text-sm shantell">
+                            {getStaffUpgradeCost(
+                              selectedFloor.floorId,
+                              "guard"
+                            )}
+                          </span>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              {/* Крестик */}
-              <button
-                onClick={handleCloseModal}
-                className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 z-50 p-1 shadow-lg hover:scale-110 transition-transform"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="12" fill="white" />
-                  <path
-                    d="M8 8L16 16"
-                    stroke="#FFBC6B"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M16 8L8 16"
-                    stroke="#FFBC6B"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </button>
             </div>
-          </>
+          </div>
         )}
 
-        {/* Модалка только для бухгалтера */}
+        {/* Модалка бухгалтера */}
         {staffModal === "accountant" && (
-          <>
-            {/* фон */}
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={handleCloseStaffModal}
+          >
             <div
-              className="fixed inset-0 bg-black bg-opacity-70 z-40"
-              onClick={handleCloseStaffModal}
-            />
-            {/* само окно */}
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <div className="relative bg-white rounded-2xl w-full max-w-md mx-auto shadow-2xl">
-                {/* заголовок с крестиком */}
-                <div className="relative p-4 border-b border-gray-200">
-                  <h2 className="text-center text-xl font-bold text-amber-800 shantell">
-                    Accountant
-                  </h2>
-                  <button
-                    onClick={handleCloseStaffModal}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 p-1 hover:scale-110 transition-transform"
-                  >
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <circle cx="12" cy="12" r="12" fill="#FFBC6B" />
-                      <path
-                        d="M8 8L16 16"
-                        stroke="white"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
-                      <path
-                        d="M16 8L8 16"
-                        stroke="white"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </button>
+              className="relative w-full max-w-md mx-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Заголовок над модальным окном */}
+              <div className="relative mb-2 flex justify-center">
+                <div className="w-1/2 relative translate-y-[8px]">
+                  <img
+                    src={`${store.imgUrl}img_window_header.png`}
+                    alt="Header"
+                    className="w-full h-auto"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-amber-800 text-lg shantell">
+                      Бухгалтер
+                    </span>
+                  </div>
                 </div>
+                {/* Кнопка закрытия */}
+                <button
+                  onClick={handleCloseStaffModal}
+                  className="absolute -top-2 -right-2 w-8 h-8 bg-transparent hover:scale-110 transition-transform z-10"
+                >
+                  <img
+                    src={`${store.imgUrl}b_close.png`}
+                    alt="Закрыть"
+                    className="w-full h-full"
+                  />
+                </button>
+              </div>
 
-                {/* контент */}
-                <div className="p-6 flex flex-col items-center text-center">
+              {/* Основное окно */}
+              <div
+                className="bg-cover bg-center rounded-lg shadow-2xl min-h-[500px]"
+                style={{
+                  backgroundImage: `url('${store.imgUrl}img_window_big.png')`,
+                }}
+              >
+                {/* Контент */}
+                <div className="p-6 space-y-4 pt-8 flex flex-col items-center text-center">
                   {/* изображение */}
                   <img
                     src={`${store.imgUrl}Accountant_big.png`}
@@ -1201,10 +1207,12 @@ const Home = observer(() => {
                     className="w-3/4 mb-4 object-contain"
                   />
 
-                  {/* таймер или информация */}
+                  {/* таймер */}
                   <div className="mb-4">
                     <div className="text-2xl font-bold text-amber-800 shantell mb-2">
-                      12:45:30
+                      {formatTime(timeLeft.days)}:{formatTime(timeLeft.hours)}:
+                      {formatTime(timeLeft.minutes)}:
+                      {formatTime(timeLeft.seconds)}
                     </div>
                     <div className="text-sm text-amber-600 shantell">
                       Осталось времени найма
@@ -1278,12 +1286,12 @@ const Home = observer(() => {
                 </div>
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
 
       <FooterHome />
-      <WebSocketComponent />
+      {!isLocalTesting && <WebSocketComponent />}
     </>
   );
 });
