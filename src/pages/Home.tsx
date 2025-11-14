@@ -338,7 +338,7 @@ const Home = observer(() => {
     );
   };
 
-  // Показываем загрузку пока данные не получены
+  // Показываем загрузку пока данные не получены -----------------------------------------------------------
   if (!store.areFloorsLoaded) {
     return (
       <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B] flex items-center justify-center">
@@ -744,6 +744,9 @@ const Home = observer(() => {
                     />
                   </span>
                 </Link>
+                <span className="absolute top-8 text-xs text-white shantell">
+                  +2.666/час
+                </span>
               </div>
             </div>
           </div>
