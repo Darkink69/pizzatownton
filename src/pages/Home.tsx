@@ -8,7 +8,8 @@ import FooterHome from "../components/FooterHome";
 
 const Home = observer(() => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedFloor, setSelectedFloor] = useState<any>(null);
+  const [selectedFloorId, setSelectedFloorId] = useState<number | null>(null);
+
   const [notification, setNotification] = useState<{
     message: string;
     type: "error" | "success";
@@ -164,45 +165,50 @@ const Home = observer(() => {
     ));
   };
 
+
+
   // Модальное окно улучшения этажа
-  const handleOpenUpgradeModal = (floorData: any) => {
-    setSelectedFloor(floorData);
+  const handleOpenUpgradeModal = (floorId: number) => {
+    setSelectedFloorId(floorId);
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setSelectedFloor(null);
+    setSelectedFloorId(null);
   };
+
+  const selectedFloor = selectedFloorId
+      ? store.safeUserFloorList.find(f => f.floorId === selectedFloorId)
+      : null;
 
   const handleUpgradeFromModal = () => {
     if (!selectedFloor) return;
-
     showNotification(
-      `🚀 Отправляем запрос на улучшение этажа ${selectedFloor.floorId}...`,
-      "success"
+        `🚀 Отправляем запрос на улучшение этажа ${selectedFloor.floorId}...`,
+        "success",
     );
     const success = store.upgradeFloor(selectedFloor.floorId);
-
     if (success) {
       setTimeout(() => {
         showNotification(
-          `✅ Этаж ${selectedFloor.floorId} улучшен до уровня ${
-            selectedFloor.level + 1
-          }!`,
-          "success"
+            `✅ Этаж ${selectedFloor.floorId} улучшен до уровня ${
+                (selectedFloor.level ?? 0) + 1
+            }!`,
+            "success",
         );
       }, 800);
     } else {
       setTimeout(() => {
         showNotification(
-          `❌ Не удалось улучшить этаж ${selectedFloor.floorId}. Недостаточно средств!`,
-          "error"
+            `❌ Не удалось улучшить этаж ${selectedFloor.floorId}. Недостаточно средств!`,
+            "error",
         );
       }, 800);
     }
     handleCloseModal();
   };
+
 
   const getFloorIdByIndex = (index: number): number => {
     if (index === 0) return -2;
@@ -265,46 +271,63 @@ const Home = observer(() => {
     event.stopPropagation();
     if (floorId === 1) {
       showNotification(
-        "Basement сейчас нельзя улучшить — ждём звёздный апгрейд!",
-        "error"
+          "Basement сейчас нельзя улучшить — ждём звёздный апгрейд!",
+          "error",
       );
       return;
     }
-
-    const floor = store.getFloorById(floorId);
-    if (floor) {
-      handleOpenUpgradeModal(floor);
-    }
+    handleOpenUpgradeModal(floorId);
   };
 
   // Функции для персонала
   const getStaffUpgradeCost = (
-    _floorId: number,
-    _staffType: "manager" | "guard"
-  ) => {
-    return 62.5; // Базовая цена
+      floorId: number,
+      staffType: "manager" | "guard"
+  ): number => {
+    const floor = store.safeUserFloorList.find(f => f.floorId === floorId);
+    if (!floor || !floor.staff) return 0;
+    const staff = floor.staff.find(
+        s => s.staffName.toLowerCase() === staffType
+    );
+    if (!staff?.upgradeStaff?.length) return 0;
+    // стоимость следующего уровня
+    const next = staff.upgradeStaff.find(u => u.level === staff.staffLevel + 1);
+    return next?.cost ?? staff.upgradeStaff[0].cost;
   };
 
   const getStaffCurrentLevel = (
-    _floorId: number,
-    _staffType: "manager" | "guard"
-  ) => {
-    return 0; // Начальный уровень
+      floorId: number,
+      staffType: "manager" | "guard"
+  ): number => {
+    const floor = store.safeUserFloorList.find(f => f.floorId === floorId);
+    if (!floor || !floor.staff) return 0;
+    const staff = floor.staff.find(
+        s => s.staffName.toLowerCase() === staffType
+    );
+    return staff?.staffLevel ?? 0;
   };
 
+
   const handleStaffUpgrade = (
-    staffType: "manager" | "guard",
-    floorId: number
+      staffType: "manager" | "guard",
+      floorId: number
   ) => {
-    const staffId = staffType === "manager" ? 2 : 1;
+    const staffId = staffType === "manager" ? 2 : 1; // id из бэка
     const currentLevel = getStaffCurrentLevel(floorId, staffType);
-    store.sendHireStaff(staffId, currentLevel + 1, undefined, floorId);
-    showNotification(
-      `👔 ${
-        staffType === "manager" ? "Менеджер" : "Охранник"
-      } улучшен на этаже ${floorId}!`,
-      "success"
-    );
+    const nextLevel = currentLevel + 1;
+
+    const ok = store.sendHireStaff(staffId, nextLevel, undefined, floorId);
+
+    if (ok) {
+      showNotification(
+          `👔 ${staffType === "manager" ? "Менеджер" : "Охранник"} ${
+              currentLevel ? "улучшен" : "нанят"
+          } (уровень ${nextLevel}) на этаже ${floorId}`,
+          "success"
+      );
+    } else {
+      showNotification("❌ Ошибка при покупке/апгрейде", "error");
+    }
   };
 
   // Функция для отображения уровней персонала с звездочками
@@ -481,8 +504,10 @@ const Home = observer(() => {
                 const isRoof = floorId === -2;
 
                 // Данные персонала с сервера
-                const managerLevel = 0; // Заменить на реальные данные из store
-                const guardLevel = 0; // Заменить на реальные данные из store
+                const managerLevel =
+                    floorData?.staff?.find(s => s.staffName === "Manager")?.staffLevel ?? 0;
+                const guardLevel =
+                    floorData?.staff?.find(s => s.staffName === "Guard")?.staffLevel ?? 0;
 
                 return (
                   <div
@@ -852,7 +877,7 @@ const Home = observer(() => {
                   {/* Звезды с бонусами */}
                   <div className="flex justify-between items-center">
                     {[1, 2, 3, 4, 5].map((star, index) => {
-                      const isActive = index < selectedFloor.level;
+                      const isActive = index < (selectedFloor.level ?? 0);
                       const bonuses = [64, 104, 130, 164, 206];
                       return (
                         <div key={star} className="flex flex-col items-center">
@@ -899,7 +924,7 @@ const Home = observer(() => {
                       className="w-5 h-5 relative z-10"
                     />
                     <span className="text-white font-bold shantell relative z-10">
-                      Улучшить до уровня {selectedFloor.level + 1}
+                      Улучшить до уровня {(selectedFloor.level ?? 0) + 1}
                     </span>
                     <div className="flex items-center gap-1 relative z-10">
                       <img

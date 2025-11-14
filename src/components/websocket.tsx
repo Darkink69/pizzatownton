@@ -203,16 +203,12 @@ const WebSocketComponent = observer(() => {
 
           case "PERSON_BUY": {
             if (parsed.success && parsed.data) {
-              const d = parsed.data; // StaffBuyUpdateResponse
               runInAction(() => {
-                store.updateUserData({
-                  pcoin: d.user?.pcoin,
-                  pdollar: d.user?.pdollar,
-                  pizza: d.user?.pizza,
-                });
-                store.userStaff = d.userStaff;
-                console.log("💼 PERSON_BUY response:", parsed.data);
+                store.updateAfterStaffBuy(parsed.data);
+                store.userStaff = parsed.data.userStaff;
               });
+
+              console.log("💼 PERSON_BUY response (applied to store):", parsed.data);
               toast.success("✅ Персонал успешно нанят / обновлён!");
             } else {
               toast.error(parsed.message || "Ошибка найма персонала");

@@ -35,6 +35,44 @@ export interface UserFloor {
   purchaseCost: number | null;
   earned?: number;
   owned: boolean;
+  balance?: number;
+
+
+  staff?: {
+    staffId: number;
+    staffLevel: number;
+    staffName: string;
+    startDate: string | null;
+    endDate: string | null;
+    durationDay: number | null;
+    upgradeStaff: {
+      level: number;
+      cost: number;
+      incomePercent: number;
+      loosesPercent: number;
+    }[];
+    accountantLevel?: number | null;
+    owned: boolean;
+  }[] | null;
+}
+
+export interface StaffMember {
+  staffId: number;
+  staffLevel: number;
+  staffName: string; // "Manager" | "Guard"
+  startDate: string | null;
+  endDate: string | null;
+  durationDay: number | null;
+  upgradeStaff: StaffUpgrade[]; // все уровни для апгрейда
+  accountantLevel?: number | null;
+  owned: boolean;
+}
+
+export interface StaffUpgrade {
+  level: number;
+  cost: number;
+  incomePercent: number;
+  loosesPercent: number;
 }
 
 // -------------------- Пользователь --------------------

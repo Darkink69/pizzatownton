@@ -512,6 +512,51 @@ class Store {
   }
 
   // -------------------------------------------------------------------------
+// STAFF UPDATE
+// -------------------------------------------------------------------------
+  updateAfterStaffBuy(data: any) {
+    const { user, userStaff } = data || {};
+    if (!userStaff) return;
+
+    this.updateUserData({
+      pcoin: user?.pcoin,
+      pdollar: user?.pdollar,
+      pizza: user?.pizza,
+    });
+
+    runInAction(() => {
+      const newList = this.safeUserFloorList.map((floor) => {
+        if (!floor.staff || floor.floorId !== userStaff.floorId) return floor;
+
+        const updatedStaff = floor.staff.map((s) =>
+            s.staffId === userStaff.staffId
+                ? {
+                  ...s,
+                  owned: true,
+                  staffLevel: userStaff.staffLevel ?? s.staffLevel + 1,
+                  startDate: userStaff.startDate ?? s.startDate,
+                  endDate: userStaff.endDate ?? s.endDate,
+                  upgradeStaff: userStaff.upgradeStaff ?? s.upgradeStaff,
+                }
+                : s
+        );
+
+        return { ...floor, staff: updatedStaff };
+      });
+
+      this.userFloors = {
+        ...this.userFloors,
+        data: {
+          ...this.userFloors.data,
+          userFloorList: newList,
+        },
+      };
+    });
+
+    console.log("🧍‍♂️ Staff updated:", userStaff);
+  }
+
+  // -------------------------------------------------------------------------
   // SYSTEM & RESET
   // -------------------------------------------------------------------------
   private ensureWs() {
