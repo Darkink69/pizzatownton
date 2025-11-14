@@ -6,23 +6,6 @@ import WebSocketComponent from "../components/websocket";
 import { Link } from "react-router-dom";
 import FooterHome from "../components/FooterHome";
 
-// Локальные данные для тестирования
-const LOCAL_TEST_DATA = {
-  floors: [
-    { floorId: 1, level: 1, owned: true, yieldPerHour: 1000, balance: 2755 },
-    { floorId: 2, level: 2, owned: true, yieldPerHour: 1500, balance: 3200 },
-    { floorId: 3, level: 1, owned: false, yieldPerHour: 0, balance: 0 },
-  ],
-  pcoin: 1500,
-  pdollar: 2500,
-  claimProgress: 75,
-};
-
-// Фиксированная дата для тестирования таймера (2 дня вперед)
-const TEST_END_DATE = new Date();
-TEST_END_DATE.setDate(TEST_END_DATE.getDate() + 2);
-TEST_END_DATE.setHours(12, 45, 30, 0);
-
 const Home = observer(() => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedFloor, setSelectedFloor] = useState<any>(null);
@@ -42,15 +25,10 @@ const Home = observer(() => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const floors = 11;
 
-  // Флаг для локального тестирования
-  const isLocalTesting = !store.sessionId || !store.user?.telegramId;
-
   // Таймер обратного отсчета
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const endDate = isLocalTesting
-        ? TEST_END_DATE
-        : new Date(store.accountantEndTime || TEST_END_DATE);
+      const endDate = new Date(store.accountantEndTime);
       const now = new Date();
       const difference = endDate.getTime() - now.getTime();
 
@@ -70,7 +48,7 @@ const Home = observer(() => {
     const timer = setInterval(calculateTimeLeft, 1000);
 
     return () => clearInterval(timer);
-  }, [isLocalTesting, store.accountantEndTime]);
+  }, [store.accountantEndTime]);
 
   // Форматирование времени для отображения
   const formatTime = (time: number) => {
@@ -116,11 +94,11 @@ const Home = observer(() => {
 
   // Запрос данных при монтировании
   useEffect(() => {
-    if (!isLocalTesting && !store.areFloorsLoaded) {
+    if (!store.areFloorsLoaded) {
       console.log("Requesting floors data on component mount...");
       store.requestFloorsData();
     }
-  }, [isLocalTesting, store.areFloorsLoaded]);
+  }, [store.areFloorsLoaded]);
 
   // Автоскролл при загрузке
   useEffect(() => {
@@ -142,9 +120,7 @@ const Home = observer(() => {
   };
 
   const handleClaimDo = () => {
-    if (isLocalTesting) {
-      showNotification("💰 Доход собирается... (тестовый режим)", "success");
-    } else if (store.sendClaimDo(0)) {
+    if (store.sendClaimDo(0)) {
       showNotification("💰 Доход собирается...", "success");
     } else {
       showNotification("❌ Ошибка при сборе дохода", "error");
@@ -158,16 +134,10 @@ const Home = observer(() => {
   const handleHireStaff = (option?: number) => {
     if (!staffModal) return;
 
-    if (isLocalTesting) {
-      showNotification(
-        `Бухгалтер нанят на ${option || 7} дней! (тестовый режим)`,
-        "success"
-      );
-    } else {
-      const ok = store.sendHireStaff(3, undefined, option ?? 7, 0);
-      if (ok) showNotification("Бухгалтер нанят!", "success");
-      else showNotification("Ошибка при найме бухгалтера", "error");
-    }
+    const ok = store.sendHireStaff(3, undefined, option ?? 7, 0);
+    if (ok) showNotification("Бухгалтер нанят!", "success");
+    else showNotification("Ошибка при найме бухгалтера", "error");
+
     handleCloseStaffModal();
   };
 
@@ -175,12 +145,6 @@ const Home = observer(() => {
   const getFloorData = (index: number) => {
     if (index === 0 || index === floors - 1) return null;
     const realFloorId = floors - 1 - index;
-
-    if (isLocalTesting) {
-      return (
-        LOCAL_TEST_DATA.floors.find((f) => f.floorId === realFloorId) || null
-      );
-    }
 
     return (
       store.safeUserFloorList?.find((f) => f.floorId === realFloorId) || null
@@ -214,37 +178,28 @@ const Home = observer(() => {
   const handleUpgradeFromModal = () => {
     if (!selectedFloor) return;
 
-    if (isLocalTesting) {
-      showNotification(
-        `✅ Этаж ${selectedFloor.floorId} улучшен до уровня ${
-          selectedFloor.level + 1
-        }! (тестовый режим)`,
-        "success"
-      );
-    } else {
-      showNotification(
-        `🚀 Отправляем запрос на улучшение этажа ${selectedFloor.floorId}...`,
-        "success"
-      );
-      const success = store.upgradeFloor(selectedFloor.floorId);
+    showNotification(
+      `🚀 Отправляем запрос на улучшение этажа ${selectedFloor.floorId}...`,
+      "success"
+    );
+    const success = store.upgradeFloor(selectedFloor.floorId);
 
-      if (success) {
-        setTimeout(() => {
-          showNotification(
-            `✅ Этаж ${selectedFloor.floorId} улучшен до уровня ${
-              selectedFloor.level + 1
-            }!`,
-            "success"
-          );
-        }, 800);
-      } else {
-        setTimeout(() => {
-          showNotification(
-            `❌ Не удалось улучшить этаж ${selectedFloor.floorId}. Недостаточно средств!`,
-            "error"
-          );
-        }, 800);
-      }
+    if (success) {
+      setTimeout(() => {
+        showNotification(
+          `✅ Этаж ${selectedFloor.floorId} улучшен до уровня ${
+            selectedFloor.level + 1
+          }!`,
+          "success"
+        );
+      }, 800);
+    } else {
+      setTimeout(() => {
+        showNotification(
+          `❌ Не удалось улучшить этаж ${selectedFloor.floorId}. Недостаточно средств!`,
+          "error"
+        );
+      }, 800);
     }
     handleCloseModal();
   };
@@ -260,9 +215,7 @@ const Home = observer(() => {
     if (index === 0) return "img_roof.png";
 
     const floorId = getFloorIdByIndex(index);
-    const floor = isLocalTesting
-      ? LOCAL_TEST_DATA.floors.find((f) => f.floorId === floorId)
-      : store.getFloorById(floorId);
+    const floor = store.getFloorById(floorId);
 
     return floor?.owned ? "img_floor_empty.png" : "img_floor_dark.png";
   };
@@ -271,10 +224,7 @@ const Home = observer(() => {
     const floorId = getFloorIdByIndex(index);
     if (floorId === -1 || floorId === -2) return true;
 
-    const floor = isLocalTesting
-      ? LOCAL_TEST_DATA.floors.find((f) => f.floorId === floorId)
-      : store.getFloorById(floorId);
-
+    const floor = store.getFloorById(floorId);
     return floor?.owned;
   };
 
@@ -282,10 +232,7 @@ const Home = observer(() => {
     const floorId = getFloorIdByIndex(index);
     if (floorId === -1 || floorId === -2) return false;
 
-    const floor = isLocalTesting
-      ? LOCAL_TEST_DATA.floors.find((f) => f.floorId === floorId)
-      : store.getFloorById(floorId);
-
+    const floor = store.getFloorById(floorId);
     return !floor?.owned;
   };
 
@@ -299,22 +246,18 @@ const Home = observer(() => {
 
   const handleBuyFloor = (index: number) => {
     const floorId = getFloorIdByIndex(index);
+    const success = store.buyNewFloor(floorId);
 
-    if (isLocalTesting) {
-      showNotification(`🏗 Этаж ${floorId} куплен! (тестовый режим)`, "success");
+    if (success) {
+      showNotification(
+        `🏗 Запрос на покупку этажа ${floorId} отправлен!`,
+        "success"
+      );
     } else {
-      const success = store.buyNewFloor(floorId);
-      if (success) {
-        showNotification(
-          `🏗 Запрос на покупку этажа ${floorId} отправлен!`,
-          "success"
-        );
-      } else {
-        showNotification(
-          `❌ Не удалось купить этаж ${floorId}. Проверь баланс или соединение.`,
-          "error"
-        );
-      }
+      showNotification(
+        `❌ Не удалось купить этаж ${floorId}. Проверь баланс или соединение.`,
+        "error"
+      );
     }
   };
 
@@ -328,10 +271,7 @@ const Home = observer(() => {
       return;
     }
 
-    const floor = isLocalTesting
-      ? LOCAL_TEST_DATA.floors.find((f) => f.floorId === floorId)
-      : store.getFloorById(floorId);
-
+    const floor = store.getFloorById(floorId);
     if (floor) {
       handleOpenUpgradeModal(floor);
     }
@@ -342,38 +282,29 @@ const Home = observer(() => {
     _floorId: number,
     _staffType: "manager" | "guard"
   ) => {
-    return 62.5; // Тестовая цена
+    return 62.5; // Базовая цена
   };
 
   const getStaffCurrentLevel = (
     _floorId: number,
     _staffType: "manager" | "guard"
   ) => {
-    return 0; // Начальный уровень для тестирования
+    return 0; // Начальный уровень
   };
 
   const handleStaffUpgrade = (
     staffType: "manager" | "guard",
     floorId: number
   ) => {
-    if (isLocalTesting) {
-      showNotification(
-        `👔 ${
-          staffType === "manager" ? "Менеджер" : "Охранник"
-        } улучшен на этаже ${floorId}! (тестовый режим)`,
-        "success"
-      );
-    } else {
-      const staffId = staffType === "manager" ? 2 : 1;
-      const currentLevel = getStaffCurrentLevel(floorId, staffType);
-      store.sendHireStaff(staffId, currentLevel + 1, undefined, floorId);
-      showNotification(
-        `👔 ${
-          staffType === "manager" ? "Менеджер" : "Охранник"
-        } улучшен на этаже ${floorId}!`,
-        "success"
-      );
-    }
+    const staffId = staffType === "manager" ? 2 : 1;
+    const currentLevel = getStaffCurrentLevel(floorId, staffType);
+    store.sendHireStaff(staffId, currentLevel + 1, undefined, floorId);
+    showNotification(
+      `👔 ${
+        staffType === "manager" ? "Менеджер" : "Охранник"
+      } улучшен на этаже ${floorId}!`,
+      "success"
+    );
   };
 
   // Функция для отображения уровней персонала с звездочками
@@ -407,8 +338,8 @@ const Home = observer(() => {
     );
   };
 
-  // Показываем загрузку пока данные не получены (только в реальном режиме)
-  if (!isLocalTesting && !store.areFloorsLoaded) {
+  // Показываем загрузку пока данные не получены
+  if (!store.areFloorsLoaded) {
     return (
       <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B] flex items-center justify-center">
         <div className="text-white text-xl shantell">Загрузка этажей...</div>
@@ -417,15 +348,6 @@ const Home = observer(() => {
       </div>
     );
   }
-
-  // Получение балансов для отображения
-  // const displayPcoin = isLocalTesting ? LOCAL_TEST_DATA.pcoin : store.pcoin;
-  // const displayPdollar = isLocalTesting
-  //   ? LOCAL_TEST_DATA.pdollar
-  //   : store.pdollar;
-  const displayClaimProgress = isLocalTesting
-    ? LOCAL_TEST_DATA.claimProgress
-    : store.claimProgress;
 
   return (
     <>
@@ -436,7 +358,7 @@ const Home = observer(() => {
           className="fixed scale-30 top-4 left-4 z-50 w-12 h-12 sm:w-14 sm:h-14 hover:scale-50 transition-transform"
           aria-label={isMusicPlaying ? "Выключить звук" : "Включить звук"}
         >
-          {/* SVG иконки звука остаются без изменений */}
+          {/* SVG иконки звука */}
           {isMusicPlaying ? (
             <svg width="108" height="108" viewBox="0 0 108 108" fill="none">
               <circle
@@ -530,13 +452,6 @@ const Home = observer(() => {
           </div>
         )}
 
-        {/* Индикатор тестового режима */}
-        {isLocalTesting && (
-          <div className="fixed top-4 right-4 z-50 bg-yellow-500 text-white px-3 py-1 rounded-lg text-sm shantell">
-            Тестовый режим
-          </div>
-        )}
-
         {/* Основной контент */}
         <div className="relative min-h-[200vh]">
           {/* Фон здания */}
@@ -560,23 +475,14 @@ const Home = observer(() => {
                 const isEmpty = isEmptyFloor(index);
                 const floorId = getFloorIdByIndex(index);
                 const floorName = getFloorNameByIndex(index);
-                const canBuy = isLocalTesting
-                  ? true
-                  : store.canBuyFloor(floorId);
-                const floorCost = isLocalTesting
-                  ? 1000
-                  : store.getFloorCost(floorId);
+                const canBuy = store.canBuyFloor(floorId);
+                const floorCost = store.getFloorCost(floorId);
                 const isBasementImage = floorId === -1;
                 const isRoof = floorId === -2;
-                // const isFirstFloor = floorId === 1;
 
-                // Тестовые данные для персонала
-                const managerLevel = isLocalTesting
-                  ? floorId === 1
-                    ? 1
-                    : 0
-                  : 0;
-                const guardLevel = isLocalTesting ? (floorId === 2 ? 1 : 0) : 0;
+                // Данные персонала с сервера
+                const managerLevel = 0; // Заменить на реальные данные из store
+                const guardLevel = 0; // Заменить на реальные данные из store
 
                 return (
                   <div
@@ -771,7 +677,7 @@ const Home = observer(() => {
         </div>
 
         {/* Нижний блок */}
-        <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 w-full max-w-lg mx-auto z-30">
+        <div className="absolute bottom-36 left-1/2 transform -translate-x-1/2 w-full max-w-lg mx-auto z-30">
           {/* Блок только с бухгалтером */}
           <div className="flex justify-center items-end px-4 mb-2">
             {/* Accountant */}
@@ -792,7 +698,7 @@ const Home = observer(() => {
           </div>
 
           {/* Блоки балансов */}
-          <div className="flex-col justify-between items-center">
+          <div className="absolute -bottom-5 left-6 flex-col justify-between items-center">
             {/* PCOIN */}
             <div className="relative w-20 hover:opacity-90 transition-opacity mb-4">
               <img src={`${store.imgUrl}b_white.png`} alt="pcoin" />
@@ -846,10 +752,10 @@ const Home = observer(() => {
         {/* Центральная кнопка handleClaimDo */}
         <button
           onClick={handleClaimDo}
-          className="fixed bottom-4 left-1/2 w-30 sm:w-50 transform -translate-x-1/2 z-50 hover:opacity-90 transition-opacity active:scale-95"
+          className="fixed bottom-4 left-1/2 w-30 lg:w-50 transform -translate-x-1/2 z-50 hover:opacity-90 transition-opacity active:scale-95"
         >
           <div className="absolute top-8 left-1/2 transform -translate-x-1/2 flex items-center justify-center text-2xl md:text-4xl text-blue-900 shantell">
-            {displayClaimProgress.toFixed(0)}%
+            {store.claimProgress.toFixed(0)}%
           </div>
           <img src={`${store.imgUrl}b_zabrat2.png`} alt="Claim" />
         </button>
@@ -972,12 +878,8 @@ const Home = observer(() => {
                   {/* Кнопка улучшения этажа */}
                   <button
                     onClick={handleUpgradeFromModal}
-                    disabled={
-                      !isLocalTesting &&
-                      !store.canUpgradeFloor(selectedFloor.floorId)
-                    }
+                    disabled={!store.canUpgradeFloor(selectedFloor.floorId)}
                     className={`w-full relative py-3 rounded-lg flex items-center justify-center gap-3 ${
-                      isLocalTesting ||
                       store.canUpgradeFloor(selectedFloor.floorId)
                         ? "hover:opacity-90 cursor-pointer"
                         : "opacity-50 cursor-not-allowed"
@@ -1005,8 +907,6 @@ const Home = observer(() => {
                       <span className="text-white font-bold shantell">
                         {selectedFloor.level >= 5
                           ? 0
-                          : isLocalTesting
-                          ? 1000
                           : store.getUpgradeCost(selectedFloor.floorId) || 1000}
                       </span>
                     </div>
@@ -1052,7 +952,7 @@ const Home = observer(() => {
                         <img
                           src={`${store.imgUrl}b_red_round.png`}
                           alt="Button background"
-                          className="absolute inset-0 w-full h-full object-cover"
+                          className="absolute inset-0 w-full h-full"
                         />
                         <span className="text-white font-bold text-sm shantell relative z-10">
                           {getStaffCurrentLevel(
@@ -1117,7 +1017,7 @@ const Home = observer(() => {
                         <img
                           src={`${store.imgUrl}b_red_round.png`}
                           alt="Button background"
-                          className="absolute inset-0 w-full h-full object-cover"
+                          className="absolute inset-0 w-full h-full"
                         />
                         <span className="text-white font-bold text-sm shantell relative z-10">
                           {getStaffCurrentLevel(
@@ -1291,7 +1191,7 @@ const Home = observer(() => {
       </div>
 
       <FooterHome />
-      {!isLocalTesting && <WebSocketComponent />}
+      <WebSocketComponent />
     </>
   );
 });

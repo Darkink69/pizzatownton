@@ -156,7 +156,7 @@ function ExchangeModal({
 function Bank() {
   const [tonAmount, setTonAmount] = useState(0.5);
   const [pdollarAmount, setPdollarAmount] = useState("100000");
-  const [tonExchangeAmount, setTonExchangeAmount] = useState("50000");
+  const [tonExchangeAmount, setTonExchangeAmount] = useState("1");
   const [pcoinAmount, setPcoinAmount] = useState("500");
   const [buying, setBuying] = useState(false);
   const [isExchangeModalOpen, setIsExchangeModalOpen] = useState(false);
@@ -346,7 +346,7 @@ function Bank() {
                     />
 
                     <div className="text-center mb-4 sm:mb-6 font-bold text-base sm:text-lg text-amber-800 shantell">
-                      0.5 PDOLLAR за 1 TON
+                      100000 PDOLLAR за 1 TON
                     </div>
 
                     <ActionButton
