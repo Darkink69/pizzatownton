@@ -39,28 +39,11 @@ class Store {
   userStaff: any = null;
   accountantEndTime: any;
 
-  requestStaffData() {
-    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) return false;
-    const rq = {
-      type: "STAFF_GET",
-      requestId: Math.random().toString(36).substring(2, 10),
-      session: this.sessionId,
-      staffRq: {telegramId: this.user.telegramId},
-    };
-    this.wsSend(rq);
-    return true;
-  }
-
-  sendHireStaff(
-      staffId: number,
-      level?: number,
-      subscription?: number,
-      floorId?: number
-  ) {
+  sendHireStaff(staffId: number, level?: number, subscription?: number, floorId?: number): boolean {
     if (!this.wsSend || !this.sessionId || !this.user?.telegramId) return false;
     const rq = {
       type: "PERSON_BUY",
-      requestId: Math.random().toString(36).substring(2, 10),
+      requestId: genId(),
       session: this.sessionId,
       buyPersonRq: {
         telegramId: this.user.telegramId,
@@ -70,7 +53,6 @@ class Store {
         floorId,
       },
     };
-    console.log("➡️ SEND PERSON_BUY", rq);
     this.wsSend(rq);
     return true;
   }
@@ -128,7 +110,16 @@ class Store {
 
   constructor() {
     makeAutoObservable(this);
+    // 🔹 Восстанавливаем данные при старте
+    const savedUser = localStorage.getItem("user");
+    const savedStaff = localStorage.getItem("staffData");
+    const savedFloors = localStorage.getItem("userFloors");
+
+    if (savedUser) this.user = JSON.parse(savedUser);
+    if (savedStaff) this.staffData = JSON.parse(savedStaff);
+    if (savedFloors) this.userFloors = JSON.parse(savedFloors);
   }
+
 
   // -------------------------------------------------------------------------
   // BASIC GETTERS
@@ -201,78 +192,91 @@ class Store {
   // -------------------------------------------------------------------------
   // FLOORS
   // -------------------------------------------------------------------------
-  setFloorsData(payload: any) {
-    try {
-      const response = payload || {};
-      const data = response.data || {};
-      const incoming = data.userFloorList ?? [];
 
-      runInAction(() => {
-        // 🪙 Обновляем пользовательские балансы
-        if (data.user) {
-          this.pcoin = Number(data.user.pcoin ?? this.pcoin);
-          this.pdollar = Number(data.user.pdollar ?? this.pdollar);
-          this.pizza = Number(data.user.pizza ?? this.pizza);
-        }
+    setFloorsData(payload: any) {
+      try {
+        const response = payload || {};
+        const data = response.data || {};
+        const incoming = data.userFloorList ?? [];
 
-        // 🧱 Базовая нормализация этажей
-        let normalized = Array.isArray(incoming)
-            ? incoming.map((f: any) => ({
-              ...f,
-              owned: f.owned ?? f.isOwned ?? false,
-              earned: f.earned ?? 0,
-            }))
-            : [];
+        runInAction(() => {
 
-        // 🔹 Basement всегда куплен
-        normalized = normalized.map((f: any) =>
-            f.floorId === 1
-                ? {
-                  ...f,
-                  owned: true,
-                  purchaseCost: null,
-                  upgradeCurrency: "stars",
-                }
-                : f
-        );
+          if (data.user) {
+            this.pcoin = Number(data.user.pcoin ?? this.pcoin);
+            this.pdollar = Number(data.user.pdollar ?? this.pdollar);
+            this.pizza = Number(data.user.pizza ?? this.pizza);
+          }
 
 
-        const merged = normalized.map(floor => {
-          const existing = this.safeUserFloorList.find(x => x.floorId === floor.floorId);
-          return { ...floor, staff: existing?.staff ?? [] };
+          let normalized = Array.isArray(incoming)
+              ? incoming.map((f: any) => ({
+                ...f,
+                owned: f.owned ?? f.isOwned ?? false,
+                earned: f.earned ?? 0,
+              }))
+              : [];
+
+
+          normalized = normalized.map((f: any) =>
+              f.floorId === 1
+                  ? {
+                    ...f,
+                    owned: true,
+                    purchaseCost: null,
+                    upgradeCurrency: "stars",
+                  }
+                  : f
+          );
+
+
+          const merged = normalized.map((floor) => {
+            const existing = this.safeUserFloorList.find(
+                (x) => x.floorId === floor.floorId
+            );
+
+            const preservedStaff = existing?.staff ?? [];
+            const preservedBalance = existing?.balance ?? floor.balance ?? 0;
+
+            return {
+              ...floor,
+              staff: preservedStaff,
+              balance: preservedBalance,
+            };
+          });
+
+
+          this.userFloors = {
+            success: !!response.success,
+            message: response.message ?? "",
+            type: response.type ?? "FLOORS_GET",
+            requestId: response.requestId ?? "",
+            data: {
+              userFloorList: merged,
+              pdollarAmount: Number(data.pdollarAmount ?? 0),
+              pizzaAmount: Number(data.pizzaAmount ?? 0),
+              user: data.user ?? {},
+            },
+          };
+          localStorage.setItem("userFloors", JSON.stringify(this.userFloors));
+
+          this.floorsLoaded = true;
         });
 
-        // Обновляем observable‑состояние
-        this.userFloors = {
-          success: !!response.success,
-          message: response.message ?? "",
-          type: response.type ?? "FLOORS_GET",
-          requestId: response.requestId ?? "",
-          data: {
-            userFloorList: merged,
-            pdollarAmount: Number(data.pdollarAmount ?? 0),
-            pizzaAmount: Number(data.pizzaAmount ?? 0),
-            user: data.user ?? {},
-          },
-        };
 
-        this.floorsLoaded = true;
-      });
-
-      // для отладки
-      console.group("📊 Floors after fresh update from server");
-      console.log("💰 pcoin сейчас:", this.pcoin);
-      this.safeUserFloorList.forEach((f) =>
+        console.group("📊 Floors after fresh update from server");
+        console.log("💰 pcoin сейчас:", this.pcoin);
+        this.safeUserFloorList.forEach((f) => {
           console.log(
-              `id=${f.floorId} | owned=${f.owned} | staff=${Array.isArray(f.staff) ? f.staff.length : "—"}`
-          )
-      );
-      console.groupEnd();
-
-    } catch (e) {
-      console.warn("setFloorsData failed:", e);
+              `id=${f.floorId} | owned=${f.owned} | staff=${
+                  Array.isArray(f.staff) ? f.staff.length : "—"
+              }`
+          );
+        });
+        console.groupEnd();
+      } catch (e) {
+        console.warn("setFloorsData failed:", e);
+      }
     }
-  }
 
   lastClaimRewards: {
     floorId: number;
@@ -314,6 +318,7 @@ class Store {
 
   setUser(user?: TgUser) {
     this.user = user ?? {};
+    localStorage.setItem("user", JSON.stringify(this.user));
   }
 
   setUserState(userState?: UserState) {
@@ -526,20 +531,64 @@ class Store {
     if (!data?.userStaff) return;
     const { userStaff, user } = data;
 
-    // подходящее действие mobx, чтобы UI сразу обновился
     runInAction(() => {
-      const floor = this.safeUserFloorList.find(f => f.floorId === userStaff.floorId);
-      if (!floor || !Array.isArray(floor.staff)) return;
+      // ищем нужный этаж
+      const floor = this.safeUserFloorList.find(
+          (f) => f.floorId === userStaff.floorId
+      );
+      if (!floor) {
+        console.warn(`⚠️ Этаж ${userStaff.floorId} не найден для обновления staff`);
+        return;
+      }
 
-      // ищем по имени (имена приходят с бэка: "Guard", "Manager")
-      const staff = floor.staff.find(s => s.staffName === userStaff.staffName);
-      if (!staff) return;
+      // гарантируем, что floor.staff — массив
+      if (!Array.isArray(floor.staff)) {
+        floor.staff = [];
+      }
 
-      // обновляем поля
-      staff.owned = true;
-      staff.staffLevel = userStaff.staffLevel ?? 1;
+      // Находим или создаём персонажа по имени
+      let staff = floor.staff.find((s) => s.staffName === userStaff.staffName);
+      if (!staff) {
+        staff = {
+          staffId: userStaff.staffId,
+          staffName: userStaff.staffName,
+          staffLevel: userStaff.staffLevel ?? 1,
+          startDate: userStaff.startDate,
+          endDate: userStaff.endDate,
+          durationDay: userStaff.durationDay,
+          upgradeStaff: [],
+          accountantLevel: userStaff.accountantLevel,
+          owned: true,
+        };
+        floor.staff.push(staff);
+      } else {
+        staff.staffId = userStaff.staffId;
+        staff.staffLevel = userStaff.staffLevel ?? staff.staffLevel;
+        staff.startDate = userStaff.startDate;
+        staff.endDate = userStaff.endDate;
+        staff.owned = true;
+      }
 
-      // если сервер вернул пользователя, обновляем и его балансы
+      // 🧩 гарантируем наличие обеих ролей (Guard / Manager)
+      const roles = ["Guard", "Manager"];
+      const staffList = floor.staff ?? (floor.staff = []); // создаём или берём существующий массив
+      for (const role of roles) {
+        if (!staffList.find((s) => s.staffName === role)) {
+          staffList.push({
+            staffId: 0,
+            staffName: role,
+            staffLevel: 0,
+            startDate: null,
+            endDate: null,
+            durationDay: null,
+            upgradeStaff: [],
+            accountantLevel: [],
+            owned: false,
+          });
+        }
+      }
+
+      // 🔁 обновляем балансы пользователя, если сервер прислал fresh‑данные
       if (user) {
         if (user.pcoin !== undefined) this.pcoin = user.pcoin;
         if (user.pdollar !== undefined) this.pdollar = user.pdollar;
@@ -547,7 +596,7 @@ class Store {
       }
 
       console.log(
-          `🧍 Персонал ${userStaff.staffName} обновлён: уровень ${userStaff.staffLevel}, этаж ${userStaff.floorId}`
+          `🧍 ${userStaff.staffName} обновлён/добавлен: lvl=${userStaff.staffLevel}, floor=${userStaff.floorId}`
       );
     });
   }
@@ -562,19 +611,44 @@ class Store {
 
   resetSession() {
     runInAction(() => {
+      // очищаем все текущие данные в MobX
       this.sessionId = null;
       this.user = {};
       this.userState = {};
       this.floorsLoaded = false;
+
       this.pcoin = 0;
       this.pdollar = 0;
       this.pizza = 0;
+
       this.userFloors = {
-        ...this.userFloors,
-        data: {userFloorList: [], pdollarAmount: 0, pizzaAmount: 0, user: {}},
+        success: false,
+        message: "",
+        type: "FLOORS_GET",
+        requestId: "",
+        data: {
+          userFloorList: [],
+          pdollarAmount: 0,
+          pizzaAmount: 0,
+          user: {},
+        },
       };
+
+      this.staffData = null;
+      this.userStaff = null;
+      this.referral = { totalReferrals: 0, earnedPcoin: 0, earnedPdollar: 0, link: "" };
+      this.claimProgress = 0;
     });
-    this.bank.reset();
+
+    // сбрасываем внешние стейты
+    this.bank.reset?.();
+
+    // чистим локальный кэш
+    localStorage.removeItem("user");
+    localStorage.removeItem("userFloors");
+    localStorage.removeItem("staffData");
+
+    console.log("🧹 Сессия полностью сброшена");
   }
 }
 

@@ -6,7 +6,7 @@ import type {
     AuthData,
     BankCreateOrderData,
     BankOrderViewData,
-    ReferralInfoData, StaffMember,
+    ReferralInfoData,
     WsRequest,
     WsResponse,
 } from "../types/ws";
@@ -96,33 +96,31 @@ const WebSocketComponent = observer(() => {
                     /** ------------------ AUTH_INIT ------------------ */
                     case "AUTH_INIT": {
                         if (parsed.success) {
-                            const {user, sessionId} = (parsed.data || {}) as AuthData;
+                            const { user, sessionId } = (parsed.data || {}) as AuthData;
                             store.setUser?.(user);
                             store.setSessionId?.(sessionId);
+
+                            // сначала только этажи
                             sendFloorsGetRequest();
-                            store.requestStaffData();
 
-                            console.log("✅ Авторизация успешна, запускаем авто‑обновление клеймов");
-
-                            // чтобы сразу увидеть цифры, первый вызов без ожидания
                             ws.send(JSON.stringify({
                                 type: "CLAIM_REFRESH",
                                 requestId: generateRequestId(),
-                                claimRefreshRq: {telegramId: store.user.telegramId},
+                                claimRefreshRq: { telegramId: store.user.telegramId },
                                 session: store.sessionId,
                             }));
 
-                            // затем периодически обновляем каждые 30сек
+
                             setInterval(() => {
                                 if (ws.readyState === WebSocket.OPEN) {
                                     ws.send(JSON.stringify({
                                         type: "CLAIM_REFRESH",
                                         requestId: generateRequestId(),
-                                        claimRefreshRq: {telegramId: store.user.telegramId},
+                                        claimRefreshRq: { telegramId: store.user.telegramId },
                                         session: store.sessionId,
                                     }));
                                 }
-                            }, 30000); // 30 секунд, можно 15000 для более частого обновления
+                            }, 30000);
                         } else {
                             store.setAuthError?.(parsed.message || "AUTH_INIT failed");
                             toast.error(parsed.message || "Ошибка авторизации");
@@ -134,8 +132,7 @@ const WebSocketComponent = observer(() => {
                     case "FLOORS_GET": {
                         if (parsed.success) {
                             store.setFloorsData(parsed);
-                            store.requestStaffData();
-                            console.log("✅ Floors data loaded from backend");
+                            console.log("✅ Floors data loaded");
                         } else {
                             console.error("❌ FLOORS_GET failed:", parsed.message);
                         }
@@ -159,11 +156,12 @@ const WebSocketComponent = observer(() => {
                     case "FLOORS_UPGRADE": {
                         if (parsed.success) {
                             store.setFloorsData(parsed);
-                            toast.success("🔼 Этаж успешно улучшен!");
+                            toast.success(
+                                parsed.type === "FLOORS_BUY" ? "🏗 Этаж куплен!" : "🔼 Этаж улучшен!"
+                            );
                             store.updateClaimProgress(0);
-                            toast.info("⏱ Новый цикл фарма запущен после улучшения этажа!");
                         } else {
-                            toast.error(parsed.message || "Ошибка апгрейда");
+                            toast.error(parsed.message);
                         }
                         break;
                     }
@@ -190,39 +188,29 @@ const WebSocketComponent = observer(() => {
                         break;
                     }
 
-                    /** ------------------ STAFF ------------------ */
-                    case "STAFF_GET": {
-                        if (parsed.success && parsed.data) {
-                            runInAction(() => {
-                                // Подсказываем компилятору конкретный тип
-                                const staffList = parsed.data as StaffMember[];
-                                store.staffData = staffList;
-
-                                // 🔹 обновляем соответствующие этажи
-                                staffList.forEach((staffDto) => {
-                                    const floor = store.safeUserFloorList.find(
-                                        (f) => f.floorId === staffDto.floorId
-                                    );
-                                    if (!floor) return;
-
-                                    if (!Array.isArray(floor.staff)) floor.staff = [];
-                                    const existing = floor.staff.find(
-                                        (s) => s.staffName === staffDto.staffName
-                                    );
-
-                                    if (existing) {
-                                        Object.assign(existing, staffDto);
-                                    } else {
-                                        floor.staff.push(staffDto);
-                                    }
-                                });
-                            });
-                            console.log("🧍 Персонал объединён с этажами:", parsed.data);
-                        } else {
-                            toast.error(parsed.message || "Ошибка загрузки персонала");
-                        }
-                        break;
-                    }
+                    // /** ------------------ STAFF ------------------ */
+                    // case "STAFF_GET": {
+                    //     console.log("📦 STAFF_GET payload:", parsed.data);
+                    //     if (parsed.success && parsed.data && parsed.data.length) {
+                    //         runInAction(() => {
+                    //             const staffList = parsed.data as StaffMember[];
+                    //             store.staffData = staffList;
+                    //             localStorage.setItem("staffData", JSON.stringify(staffList));
+                    //             staffList.forEach(staffDto => {
+                    //                 const floor = store.safeUserFloorList.find(f => f.floorId === staffDto.floorId);
+                    //                 if (!floor) return;
+                    //                 if (!Array.isArray(floor.staff)) floor.staff = [];
+                    //                 const existing = floor.staff.find(s => s.staffName === staffDto.staffName);
+                    //                 if (existing) Object.assign(existing, staffDto);
+                    //                 else floor.staff.push(staffDto);
+                    //             });
+                    //         });
+                    //         console.log("🧍 Персонал объединён с этажами:", parsed.data);
+                    //     } else {
+                    //         console.warn("⚠️ STAFF_GET вернул пустой массив или ошибку");
+                    //     }
+                    //     break;
+                    // }
 
                     case "PERSON_BUY": {
                         if (parsed.success && parsed.data) {
@@ -230,7 +218,7 @@ const WebSocketComponent = observer(() => {
                                 store.updateAfterStaffBuy(parsed.data);
                                 store.userStaff = parsed.data.userStaff;
                             });
-                            toast.success("✅ Персонал успешно нанят / обновлён!");
+                            toast.success("✅ Персонал нанят / обновлён!");
                         } else {
                             toast.error(parsed.message || "Ошибка найма персонала");
                         }
@@ -255,7 +243,7 @@ const WebSocketComponent = observer(() => {
                             if (lostChance < 0.3) {
                                 toast.warning(
                                     "Некоторые посетители не заплатили за счёт 😕\n" +
-                                    "Вы потеряли от 1 до 5% общего дохода.\n\n" +
+                                    "Вы потеряли от 5% общего дохода.\n\n" +
                                     "Чтобы избежать потерь, наймите Охранника 👮🏼‍♂️",
                                     {autoClose: 7000}
                                 );

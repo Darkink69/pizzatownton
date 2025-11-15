@@ -11,8 +11,6 @@ export type OperationType =
     | "BANK_EXCHANGE_PDOLLAR"
     | "BANK_ORDER_VIEW"
     | "BANK_ORDER_STATUS_CHANGED"
-    // --- новый функционал персонала ---
-    | "STAFF_GET"
     | "PERSON_BUY"
     | (string & {}); // резерв на будущее
 
@@ -45,14 +43,19 @@ export interface UserFloor {
     startDate: string | null;
     endDate: string | null;
     durationDay: number | null;
+    owned: boolean;
+    floorId?: number;
     upgradeStaff: {
       level: number;
       cost: number;
-      incomePercent: number;
-      loosesPercent: number;
+      incomePercent: number | null;
+      loosesPercent: number | null;
     }[];
-    accountantLevel?: number | null;
-    owned: boolean;
+    accountantLevel?: {
+      id: number;
+      cost: number;
+      durationDay: number;
+    }[] | null;
   }[] | null;
 }
 
@@ -290,10 +293,23 @@ export interface StaffBuyUpdateResponse {
   };
   userStaff: {
     staffId: number;
+    staffLevel: number;
     staffName: string;
     startDate: string;
     endDate?: string;
-    staffLevel?: number;
+    durationDay?: number;
     floorId?: number;
+    owned?: boolean;
+    upgradeStaff?: {
+      level: number;
+      cost: number;
+      incomePercent: number | null;
+      loosesPercent: number | null;
+    }[];
+    accountantLevel?: {
+      id: number;
+      cost: number;
+      durationDay: number;
+    }[] | null;
   };
 }

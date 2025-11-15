@@ -306,27 +306,56 @@ const Home = observer(() => {
     return staff?.staffLevel ?? 0;
   };
 
-  const handleStaffUpgrade = (
-    staffType: "manager" | "guard",
-    floorId: number
-  ) => {
-    const staffId = staffType === "manager" ? 2 : 1; // id из бэка
-    const currentLevel = getStaffCurrentLevel(floorId, staffType);
-    const nextLevel = currentLevel + 1;
+    const handleStaffUpgrade = (staffType: "manager" | "guard", floorId: number) => {
+        // Находим этаж в списке пользователя
+        const floor = store.safeUserFloorList.find(f => f.floorId === floorId);
+        if (!floor) {
+            showNotification(`Этаж ${floorId} не найден`, "error");
+            return;
+        }
 
-    const ok = store.sendHireStaff(staffId, nextLevel, undefined, floorId);
+        // Проверяем, есть ли данные по персоналу на этом этаже
+        if (!Array.isArray(floor.staff) || floor.staff.length === 0) {
+            showNotification("Персонал для этого этажа ещё не загружен", "error");
+            console.warn(`⚠️ Нет данных floor.staff для этажа ${floorId}`);
+            return;
+        }
 
-    if (ok) {
-      showNotification(
-        `👔 ${staffType === "manager" ? "Менеджер" : "Охранник"} ${
-          currentLevel ? "улучшен" : "нанят"
-        } (уровень ${nextLevel}) на этаже ${floorId}`,
-        "success"
-      );
-    } else {
-      showNotification("❌ Ошибка при покупке/апгрейде", "error");
-    }
-  };
+        // Ищем нужного персонажа по роли (Manager / Guard)
+        const staff = floor.staff.find(
+            s => s.staffName.toLowerCase() === staffType
+        );
+
+        if (!staff) {
+            showNotification(
+                `Не найден персонаж ${staffType === "manager" ? "Менеджер" : "Охранник"}`,
+                "error"
+            );
+            console.warn(`⚠️ Не найден ${staffType} на этаже ${floorId}`, floor.staff);
+            return;
+        }
+
+        // Берём его реальные данные
+        const staffId = staff.staffId;               // ✅ Правильный id из spr_staff / Redis
+        const currentLevel = staff.staffLevel ?? 0;  // Текущий уровень
+        const nextLevel = currentLevel + 1;          // К следующему апгрейду
+
+        console.debug("🟢 sendHireStaff:", { staffType, staffId, currentLevel, nextLevel, floorId });
+
+        // Отправляем запрос на сервер
+        const ok = store.sendHireStaff(staffId, nextLevel, undefined, floorId);
+
+        if (ok) {
+            showNotification(
+                `👔 ${staffType === "manager" ? "Менеджер" : "Охранник"} ${
+                    currentLevel ? "улучшен" : "нанят"
+                } (уровень ${nextLevel}) на этаже ${floorId}`,
+                "success"
+            );
+        } else {
+            showNotification("❌ Ошибка при покупке/апгрейде персонала", "error");
+        }
+    };
 
   // Функция для отображения уровней персонала с звездочками
   const renderStaffLevelWithStars = (
