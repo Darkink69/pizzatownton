@@ -207,9 +207,6 @@ const WebSocketComponent = observer(() => {
                 store.updateAfterStaffBuy(parsed.data);
                 store.userStaff = parsed.data.userStaff;
               });
-              setTimeout(() => store.requestFloorsData(), 2000);
-              store.requestFloorsData();
-              console.log("💼 PERSON_BUY response (applied to store):", parsed.data);
               toast.success("✅ Персонал успешно нанят / обновлён!");
             } else {
               toast.error(parsed.message || "Ошибка найма персонала");

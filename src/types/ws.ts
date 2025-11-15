@@ -290,8 +290,8 @@ export interface StaffBuyUpdateResponse {
   userStaff: {
     staffId: number;
     staffName: string;
-    staffStartDate: string;
-    staffEndDate?: string;
+    startDate: string;
+    endDate?: string;
     staffLevel?: number;
     floorId?: number;
   };
