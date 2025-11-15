@@ -236,8 +236,11 @@ class Store {
                 : f
         );
 
-        // ✅ Больше ничего не объединяем — используем данные сервера как «истину»
-        const merged = normalized;
+
+        const merged = normalized.map(floor => {
+          const existing = this.safeUserFloorList.find(x => x.floorId === floor.floorId);
+          return { ...floor, staff: existing?.staff ?? [] };
+        });
 
         // Обновляем observable‑состояние
         this.userFloors = {

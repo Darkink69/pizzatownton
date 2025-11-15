@@ -3,12 +3,12 @@ import {useEffect, useMemo, useRef, useState} from "react";
 import store from "../store/store";
 import {toast} from "react-toastify";
 import type {
-  AuthData,
-  BankCreateOrderData,
-  BankOrderViewData,
-  ReferralInfoData,
-  WsRequest,
-  WsResponse,
+    AuthData,
+    BankCreateOrderData,
+    BankOrderViewData,
+    ReferralInfoData, StaffMember,
+    WsRequest,
+    WsResponse,
 } from "../types/ws";
 import {bankStore} from "../store/BankStore.ts";
 import {runInAction} from "mobx";
@@ -100,7 +100,7 @@ const WebSocketComponent = observer(() => {
                             store.setUser?.(user);
                             store.setSessionId?.(sessionId);
                             sendFloorsGetRequest();
-
+                            store.requestStaffData();
 
                             console.log("✅ Авторизация успешна, запускаем авто‑обновление клеймов");
 
@@ -134,6 +134,7 @@ const WebSocketComponent = observer(() => {
                     case "FLOORS_GET": {
                         if (parsed.success) {
                             store.setFloorsData(parsed);
+                            store.requestStaffData();
                             console.log("✅ Floors data loaded from backend");
                         } else {
                             console.error("❌ FLOORS_GET failed:", parsed.message);
@@ -193,9 +194,30 @@ const WebSocketComponent = observer(() => {
                     case "STAFF_GET": {
                         if (parsed.success && parsed.data) {
                             runInAction(() => {
-                                store.staffData = parsed.data; // сохранение списка доступных персонажей
+                                // Подсказываем компилятору конкретный тип
+                                const staffList = parsed.data as StaffMember[];
+                                store.staffData = staffList;
+
+                                // 🔹 обновляем соответствующие этажи
+                                staffList.forEach((staffDto) => {
+                                    const floor = store.safeUserFloorList.find(
+                                        (f) => f.floorId === staffDto.floorId
+                                    );
+                                    if (!floor) return;
+
+                                    if (!Array.isArray(floor.staff)) floor.staff = [];
+                                    const existing = floor.staff.find(
+                                        (s) => s.staffName === staffDto.staffName
+                                    );
+
+                                    if (existing) {
+                                        Object.assign(existing, staffDto);
+                                    } else {
+                                        floor.staff.push(staffDto);
+                                    }
+                                });
                             });
-                            console.log("🧍 Получен список персонала:", parsed.data);
+                            console.log("🧍 Персонал объединён с этажами:", parsed.data);
                         } else {
                             toast.error(parsed.message || "Ошибка загрузки персонала");
                         }

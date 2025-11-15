@@ -66,6 +66,7 @@ export interface StaffMember {
   upgradeStaff: StaffUpgrade[]; // все уровни для апгрейда
   accountantLevel?: number | null;
   owned: boolean;
+  floorId: number;
 }
 
 export interface StaffUpgrade {
