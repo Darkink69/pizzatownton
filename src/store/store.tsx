@@ -1,10 +1,10 @@
-import { makeAutoObservable, runInAction } from "mobx";
-import type { TgUser, UserFloor, UserState, WsRequest } from "../types/ws";
-import { bankStore } from "./BankStore";
+import {makeAutoObservable, runInAction} from "mobx";
+import type {TgUser, UserFloor, UserState, WsRequest} from "../types/ws";
+import {bankStore} from "./BankStore";
 
 class Store {
   imgUrl =
-    "https://s3.twcstorage.ru/c6bae09a-a5938890-9b68-453c-9c54-76c439a70d3e/Pizzatownton/";
+      "https://s3.twcstorage.ru/c6bae09a-a5938890-9b68-453c-9c54-76c439a70d3e/Pizzatownton/";
 
   initDataRaw = "";
   referrerId: string | null = null;
@@ -45,17 +45,17 @@ class Store {
       type: "STAFF_GET",
       requestId: Math.random().toString(36).substring(2, 10),
       session: this.sessionId,
-      staffRq: { telegramId: this.user.telegramId },
+      staffRq: {telegramId: this.user.telegramId},
     };
     this.wsSend(rq);
     return true;
   }
 
   sendHireStaff(
-    staffId: number,
-    level?: number,
-    subscription?: number,
-    floorId?: number
+      staffId: number,
+      level?: number,
+      subscription?: number,
+      floorId?: number
   ) {
     if (!this.wsSend || !this.sessionId || !this.user?.telegramId) return false;
     const rq = {
@@ -101,7 +101,7 @@ class Store {
         type: "REFERRAL_GET",
         requestId: genId(),
         session: this.sessionId,
-        referralGetRq: { telegramId: this.user.telegramId },
+        referralGetRq: {telegramId: this.user.telegramId},
       };
       this.wsSend(rq);
       console.log("📨 REFERRAL_GET запрос отправлен:", rq);
@@ -207,32 +207,32 @@ class Store {
       const data = response.data || {};
 
       runInAction(() => {
-        // 🔹 Сначала обновляем балансы из бэка
+
         if (data.user) {
           this.pcoin = Number(data.user.pcoin ?? this.pcoin);
           this.pdollar = Number(data.user.pdollar ?? this.pdollar);
           this.pizza = Number(data.user.pizza ?? this.pizza);
         }
 
-        // 🔹 Нормализуем приходящий список этажей
+
         let list = Array.isArray(data.userFloorList)
-          ? data.userFloorList.map((f: any) => ({
+            ? data.userFloorList.map((f: any) => ({
               ...f,
               owned: f.owned ?? f.isOwned ?? false,
               earned: f.earned ?? 0,
             }))
-          : [];
+            : [];
 
-        // 🔹 Basement всегда помечаем как купленный
+
         list = list.map((f: any) =>
-          f.floorId === 1
-            ? {
-                ...f,
-                owned: true,
-                purchaseCost: null,
-                upgradeCurrency: "stars",
-              }
-            : f
+            f.floorId === 1
+                ? {
+                  ...f,
+                  owned: true,
+                  purchaseCost: null,
+                  upgradeCurrency: "stars",
+                }
+                : f
         );
 
         this.userFloors = {
@@ -255,7 +255,7 @@ class Store {
       console.log("💰 pcoin сейчас:", this.pcoin);
       this.safeUserFloorList.forEach((f) => {
         console.log(
-          `id=${f.floorId} | owned=${f.owned} | cost=${f.purchaseCost} | cur=${f.upgradeCurrency}`
+            `id=${f.floorId} | owned=${f.owned} | cost=${f.purchaseCost} | cur=${f.upgradeCurrency}`
         );
       });
       console.groupEnd();
@@ -275,12 +275,12 @@ class Store {
   claimAnimations: { floorId: number; amount: number; currency: string }[] = [];
 
   addClaimAnimation(floorId: number, amount: number, currency: string) {
-    this.claimAnimations.push({ floorId, amount, currency });
+    this.claimAnimations.push({floorId, amount, currency});
     // автоматически удалить через пару секунд
     setTimeout(() => {
       runInAction(() => {
         this.claimAnimations = this.claimAnimations.filter(
-          (a) => a.floorId !== floorId
+            (a) => a.floorId !== floorId
         );
       });
     }, 2000);
@@ -310,7 +310,7 @@ class Store {
 
   setUserState(userState?: UserState) {
     if (!userState) return;
-    runInAction(() => (this.userState = { ...this.userState, ...userState }));
+    runInAction(() => (this.userState = {...this.userState, ...userState}));
   }
 
   setSessionId(sessionId?: string | null) {
@@ -348,7 +348,7 @@ class Store {
         type: "FLOORS_GET",
         requestId: genId(),
         session: this.sessionId,
-        getFloorRq: { telegramId: this.user.telegramId },
+        getFloorRq: {telegramId: this.user.telegramId},
       });
       return true;
     }
@@ -364,7 +364,7 @@ class Store {
         type: "CLAIM_DO",
         requestId: genId(),
         session: this.sessionId!,
-        claimDoRq: { telegramId: tgId, floorId },
+        claimDoRq: {telegramId: tgId, floorId},
       });
 
       return true;
@@ -399,7 +399,7 @@ class Store {
         type: "FLOORS_BUY",
         requestId: genId(),
         session: this.sessionId!,
-        buyFloorRq: { telegramId: tgId, floorId },
+        buyFloorRq: {telegramId: tgId, floorId},
       });
 
       this.deductCurrency(price, currency);
@@ -407,7 +407,7 @@ class Store {
       // обновляем массив этажей
       runInAction(() => {
         this.userFloors.data.userFloorList = this.safeUserFloorList.map((f) =>
-          f.floorId === floorId ? { ...f, owned: true, purchaseCost: null } : f
+            f.floorId === floorId ? {...f, owned: true, purchaseCost: null} : f
         );
       });
 
@@ -437,17 +437,17 @@ class Store {
         type: "FLOORS_UPGRADE",
         requestId: genId(),
         session: this.sessionId!,
-        updateFloorRq: { telegramId: tgId, floorId },
+        updateFloorRq: {telegramId: tgId, floorId},
       });
 
       this.deductCurrency(cost, currency);
 
       runInAction(() => {
         this.userFloors.data.userFloorList = this.safeUserFloorList.map(
-          (f: UserFloor) =>
-            f.floorId === floorId
-              ? { ...f, owned: true, purchaseCost: null }
-              : f
+            (f: UserFloor) =>
+                f.floorId === floorId
+                    ? {...f, owned: true, purchaseCost: null}
+                    : f
         );
       });
       return true;
@@ -468,8 +468,8 @@ class Store {
     const floor = this.getFloorById(floorId);
     if (!floor || !floor.owned || !floor.upgradeAmount) return false;
     return this.hasEnoughCurrency(
-      floor.upgradeAmount,
-      floor.upgradeCurrency ?? "pcoin"
+        floor.upgradeAmount,
+        floor.upgradeCurrency ?? "pcoin"
     );
   }
 
@@ -495,14 +495,14 @@ class Store {
   // AUTHENTICATION STUB
   // -------------------------------------------------------------------------
   async authenticateUser(
-    initDataRaw: string,
-    referralCode: string | null
+      initDataRaw: string,
+      referralCode: string | null
   ): Promise<void> {
     this.authError = null;
     this.isAuthenticating = true;
     this.initDataRaw = initDataRaw;
     try {
-      console.log("authenticateUser called", { initDataRaw, referralCode });
+      console.log("authenticateUser called", {initDataRaw, referralCode});
     } catch (err: any) {
       console.warn("authenticateUser error:", err);
       this.authError = "Ошибка при авторизации";
@@ -525,21 +525,41 @@ class Store {
     });
 
     runInAction(() => {
-      const newList = this.safeUserFloorList.map((floor) => {
-        if (!floor.staff || floor.floorId !== userStaff.floorId) return floor;
+      const { staffId, staffLevel, floorId } = userStaff;
 
-        const updatedStaff = floor.staff.map((s) =>
-            s.staffId === userStaff.staffId
-                ? {
-                  ...s,
-                  owned: true,
-                  staffLevel: userStaff.staffLevel ?? s.staffLevel + 1,
-                  startDate: userStaff.startDate ?? s.startDate,
-                  endDate: userStaff.endDate ?? s.endDate,
-                  upgradeStaff: userStaff.upgradeStaff ?? s.upgradeStaff,
-                }
-                : s
-        );
+      const newList = this.safeUserFloorList.map((floor) => {
+        if (floor.floorId !== floorId) return floor;
+        const staffList = floor.staff ?? [];
+
+        const updatedStaff = staffList.map((s) => {
+          if (s.staffId === staffId) {
+            return {
+              ...s,
+              ...userStaff,
+              staffName: s.staffName, // сохраняем нормальное имя
+              owned: true,
+              staffLevel:
+                  typeof staffLevel === "number"
+                      ? staffLevel
+                      : (s.staffLevel ?? 0) + 1,
+            };
+          }
+          return s;
+        });
+
+        if (!updatedStaff.some((s) => s.staffId === staffId)) {
+          // определяем корректное имя для добавляемого
+          let resolvedName = "Staff";
+          if (staffId === 1) resolvedName = "Guard";
+          if (staffId === 2) resolvedName = "Manager";
+
+          updatedStaff.push({
+            ...userStaff,
+            staffId,
+            staffName: resolvedName,
+            owned: true,
+          });
+        }
 
         return { ...floor, staff: updatedStaff };
       });
@@ -553,7 +573,9 @@ class Store {
       };
     });
 
-    console.log("🧍‍♂️ Staff updated:", userStaff);
+    console.log(
+        `🧍‍♂️ Staff#${userStaff.staffId} updated on floor ${userStaff.floorId}`
+    );
   }
 
   // -------------------------------------------------------------------------
@@ -575,7 +597,7 @@ class Store {
       this.pizza = 0;
       this.userFloors = {
         ...this.userFloors,
-        data: { userFloorList: [], pdollarAmount: 0, pizzaAmount: 0, user: {} },
+        data: {userFloorList: [], pdollarAmount: 0, pizzaAmount: 0, user: {}},
       };
     });
     this.bank.reset();
