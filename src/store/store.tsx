@@ -520,29 +520,33 @@ class Store {
 // STAFF UPDATE
 // -------------------------------------------------------------------------
   updateAfterStaffBuy(data: any) {
-    if (!data || !data.userStaff) return;
-    const { userStaff } = data;
+    if (!data?.userStaff) return;
+    const { userStaff, user } = data;
 
-    // Находим этаж
-    const floor = this.safeUserFloorList.find(f => f.floorId === userStaff.floorId);
-    if (!floor || !floor.staff) return;
+    // подходящее действие mobx, чтобы UI сразу обновился
+    runInAction(() => {
+      const floor = this.safeUserFloorList.find(f => f.floorId === userStaff.floorId);
+      if (!floor || !Array.isArray(floor.staff)) return;
 
-    // Находим конкретного сотрудника на этаже
-    const staff = floor.staff.find(s => s.staffName === userStaff.staffName);
-    if (!staff) return;
+      // ищем по имени (имена приходят с бэка: "Guard", "Manager")
+      const staff = floor.staff.find(s => s.staffName === userStaff.staffName);
+      if (!staff) return;
 
-    // Обновляем данные сотрудника локально
-    staff.owned = true;
-    staff.staffLevel = userStaff.staffLevel ?? 1;
+      // обновляем поля
+      staff.owned = true;
+      staff.staffLevel = userStaff.staffLevel ?? 1;
 
-    // При необходимости синхронизируем балансы игрока
-    if (data.user) {
-      this.user.pcoin = data.user.pcoin ?? this.user.pcoin;
-      this.user.pdollar = data.user.pdollar ?? this.user.pdollar;
-      this.user.pizza = data.user.pizza ?? this.user.pizza;
-    }
+      // если сервер вернул пользователя, обновляем и его балансы
+      if (user) {
+        if (user.pcoin !== undefined) this.pcoin = user.pcoin;
+        if (user.pdollar !== undefined) this.pdollar = user.pdollar;
+        if (user.pizza !== undefined) this.pizza = user.pizza;
+      }
 
-    console.log(`🧍 Обновлён персонал ${userStaff.staffName} (уровень ${userStaff.staffLevel}) на этаже ${userStaff.floorId}`);
+      console.log(
+          `🧍 Персонал ${userStaff.staffName} обновлён: уровень ${userStaff.staffLevel}, этаж ${userStaff.floorId}`
+      );
+    });
   }
 
   // -------------------------------------------------------------------------
