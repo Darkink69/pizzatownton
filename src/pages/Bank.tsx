@@ -188,9 +188,9 @@ function Bank() {
     }
   };
 
-  // const handleExchange = () => {
-  //   setIsExchangeModalOpen(true);
-  // };
+  const handleExchange = () => {
+    setIsExchangeModalOpen(true);
+  };
 
   const { pizza, pdollar, pcoin } = store;
 
@@ -351,8 +351,8 @@ function Bank() {
 
                     <ActionButton
                       label="ОБМЕНЯТЬ"
-                      // onClick={handleExchange}
-                      onClick={() => alert("Ваша заявка принята")}
+                      onClick={handleExchange}
+                      // onClick={() => alert("Ваша заявка принята")}
                       img={`${store.imgUrl}b_blue2.png`}
                       textColor="text-blue-900"
                     />
