@@ -48,8 +48,14 @@ class Store {
   ): boolean {
     if (!this.wsSend || !this.sessionId || !this.user?.telegramId) return false;
 
-    // если передали имя и уровень  → пересчитываем staffId
-    if (floorId && staffName && level) {
+    //  для бухгалтера (floorId = 0)
+    if (floorId === 0) {
+      // подставляем правильные staffId из Redis/БД
+      if (subscription === 7)  staffId = 81;
+      if (subscription === 14) staffId = 82;
+      if (subscription === 30) staffId = 83;
+    } else if (floorId && staffName && level) {
+      // обычный случай Guard / Manager
       const nextId = this.getNextStaffId(floorId, staffName, level);
       if (nextId) staffId = nextId;
     }
@@ -67,7 +73,7 @@ class Store {
       },
     };
     this.wsSend(rq);
-    console.log("✅ PERSON_BUY отправлен:", rq);
+    console.log("✅ PERSON_BUY отправлен:", JSON.stringify(rq, null, 2));
     return true;
   }
 
@@ -154,6 +160,16 @@ class Store {
     if (savedUser) this.user = JSON.parse(savedUser);
     if (savedStaff) this.staffData = JSON.parse(savedStaff);
     if (savedFloors) this.userFloors = JSON.parse(savedFloors);
+
+
+    const savedAccountant = localStorage.getItem("accountantData");
+    if (savedAccountant) {
+      try {
+        this.userStaff = JSON.parse(savedAccountant);
+      } catch(e) {
+        console.warn("Ошибка чтения accountantData:", e);
+      }
+    }
   }
 
 
@@ -236,6 +252,12 @@ class Store {
         const incoming = data.userFloorList ?? [];
 
         runInAction(() => {
+          // 1. Сохраняем бухгалтера в стор и в localStorage
+          if (data.accountant !== undefined && data.accountant !== null) {
+            this.userStaff = data.accountant;
+            localStorage.setItem("accountantData", JSON.stringify(data.accountant));
+          }
+
 
           if (data.user) {
             this.pcoin = Number(data.user.pcoin ?? this.pcoin);
@@ -295,16 +317,17 @@ class Store {
               pdollarAmount: Number(data.pdollarAmount ?? 0),
               pizzaAmount: Number(data.pizzaAmount ?? 0),
               user: data.user ?? {},
-            },
+              accountant: data.accountant ?? this.userStaff ?? null
+            } as any,
           };
           localStorage.setItem("userFloors", JSON.stringify(this.userFloors));
-
           this.floorsLoaded = true;
         });
 
 
         console.group("📊 Floors after fresh update from server");
         console.log("💰 pcoin сейчас:", this.pcoin);
+
         this.safeUserFloorList.forEach((f) => {
           console.log(
               `id=${f.floorId} | owned=${f.owned} | staff=${
@@ -572,6 +595,16 @@ class Store {
     const { userStaff, user } = data;
 
     runInAction(() => {
+      // 🔹 Специальная ветка: бухгалтер (floorId = 0)
+      if (userStaff.floorId === 0 && userStaff.staffName === "Accountant") {
+        this.userStaff = userStaff; // сохраняем отдельно
+        this.accountantEndTime = userStaff.endDate;
+        console.log(
+            `💼 Accountant обновлён: длительность ${userStaff.durationDay} дн., до ${userStaff.endDate}`
+        );
+        //  Выходим из метода, бухгалтер не принадлежит этажу
+        return;
+      }
       // ищем нужный этаж
       const floor = this.safeUserFloorList.find(
           (f) => f.floorId === userStaff.floorId

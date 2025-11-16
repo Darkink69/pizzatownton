@@ -315,3 +315,34 @@ export interface StaffBuyUpdateResponse {
     }[] | null;
   };
 }
+
+export interface Accountant {
+  staffId: number;
+  staffLevel: number;
+  staffName: "Accountant";
+  startDate: string | null;
+  endDate: string | null;
+  durationDay: number | null;
+  owned: boolean;
+  upgradeStaff: null | {
+    staff_id: number;
+    level: number;
+    cost: number;
+    incomePercent: number;
+    loosesPercent: number;
+  }[];
+  accountantLevel: {
+    id: number;
+    cost: number;
+    duration: number; // или durationDay
+  }[];
+  floorId: 0;
+}
+
+export interface FloorsData {
+  userFloorList: UserFloor[];
+  pdollarAmount: number;
+  pizzaAmount: number;
+  user: TgUser;
+  accountant?: Accountant | null;
+}
