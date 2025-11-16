@@ -46,6 +46,7 @@ export interface UserFloor {
     owned: boolean;
     floorId?: number;
     upgradeStaff: {
+      staff_id: number;
       level: number;
       cost: number;
       incomePercent: number | null;
@@ -73,6 +74,7 @@ export interface StaffMember {
 }
 
 export interface StaffUpgrade {
+  staff_id: number;
   level: number;
   cost: number;
   incomePercent: number;

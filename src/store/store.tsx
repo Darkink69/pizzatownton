@@ -39,8 +39,21 @@ class Store {
   userStaff: any = null;
   accountantEndTime: any;
 
-  sendHireStaff(staffId: number, level?: number, subscription?: number, floorId?: number): boolean {
+  sendHireStaff(
+      staffId: number,
+      level?: number,
+      subscription?: number,
+      floorId?: number,
+      staffName?: string
+  ): boolean {
     if (!this.wsSend || !this.sessionId || !this.user?.telegramId) return false;
+
+    // если передали имя и уровень  → пересчитываем staffId
+    if (floorId && staffName && level) {
+      const nextId = this.getNextStaffId(floorId, staffName, level);
+      if (nextId) staffId = nextId;
+    }
+
     const rq = {
       type: "PERSON_BUY",
       requestId: genId(),
@@ -54,7 +67,30 @@ class Store {
       },
     };
     this.wsSend(rq);
+    console.log("✅ PERSON_BUY отправлен:", rq);
     return true;
+  }
+
+  getNextStaffId(floorId: number, staffName: string, nextLevel: number): number | undefined {
+    const floor = this.getFloorById(floorId);
+    if (!floor || !Array.isArray(floor.staff)) return undefined;
+
+    const current = floor.staff.find(s => s.staffName === staffName);
+    if (!current || !Array.isArray(current.upgradeStaff)) return undefined;
+
+    const next = current.upgradeStaff.find(up => up.level === nextLevel);
+
+    console.group(`🔍 getNextStaffId debug`);
+    console.log("floorId:", floorId);
+    console.log("staffName:", staffName);
+    console.log("nextLevel:", nextLevel);
+    console.log("upgradeStaff:", current.upgradeStaff);
+    console.log("nextFound:", next);
+    console.groupEnd();
+
+    if (next?.staff_id) return next.staff_id;
+
+    return current.staffId;
   }
 
   updateClaimProgress(percent: string | number) {
@@ -234,7 +270,11 @@ class Store {
                 (x) => x.floorId === floor.floorId
             );
 
-            const preservedStaff = existing?.staff ?? [];
+            // если сервер прислал staff → используем его
+            const preservedStaff = Array.isArray(floor.staff)
+                ? floor.staff
+                : existing?.staff ?? [];
+
             const preservedBalance = existing?.balance ?? floor.balance ?? 0;
 
             return {

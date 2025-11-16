@@ -357,7 +357,7 @@ const Home = observer(() => {
     });
 
     // Отправляем запрос на сервер
-    const ok = store.sendHireStaff(staffId, nextLevel, undefined, floorId);
+    const ok = store.sendHireStaff(staffId, nextLevel, undefined, floorId, staff.staffName);
 
     if (ok) {
       showNotification(
