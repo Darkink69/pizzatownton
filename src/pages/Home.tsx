@@ -690,6 +690,7 @@ const Home = observer(() => {
                     )}
 
                     {/* Блок с данными для заполненных этажей */}
+                    {/* Блок с данными для заполненных этажей */}
                     {isFilled && floorData && !isBasementImage && !isRoof && (
                       <>
                         <div className="absolute inset-0 flex items-center justify-center -z-10">
@@ -729,6 +730,12 @@ const Home = observer(() => {
                                   className="h-10 sm:h-12 w-auto"
                                 />
                                 <div className="absolute inset-0 flex items-center justify-center gap-0 px-1 sm:px-2">
+                                  {/* Добавлена иконка стрелки перед надписью этажа */}
+                                  <img
+                                    src={`${store.imgUrl}icon_arrow.png`}
+                                    alt="Arrow"
+                                    className="w-4 h-4 mr-1"
+                                  />
                                   <span className="text-white text-sm sm:text-md shantell font-bold">
                                     {floorData.floorId} этаж
                                   </span>
@@ -768,6 +775,134 @@ const Home = observer(() => {
                               )}
 
                               {/* Охранник */}
+                              {guard && (
+                                <div className="flex items-center gap-1 ml-2 -translate-x-[4px]">
+                                  <img
+                                    src={`${store.imgUrl}${
+                                      guard.owned
+                                        ? "Guard_icon.png"
+                                        : "Guard_icon_0.png"
+                                    }`}
+                                    alt="Guard"
+                                    className="w-6 h-6 sm:w-8 sm:h-8"
+                                  />
+                                  <img
+                                    src={`${store.imgUrl}${
+                                      guard.owned
+                                        ? "icon_star.png"
+                                        : "icon_star_empty.png"
+                                    }`}
+                                    alt="Star"
+                                    className="w-4 h-4 -translate-x-[2px]"
+                                  />
+                                  <span className="text-amber-800 text-xs sm:text-sm shantell -translate-x-[3px]">
+                                    {guard.owned ? guard.staffLevel : 0}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Блок с данными для basement */}
+                    {isFilled && floorData && isBasementImage && (
+                      <>
+                        <div className="absolute inset-0 flex items-center justify-center -z-10">
+                          <video
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            className="w-3/4 max-w-80 h-[90%] object-cover -translate-y-[15px] -translate-x-[20px]"
+                          >
+                            <source
+                              src={`${store.imgUrl}chif.mp4`}
+                              type="video/mp4"
+                            />
+                            Your browser does not support the video tag.
+                          </video>
+                        </div>
+
+                        <div className="absolute -top-10 left-2/5 transform -translate-x-1/2 translate-y-1/2 z-40 w-4/5 max-w-xs">
+                          <div className="flex items-center relative">
+                            <img
+                              src={`${store.imgUrl}img_block_mini.png`}
+                              alt="Background"
+                              className="w-full h-auto object-contain"
+                            />
+                            <div className="absolute inset-0 flex items-center">
+                              {/* Кнопка улучшения этажа для basement */}
+                              <button
+                                onClick={(e) =>
+                                  handleUpgradeFloor(floorData.floorId, e)
+                                }
+                                className="relative -translate-x-[24px] cursor-pointer hover:opacity-90 transition-opacity"
+                              >
+                                <img
+                                  src={`${store.imgUrl}b_red_mini.png`}
+                                  alt="Upgrade"
+                                  className="h-10 sm:h-12 w-auto"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center gap-0 px-1 sm:px-2">
+                                  {/* Добавлена иконка стрелки перед надписью этажа */}
+                                  <img
+                                    src={`${store.imgUrl}icon_arrow.png`}
+                                    alt="Arrow"
+                                    className="w-4 h-4 mr-1"
+                                  />
+                                  <span className="text-white text-sm sm:text-md shantell font-bold">
+                                    {floorData.floorId} этаж
+                                  </span>
+                                </div>
+                              </button>
+
+                              {/* Звезды уровня этажа */}
+                              <div className="flex items-center gap-0.5 -translate-x-[20px]">
+                                {renderStars(floorData.level)}
+                              </div>
+
+                              {/* Пицца для basement */}
+                              <div className="flex items-center gap-1 -translate-x-[6px]">
+                                <img
+                                  src={`${store.imgUrl}icon_pizza.png`}
+                                  alt="Pizza"
+                                  className="w-6 h-6 sm:w-8 sm:h-8"
+                                />
+                                <span className="text-amber-800 text-xs sm:text-sm shantell font-bold -translate-x-[3px]">
+                                  {store.pizza || 0}
+                                </span>
+                              </div>
+
+                              {/* Менеджер для basement */}
+                              {manager && (
+                                <div className="flex items-center gap-1 ml-2 -translate-x-[4px]">
+                                  <img
+                                    src={`${store.imgUrl}${
+                                      manager.owned
+                                        ? "Manager_icon.png"
+                                        : "Manager_icon_0.png"
+                                    }`}
+                                    alt="Manager"
+                                    className="w-6 h-6 sm:w-8 sm:h-8"
+                                  />
+                                  <img
+                                    src={`${store.imgUrl}${
+                                      manager.owned
+                                        ? "icon_star.png"
+                                        : "icon_star_empty.png"
+                                    }`}
+                                    alt="Star"
+                                    className="w-4 h-4 -translate-x-[2px]"
+                                  />
+                                  <span className="text-amber-800 text-xs sm:text-sm shantell font-bold -translate-x-[3px]">
+                                    {manager.owned ? manager.staffLevel : 0}
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Охранник для basement */}
                               {guard && (
                                 <div className="flex items-center gap-1 ml-2 -translate-x-[4px]">
                                   <img
