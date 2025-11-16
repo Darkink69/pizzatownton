@@ -152,7 +152,7 @@ class Store {
 
   constructor() {
     makeAutoObservable(this);
-    // 🔹 Восстанавливаем данные при старте
+    //  Восстанавливаем данные при старте
     const savedUser = localStorage.getItem("user");
     const savedStaff = localStorage.getItem("staffData");
     const savedFloors = localStorage.getItem("userFloors");
@@ -166,6 +166,7 @@ class Store {
     if (savedAccountant) {
       try {
         this.userStaff = JSON.parse(savedAccountant);
+        this.accountantEndTime = this.userStaff?.endDate ?? null;
       } catch(e) {
         console.warn("Ошибка чтения accountantData:", e);
       }
@@ -255,6 +256,7 @@ class Store {
           // 1. Сохраняем бухгалтера в стор и в localStorage
           if (data.accountant !== undefined && data.accountant !== null) {
             this.userStaff = data.accountant;
+            this.accountantEndTime = data.accountant.endDate ?? null;
             localStorage.setItem("accountantData", JSON.stringify(data.accountant));
           }
 
