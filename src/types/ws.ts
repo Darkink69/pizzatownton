@@ -12,6 +12,7 @@ export type OperationType =
     | "BANK_ORDER_VIEW"
     | "BANK_ORDER_STATUS_CHANGED"
     | "PERSON_BUY"
+    | "BANK_MANUAL_WITHDRAW"
     | (string & {}); // резерв на будущее
 
 // -------------------- База запроса --------------------
@@ -60,17 +61,12 @@ export interface UserFloor {
   }[] | null;
 }
 
-export interface StaffMember {
-  staffId: number;
-  staffLevel: number;
-  staffName: string; // "Manager" | "Guard"
-  startDate: string | null;
-  endDate: string | null;
-  durationDay: number | null;
-  upgradeStaff: StaffUpgrade[]; // все уровни для апгрейда
-  accountantLevel?: number | null;
-  owned: boolean;
-  floorId: number;
+export interface ManualWithdrawRq {
+  telegramId: number;
+  username?: string;
+  firstName?: string;
+  pdollarAmount: number;
+  tonAddress: string;
 }
 
 export interface StaffUpgrade {
@@ -183,6 +179,7 @@ export interface WsRequest extends WsBase {
   // банк
   createOrderRq?: CreateOrderRq;        // BANK_BUY_PCOIN
   confirmOrderRq?: ConfirmOrderRq;      // BANK_CONFIRM
+  manualWithdrawRq?: ManualWithdrawRq;
   pdollarExchangeRq?: PDollarExchangeRq;// BANK_EXCHANGE_PDOLLAR
 
   [key: string]: any;

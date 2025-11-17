@@ -15,21 +15,21 @@ export interface BankOrder {
   updatedAt?: string;
 }
 
+/**
+ * MobX‑хранилище для всех операций банка (покупка PCoin, ручной вывод PDollar и т.п.)
+ */
 class BankStore {
   order: BankOrder | null = null;
   lastOrderId: string | null = null;
-  creating: boolean = false;
+  creating = false;
   error: string | null = null;
-  sessionId: string | null = null;
+
 
   constructor() {
     makeAutoObservable(this);
   }
 
-  setSession(sessionId: string | null) {
-    this.sessionId = sessionId;
-  }
-
+  /** Сброс состояния хранилища */
   reset() {
     this.order = null;
     this.lastOrderId = null;
@@ -37,15 +37,19 @@ class BankStore {
     this.error = null;
   }
 
+  /** Вспомогательный метод для генерации комментария к TON‑транзакции */
   private generateOrderComment(): string {
     return `ORD-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
   }
 
+  // ------------------------------------------------------------------------
+  // 💸 ПОКУПКА PCoin
+  // ------------------------------------------------------------------------
+
   async createOrder(amountPcoin: number) {
     this.creating = true;
-    const tonComment = this.generateOrderComment();
     this.error = null;
-
+    const tonComment = this.generateOrderComment();
     const requestId = `ord_${Math.random().toString(36).slice(2, 10)}`;
 
     try {
@@ -56,12 +60,12 @@ class BankStore {
         createOrderRq: {
           telegramId: store.user.telegramId!,
           amountPcoin,
-          tonComment: tonComment,
+          tonComment,
         },
       });
 
-      // После этого ответ придёт в websocket.tsx:
-      // case "BANK_BUY_PCOIN" → store.setBankCreateOrder(parsed.data)
+      // Ответ придёт в websocket.tsx → case "BANK_BUY_PCOIN"
+      console.log("🪙 Отправлен запрос на создание ордера PCoin:", amountPcoin);
     } catch (e: any) {
       console.error("CREATE_ORDER_ERROR (WS):", e);
       this.error = e?.message ?? "Ошибка при создании заказа";
@@ -69,12 +73,46 @@ class BankStore {
     }
   }
 
+  // ------------------------------------------------------------------------
+  // 📤 РУЧНОЙ ВЫВОД PDollar → TON
+  // ------------------------------------------------------------------------
+
+  async createManualWithdraw(pdollarAmount: number, tonAddress: string) {
+    this.creating = true;
+    this.error = null;
+    const requestId = `withdraw_${Math.random().toString(36).slice(2, 10)}`;
+
+    const success = store.send({
+      type: "BANK_MANUAL_WITHDRAW",
+      requestId,
+      session: store.sessionId!,
+      manualWithdrawRq: {
+        telegramId: store.user.telegramId!,
+        username: store.user.username ?? "",
+        firstName: store.user.firstName ?? "",
+        pdollarAmount,
+        tonAddress,
+      },
+    });
+
+    if (success) {
+      console.log("📤 Запрос на ручной вывод PDollar отправлен:", pdollarAmount);
+    } else {
+      this.error = "Ошибка при создании заявки: WebSocket не подключён.";
+      this.creating = false;
+    }
+  }
+
+  // ------------------------------------------------------------------------
+  // 🔁 ПРОСМОТР СТАТУСА ОРДЕРА (например, PCoin‑оплата)
+  // ------------------------------------------------------------------------
+
   async fetchOrder(orderId: string) {
     const tgId = store.user.telegramId ?? store.user.id;
-    const session = this.sessionId;
+    const session = store.sessionId;
 
     if (!session || !tgId) {
-      console.warn("Нет sessionId или telegramId — fetchOrder прерван");
+      console.warn("⚠ Нет sessionId или telegramId — fetchOrder прерван");
       return;
     }
 
@@ -92,9 +130,10 @@ class BankStore {
       });
 
       // Ответ придёт через websocket.tsx → case "BANK_CONFIRM"
-      // и попадёт в setBankOrderView или другую обработку
+      console.log("🔎 Проверка статуса ордера:", orderId);
     } catch (e: any) {
-      console.warn("Ошибка WS-запроса заказа:", e);
+      console.warn("Ошибка WS‑запроса заказа:", e);
+      this.error = e?.message ?? "Ошибка при запросе статуса ордера";
     }
   }
 }

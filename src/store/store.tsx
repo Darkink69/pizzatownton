@@ -174,6 +174,8 @@ class Store {
   }
 
 
+
+
   // -------------------------------------------------------------------------
   // BASIC GETTERS
   // -------------------------------------------------------------------------
@@ -393,7 +395,7 @@ class Store {
 
   setSessionId(sessionId?: string | null) {
     this.sessionId = sessionId ?? null;
-    this.bank.setSession(this.sessionId ?? null);
+
   }
 
   setAuthError(message: string | null) {

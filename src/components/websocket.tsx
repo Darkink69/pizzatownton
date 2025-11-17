@@ -254,6 +254,16 @@ const WebSocketComponent = observer(() => {
                         break;
                     }
 
+                    case "BANK_MANUAL_WITHDRAW": {
+                        if (parsed.success) {
+                            toast.success("✅ Заявка на вывод PDollar сохранена");
+                            console.log("ManualWithdrawResponse:", parsed.data);
+                        } else {
+                            toast.error(parsed.message || "Ошибка при создании заявки на вывод");
+                        }
+                        break;
+                    }
+
                     /** ------------------ CLAIM_REFRESH ------------------ */
                     case "CLAIM_REFRESH": {
                         if (parsed.success && parsed.data) {
