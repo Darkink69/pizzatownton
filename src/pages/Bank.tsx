@@ -173,7 +173,7 @@ function Bank() {
   const [pcoinAmount, setPcoinAmount] = useState("500");
   const [buying, setBuying] = useState(false);
   const [isExchangeModalOpen, setIsExchangeModalOpen] = useState(false);
-
+  const PDOLLAR_PER_TON = 100000;
   const handleBuy = async () => {
     const parsed = parseInt(pcoinAmount);
     if (Number.isNaN(parsed) || parsed < 100) {
@@ -278,7 +278,7 @@ function Bank() {
                   />
                   <div className="absolute inset-0 flex flex-col p-4 sm:p-5">
                     <div className="text-base text-center sm:text-lg text-amber-800 shantell mb-2 font-bold">
-                      Сколько PCoin вы хотите купить
+                      Сколько PCoin вы хотите купить
                     </div>
 
                     {/* Поле PCoin */}
@@ -309,7 +309,7 @@ function Bank() {
 
                     {/* Курс */}
                     <div className="text-center mb-4 sm:mb-6 font-bold text-base sm:text-lg text-amber-800 shantell flex items-center justify-center">
-                      Курс: 1 TON = 1000 PCoin
+                      Курс: 1 TON = 1000 PCoin
                       <img
                         src={`${store.imgUrl}icon_dollar_coin.png`}
                         alt="PCoin"
@@ -342,12 +342,17 @@ function Bank() {
                       ОБМЕННИК
                     </div>
 
+                    {/* PDollar → TON */}
                     <CurrencyInput
                       icon={`${store.imgUrl}icon_dollar.png`}
                       label="PDollar"
                       balance={store.pdollar}
                       value={pdollarAmount}
-                      onChange={setPdollarAmount}
+                      onChange={(v) => {
+                        setPdollarAmount(v);
+                        const num = Number(v);
+                        if (!isNaN(num)) setTonExchangeAmount((num / PDOLLAR_PER_TON).toFixed(2));
+                      }}
                     />
                     <ArrowDown />
                     <CurrencyInput
@@ -359,7 +364,7 @@ function Bank() {
                     />
 
                     <div className="text-center mb-4 sm:mb-6 font-bold text-base sm:text-lg text-amber-800 shantell">
-                      100000 PDOLLAR за 1 TON
+                      Курс: 1 PDollar = 0.00001 TON
                     </div>
 
                     <ActionButton
