@@ -84,14 +84,7 @@ const BankOrderModal: React.FC = () => {
   const isPaid = order?.status === "PAID";
   const isExpired = order?.status === "EXPIRED";
   const statusInfo = order?.status ? statusUi[order.status] : null;
-
-  // 👉 Безопасное приведение amountTon
   const numericAmountTon = Number(order?.amountTon ?? 0);
-
-  // Функция закрытия модального окна
-  const closeModal = () => {
-    store.bank.order = null;
-  };
 
   // Таймер до истечения срока действия
   useEffect(() => {
@@ -130,9 +123,9 @@ const BankOrderModal: React.FC = () => {
   // Автоматическое закрытие модалки при успешной оплате или истечении времени
   useEffect(() => {
     if (isPaid || isExpired) {
-      // Закрываем через 2 секунды после успешной оплаты или истечения времени
       const timer = setTimeout(() => {
-        closeModal();
+        store.bank.order = null;
+        window.history.replaceState(null, "", "/bank"); // или navigate("/bank")
       }, 2000);
       return () => clearTimeout(timer);
     }

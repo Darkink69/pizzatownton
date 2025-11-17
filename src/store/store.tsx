@@ -266,7 +266,16 @@ class Store {
           if (data.user) {
             this.pcoin = Number(data.user.pcoin ?? this.pcoin);
             this.pdollar = Number(data.user.pdollar ?? this.pdollar);
-            this.pizza = Number(data.user.pizza ?? this.pizza);
+            this.pizza = Number(
+                // берём сначала pizzaAmount, потом user.pizza, потом текущее
+                data.pizzaAmount ?? data.user.pizza ?? this.pizza
+            );
+          } else if (data.pizzaAmount !== undefined && data.pizzaAmount !== null) {
+            this.pizza = Number(data.pizzaAmount);
+          }
+
+          if (data.pizzaAmount !== undefined && data.pizzaAmount !== null) {
+            this.pizza = Number(data.pizzaAmount);
           }
 
 

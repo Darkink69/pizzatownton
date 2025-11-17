@@ -295,7 +295,7 @@ const Home = observer(() => {
   const getFloorNameByIndex = (index: number): string => {
     const floorId = getFloorIdByIndex(index);
     if (index === 0) return "Крыша";
-    // if (floorId === -1) return "Basement";
+    if (floorId === -1) return "Basement";
     if (floorId === 1) return "Basement";
     return `${floorId} этаж`;
   };
@@ -629,7 +629,7 @@ const Home = observer(() => {
                 const floorName = getFloorNameByIndex(index);
                 const canBuy = store.canBuyFloor(floorId);
                 const floorCost = store.getFloorCost(floorId);
-                const isBasementImage = floorId === 1;
+                const isBasementImage = floorId === -1;
                 const isRoof = floorId === -2;
 
                 // Данные персонала с сервера
@@ -690,6 +690,7 @@ const Home = observer(() => {
                       </button>
                     )}
 
+                    {/* Блок с данными для заполненных этажей */}
                     {/* Блок с данными для заполненных этажей */}
                     {isFilled && floorData && !isBasementImage && !isRoof && (
                       <>
@@ -807,7 +808,7 @@ const Home = observer(() => {
                     )}
 
                     {/* Блок с данными для basement */}
-                    {isFilled && floorData && isBasementImage && !isRoof && (
+                    {isFilled && floorData && floorData.floorId === 1 && !isRoof && (
                       <>
                         <div className="absolute inset-0 flex items-center justify-center -z-10">
                           <video
@@ -871,7 +872,7 @@ const Home = observer(() => {
                                   className="w-6 h-6 sm:w-8 sm:h-8"
                                 />
                                 <span className="text-amber-800 text-xs sm:text-sm shantell font-bold -translate-x-[3px]">
-                                  {store.pizza || 0}
+                                  {store.pizza.toLocaleString()}
                                 </span>
                               </div>
 
@@ -1038,10 +1039,10 @@ const Home = observer(() => {
                     />
                   </span>
                 </Link>
+                <span className="absolute top-8 text-xs text-white 500 shantell whitespace-nowrap tracking-tight">
+                  +{totalIncome.toLocaleString()}/час
+                </span>
               </div>
-            </div>
-            <div className="absolute top-20 text-xs text-white shantell">
-              +{totalIncome.toLocaleString()}/час
             </div>
           </div>
         </div>
