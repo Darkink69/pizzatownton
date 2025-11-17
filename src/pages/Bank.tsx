@@ -344,15 +344,21 @@ function Bank() {
 
                     {/* PDollar → TON */}
                     <CurrencyInput
-                      icon={`${store.imgUrl}icon_dollar.png`}
-                      label="PDollar"
-                      balance={store.pdollar}
-                      value={pdollarAmount}
-                      onChange={(v) => {
-                        setPdollarAmount(v);
-                        const num = Number(v);
-                        if (!isNaN(num)) setTonExchangeAmount((num / PDOLLAR_PER_TON).toFixed(2));
-                      }}
+                        icon={`${store.imgUrl}icon_dollar.png`}
+                        label="PDollar"
+                        balance={store.pdollar}
+                        value={pdollarAmount}
+                        onChange={(v) => {
+                          const num = Number(v);
+                          // ⬇️ Минимум 100000
+                          if (!isNaN(num)) {
+                            const clamped = Math.max(num, 100000);
+                            setPdollarAmount(String(clamped));
+                            setTonExchangeAmount((clamped / PDOLLAR_PER_TON).toFixed(2));
+                          }
+                        }}
+                        placeholder="100000"
+                        min={100000}
                     />
                     <ArrowDown />
                     <CurrencyInput
