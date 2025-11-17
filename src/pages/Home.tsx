@@ -296,7 +296,7 @@ const Home = observer(() => {
     const floorId = getFloorIdByIndex(index);
     if (index === 0) return "Крыша";
     if (floorId === -1) return "Basement";
-    if (floorId === 1) return "Basement";
+    // if (floorId === 1) return "Basement";
     return `${floorId} этаж`;
   };
 
@@ -691,7 +691,6 @@ const Home = observer(() => {
                     )}
 
                     {/* Блок с данными для заполненных этажей */}
-                    {/* Блок с данными для заполненных этажей */}
                     {isFilled && floorData && !isBasementImage && !isRoof && (
                       <>
                         <div className="absolute inset-0 flex items-center justify-center -z-10">
@@ -1039,10 +1038,10 @@ const Home = observer(() => {
                     />
                   </span>
                 </Link>
-                <span className="absolute top-8 text-xs text-white shantell">
-                  +{totalIncome.toLocaleString()}/час
-                </span>
               </div>
+            </div>
+            <div className="absolute top-20 text-xs text-white shantell">
+              +{totalIncome.toLocaleString()}/час
             </div>
           </div>
         </div>

@@ -180,7 +180,7 @@ const BankOrderModal: React.FC = () => {
 
         {merchantAddr && (
           <div className="mb-1 text-sm break-all text-gray-800">
-            Адрес: <strong>{merchantAddr}</strong>
+            Платёжи на этот кошелёк: <strong>{merchantAddr}</strong>
           </div>
         )}
 
