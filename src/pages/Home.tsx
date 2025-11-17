@@ -5,6 +5,7 @@ import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
 import { Link } from "react-router-dom";
 import FooterHome from "../components/FooterHome";
+import { getFloorUpgradeData, getCurrentUpgradeCost } from "./floorUpgradeData";
 
 const Home = observer(() => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -807,7 +808,7 @@ const Home = observer(() => {
                     )}
 
                     {/* Блок с данными для basement */}
-                    {isFilled && floorData && isBasementImage && (
+                    {isFilled && floorData && isBasementImage && !isRoof && (
                       <>
                         <div className="absolute inset-0 flex items-center justify-center -z-10">
                           <video
@@ -1134,7 +1135,7 @@ const Home = observer(() => {
                         <img
                           src={`${store.imgUrl}icon_dollar.png`}
                           alt="Доллар"
-                          className="w-5 h-5"
+                          className="w-6 h-4"
                         />
                         <span className="text-xs text-amber-800 shantell">
                           / час
@@ -1147,7 +1148,11 @@ const Home = observer(() => {
                   <div className="flex justify-between items-center">
                     {[1, 2, 3, 4, 5].map((star, index) => {
                       const isActive = index < (selectedFloor.level ?? 0);
-                      const bonuses = [64, 104, 130, 164, 206];
+                      const floorUpgrades = getFloorUpgradeData(
+                        selectedFloor.floorId
+                      );
+                      const bonus = floorUpgrades[index]?.incomeBonus || 0;
+
                       return (
                         <div key={star} className="flex flex-col items-center">
                           <img
@@ -1159,7 +1164,7 @@ const Home = observer(() => {
                           />
                           <div className="flex items-center gap-0 bg-white px-2 py-1 rounded border border-amber-800">
                             <span className="text-xs font-bold text-amber-800 shantell">
-                              +{bonuses[index]}
+                              +{bonus}
                             </span>
                             <img
                               src={`${store.imgUrl}icon_dollar.png`}
@@ -1203,7 +1208,10 @@ const Home = observer(() => {
                           className="w-5 h-5"
                         />
                         <span className="text-white font-bold shantell">
-                          {store.getUpgradeCost(selectedFloor.floorId) || 1000}
+                          {getCurrentUpgradeCost(
+                            selectedFloor.floorId,
+                            selectedFloor.level ?? 0
+                          )}
                         </span>
                       </div>
                     </button>
