@@ -295,8 +295,8 @@ const Home = observer(() => {
   const getFloorNameByIndex = (index: number): string => {
     const floorId = getFloorIdByIndex(index);
     if (index === 0) return "Крыша";
-    if (floorId === -1) return "Basement";
-    // if (floorId === 1) return "Basement";
+    // if (floorId === -1) return "Basement";
+    if (floorId === 1) return "Basement";
     return `${floorId} этаж`;
   };
 
@@ -629,7 +629,7 @@ const Home = observer(() => {
                 const floorName = getFloorNameByIndex(index);
                 const canBuy = store.canBuyFloor(floorId);
                 const floorCost = store.getFloorCost(floorId);
-                const isBasementImage = floorId === -1;
+                const isBasementImage = floorId === 1;
                 const isRoof = floorId === -2;
 
                 // Данные персонала с сервера
