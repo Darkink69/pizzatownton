@@ -58,12 +58,12 @@ const Home = observer(() => {
         // Опускаем лифт с пиццей вниз
         setLiftPosition((prev) => {
           const newPosition = prev - 1;
-          if (newPosition <= 0) {
+          if (newPosition <= -2) {
             // Достигли низа - меняем на пустой лифт
             setTimeout(() => {
               setLiftHasPizza(false);
             }, 500); // Небольшая пауза внизу
-            return 0;
+            return -2;
           }
           return newPosition;
         });
@@ -78,9 +78,7 @@ const Home = observer(() => {
 
   // Функция для расчета позиции лифта относительно этажей
   const getLiftStyle = (): React.CSSProperties => {
-    // Высота всего здания (примерно соответствует высоте 11 этажей)
-    // const totalBuildingHeight = 100; // в процентах от высоты контейнера
-    const liftHeight = 5.45; // высота одного лифта в процентах (100% / 11 этажей ≈ 9.09%)
+    const liftHeight = 10; // высота одного лифта в процентах (100% / 11 этажей ≈ 9.09%)
 
     // Позиция рассчитывается от низа контейнера
     const bottomPosition = ((100 - liftHeight) * liftPosition) / 100;
@@ -88,7 +86,7 @@ const Home = observer(() => {
     return {
       position: "absolute",
       bottom: `${bottomPosition}%`,
-      right: "20px",
+      right: "14px",
       zIndex: 20,
       transition: "bottom 0.05s linear", // Плавное движение
       width: "60px",

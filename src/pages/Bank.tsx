@@ -173,7 +173,8 @@ function Bank() {
   const [pcoinAmount, setPcoinAmount] = useState("500");
   const [buying, setBuying] = useState(false);
   const [isExchangeModalOpen, setIsExchangeModalOpen] = useState(false);
-  const PDOLLAR_PER_TON = 100000;
+  // const PDOLLAR_PER_TON = 100000;
+  const PDOLLAR_TO_TON_RATE = 0.00001; // 1 PDollar = 0.00001 TON
   const handleBuy = async () => {
     const parsed = parseInt(pcoinAmount);
     if (Number.isNaN(parsed) || parsed < 100) {
@@ -252,17 +253,29 @@ function Bank() {
         </div>
 
         {/* Кнопка подключения ton connect */}
-        <div className="absolute top-12 right-4 flex items-center space-x-3 z-40">
-          <Link to="/ton-connect">
-            <div className="rounded-full w-10 flex items-center justify-center">
+
+        <Link to="/ton-connect">
+          <div className="absolute top-6 right-4 flex items-center space-x-3 z-40">
+            {/* Блок с балансом TON */}
+            <div className="relative">
               <img
-                src={`${store.imgUrl}icon_ton.png`}
-                alt="TON connect"
-                className="w-8 h-8"
+                src={`${store.imgUrl}b_white.png`}
+                alt="TON balance"
+                className="w-16 h-10"
               />
+              <div className="absolute inset-0 flex items-center justify-center gap-1 px-2">
+                <img
+                  src={`${store.imgUrl}icon_ton.png`}
+                  alt="TON"
+                  className="w-4"
+                />
+                <span className="text-amber-800 text-sm shantell font-bold">
+                  {store.tonBalance}
+                </span>
+              </div>
             </div>
-          </Link>
-        </div>
+          </div>
+        </Link>
 
         {/* Контейнер для содержимого */}
         <div className="relative z-30 h-screen flex flex-col pt-36 sm:pt-44 pb-20">
@@ -344,21 +357,22 @@ function Bank() {
 
                     {/* PDollar → TON */}
                     <CurrencyInput
-                        icon={`${store.imgUrl}icon_dollar.png`}
-                        label="PDollar"
-                        balance={store.pdollar}
-                        value={pdollarAmount}
-                        onChange={(v) => {
-                          const num = Number(v);
-                          // ⬇️ Минимум 100000
-                          if (!isNaN(num)) {
-                            const clamped = Math.max(num, 100000);
-                            setPdollarAmount(String(clamped));
-                            setTonExchangeAmount((clamped / PDOLLAR_PER_TON).toFixed(2));
-                          }
-                        }}
-                        placeholder="100000"
-                        min={100000}
+                      icon={`${store.imgUrl}icon_dollar.png`}
+                      label="PDollar"
+                      balance={store.pdollar}
+                      value={pdollarAmount}
+                      onChange={(v) => {
+                        const num = Number(v);
+                        if (!isNaN(num)) {
+                          const clamped = Math.max(num, 100000);
+                          setPdollarAmount(String(clamped));
+                          // Автоматический пересчет в TON
+                          const tonValue = clamped * PDOLLAR_TO_TON_RATE;
+                          setTonExchangeAmount(tonValue.toFixed(2));
+                        }
+                      }}
+                      placeholder="100000"
+                      min={100000}
                     />
                     <ArrowDown />
                     <CurrencyInput
@@ -366,7 +380,15 @@ function Bank() {
                       label="TON"
                       balance={0}
                       value={tonExchangeAmount}
-                      onChange={setTonExchangeAmount}
+                      onChange={(v) => {
+                        const num = Number(v);
+                        if (!isNaN(num)) {
+                          setTonExchangeAmount(v);
+                          // Автоматический пересчет в PDollar
+                          const pdollarValue = num / PDOLLAR_TO_TON_RATE;
+                          setPdollarAmount(String(Math.round(pdollarValue)));
+                        }
+                      }}
                     />
 
                     <div className="text-center mb-4 sm:mb-6 font-bold text-base sm:text-lg text-amber-800 shantell">
