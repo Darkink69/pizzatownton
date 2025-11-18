@@ -373,12 +373,6 @@ const Home = observer(() => {
     if (index === 0) return "Крыша";
     if (floorId === -1) return "Basement";
 
-    // Переименовываем этажи:
-    // floorId 1 → Basement
-    // floorId 2 → 1 этаж
-    // floorId 3 → 2 этаж
-    // ...
-    // floorId 9 → 8 этаж
     if (floorId === 1) return "Basement";
     if (floorId >= 2 && floorId <= 9) return `${floorId - 1} этаж`;
 
@@ -651,7 +645,7 @@ const Home = observer(() => {
         {/* Уведомление */}
         {notification && (
           <div
-            className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg ${
+            className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-8 py-2 rounded-lg shadow-lg ${
               notification.type === "error"
                 ? "bg-red-500 text-white"
                 : "bg-green-500 text-white"
@@ -683,7 +677,7 @@ const Home = observer(() => {
                   />
                 </svg>
               )}
-              <span className="font-medium">{notification.message}</span>
+              <span className="shantell">{notification.message}</span>
             </div>
           </div>
         )}
@@ -774,7 +768,6 @@ const Home = observer(() => {
                       </button>
                     )}
 
-                    {/* Блок с данными для заполненных этажей */}
                     {/* Блок с данными для заполненных этажей */}
                     {isFilled && floorData && !isBasementImage && !isRoof && (
                       <>
@@ -1577,7 +1570,7 @@ const Home = observer(() => {
                             <img
                               src={`${store.imgUrl}b_white.png`}
                               alt={`${opt.duration ?? opt.durationDay} дней`}
-                              className="w-full"
+                              className="w-full scale-y-110"
                             />
                             <span className="absolute inset-0 flex flex-col items-center justify-center text-amber-800 shantell text-sm">
                               <span>
