@@ -137,17 +137,17 @@ export const TONConnectPage: FC = observer(() => {
             {/* Информация о кошельке */}
             <div className="flex items-center gap-3 mb-4">
               <img
-                src="https://wallet.ton.org/assets/ui/tonconnect-logo.png"
+                src="https://s3.twcstorage.ru/c6bae09a-a5938890-9b68-453c-9c54-76c439a70d3e/Pizzatownton/pizza_logo.png"
                 alt="Wallet logo"
-                className="w-12 h-12 rounded-full"
+                className="w-40"
               />
               <div className="flex-1">
-                <div className="text-lg font-bold text-amber-800 shantell">
+                {/* <div className="text-lg font-bold text-amber-800 shantell">
                   {wallet.device?.appName ?? "Подключенный кошелёк"}
                 </div>
                 <div className="text-sm text-amber-600 shantell">
                   {wallet.device?.platform ?? "TON Wallet"}
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -170,8 +170,6 @@ export const TONConnectPage: FC = observer(() => {
                 onClick={() => {
                   if (adrss) {
                     navigator.clipboard.writeText(adrss);
-                    // Можно добавить уведомление о успешном копировании
-                    // alert("Адрес скопирован в буфер обмена!");
                   }
                 }}
                 className="w-full relative py-3 rounded-lg flex items-center justify-center hover:opacity-90 transition-opacity"
