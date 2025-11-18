@@ -374,10 +374,18 @@ const Home = observer(() => {
     const floorId = getFloorIdByIndex(index);
     if (index === 0) return "Крыша";
     if (floorId === -1) return "Basement";
+
+    // Переименовываем этажи:
+    // floorId 1 → Basement
+    // floorId 2 → 1 этаж
+    // floorId 3 → 2 этаж
+    // ...
+    // floorId 9 → 8 этаж
     if (floorId === 1) return "Basement";
+    if (floorId >= 2 && floorId <= 9) return `${floorId - 1} этаж`;
+
     return `${floorId} этаж`;
   };
-
   const handleBuyFloor = (index: number) => {
     const floorId = getFloorIdByIndex(index);
     playSound("buy.mp3");
@@ -816,7 +824,7 @@ const Home = observer(() => {
                                     className="w-4 h-4 mr-1"
                                   />
                                   <span className="text-white text-sm sm:text-md shantell font-bold">
-                                    {floorData.floorId} этаж
+                                    {getFloorNameByIndex(index)}
                                   </span>
                                 </div>
                               </button>
@@ -935,7 +943,7 @@ const Home = observer(() => {
                                       className="w-4 h-4 mr-1"
                                     />
                                     <span className="text-white text-sm sm:text-md shantell font-bold">
-                                      {floorData.floorId} этаж
+                                      {getFloorNameByIndex(index)}
                                     </span>
                                   </div>
                                 </button>
@@ -1161,7 +1169,9 @@ const Home = observer(() => {
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span className="text-amber-800 font-bold text-lg shantell">
-                      {selectedFloor.floorId} этаж
+                      {getFloorNameByIndex(
+                        floors - 1 - (selectedFloor?.floorId ?? 0)
+                      )}
                     </span>
                   </div>
                 </div>
