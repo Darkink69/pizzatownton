@@ -1,18 +1,18 @@
-// src/pages/TONConnectPage.tsx
 import { useEffect, type FC } from "react";
+import { useTonConnectUI } from "@tonconnect/ui-react";
 import {
   TonConnectButton,
   useTonWallet,
   useTonAddress,
 } from "@tonconnect/ui-react";
 import {
-  Avatar,
-  Cell,
-  List,
+  // Avatar,
+  // Cell,
+  // List,
   Placeholder,
-  Section,
+  // Section,
   Text,
-  Title,
+  // Title,
 } from "@telegram-apps/telegram-ui";
 import { observer } from "mobx-react-lite";
 
@@ -35,6 +35,7 @@ function nanosToTonStr(nano: string | number, fractionDigits = 2): string {
 export const TONConnectPage: FC = observer(() => {
   const wallet = useTonWallet();
   const adrss = useTonAddress();
+  const [tonConnectUI] = useTonConnectUI();
 
   // ---------------- Логика получения баланса ----------------
   const getTonBalance = async (address: string, signal?: AbortSignal) => {
@@ -121,19 +122,6 @@ export const TONConnectPage: FC = observer(() => {
   return (
     <Page>
       <div className="relative h-screen w-full flex flex-col bg-[#FFBC6B] overflow-hidden">
-        {/* Обновление баланса вручную */}
-        <div
-          className="mt-10 cursor-pointer text-center px-3 py-2 text-white shantell"
-          onClick={() => adrss && getTonBalance(adrss)}
-        >
-          🔄 Обновить баланс TON (текущий: {store.tonBalance})
-        </div>
-
-        {/* <Section header="Баланс TON">
-            <Cell>
-              <Title level="2">{store.tonBalance} TON</Title>
-            </Cell>
-          </Section> */}
         <div className="mt-10 mb-10 flex justify-center items-center text-3xl text-amber-800 shantell">
           <img
             src={`${store.imgUrl}icon_ton.png`}
@@ -143,34 +131,79 @@ export const TONConnectPage: FC = observer(() => {
           {store.tonBalance} TON
         </div>
 
-        <List>
-          <Section>
-            <Cell
-              before={
-                <Avatar
-                  src="https://wallet.ton.org/assets/ui/tonconnect-logo.png"
-                  alt="Wallet logo"
-                  width={60}
-                  height={60}
-                />
-              }
-              subtitle={wallet.device?.platform ?? "TON Wallet"}
-            >
-              <Title level="3">
-                {wallet.device?.appName ?? "Подключенный кошелёк"}
-              </Title>
-            </Cell>
-            <TonConnectButton className={e("button-connected")} />
-          </Section>
+        {/* Кастомизированный блок подключенного кошелька */}
+        <div className="px-4">
+          <div className="bg-white rounded-2xl p-4 mb-4 border-2 border-amber-800 shadow-lg">
+            {/* Информация о кошельке */}
+            <div className="flex items-center gap-3 mb-4">
+              <img
+                src="https://wallet.ton.org/assets/ui/tonconnect-logo.png"
+                alt="Wallet logo"
+                className="w-12 h-12 rounded-full"
+              />
+              <div className="flex-1">
+                <div className="text-lg font-bold text-amber-800 shantell">
+                  {wallet.device?.appName ?? "Подключенный кошелёк"}
+                </div>
+                <div className="text-sm text-amber-600 shantell">
+                  {wallet.device?.platform ?? "TON Wallet"}
+                </div>
+              </div>
+            </div>
 
-          {/* <DisplayData
-            header="Аккаунт"
-            rows={[
-              { title: "Адрес", value: wallet.account?.address ?? "—" },
-              { title: "Сеть", value: wallet.account?.chain ?? "?" },
-            ]}
-          /> */}
-        </List>
+            {/* Адрес кошелька */}
+            <div className="mb-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+              <div className="text-xs text-amber-600 shantell mb-1">
+                Адрес кошелька:
+              </div>
+              <div className="text-sm text-amber-800 shantell font-mono break-all">
+                {adrss
+                  ? `${adrss.slice(0, 8)}...${adrss.slice(-8)}`
+                  : "Не подключен"}
+              </div>
+            </div>
+
+            {/* Кнопки действий */}
+            <div className="flex flex-col gap-2">
+              {/* Кнопка "Скопировать адрес" */}
+              <button
+                onClick={() => {
+                  if (adrss) {
+                    navigator.clipboard.writeText(adrss);
+                    // Можно добавить уведомление о успешном копировании
+                    // alert("Адрес скопирован в буфер обмена!");
+                  }
+                }}
+                className="w-full relative py-3 rounded-lg flex items-center justify-center hover:opacity-90 transition-opacity"
+              >
+                <img
+                  src={`${store.imgUrl}b_blue_small.png`}
+                  alt="Button background"
+                  className="absolute inset-0 w-full h-full"
+                />
+                <span className="text-blue-900 font-bold shantell text-lg relative z-10">
+                  Скопировать адрес
+                </span>
+              </button>
+
+              {/* Кнопка "Выйти" */}
+              <button
+                onClick={() => tonConnectUI.disconnect()}
+                className="w-full relative py-3 rounded-lg flex items-center justify-center hover:opacity-90 transition-opacity"
+              >
+                <img
+                  src={`${store.imgUrl}b_red_round.png`}
+                  alt="Button background"
+                  className="absolute inset-0 w-full h-full"
+                />
+                <span className="text-white font-bold shantell text-lg relative z-10">
+                  Выйти
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 z-20">
           <img
             src={`${store.imgUrl}img_blue_pizza.png`}

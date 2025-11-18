@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 // import { QRCodeCanvas } from "qrcode.react";
 import { TonConnectButton, useTonWallet } from "@tonconnect/ui-react";
 import store from "../store/store";
@@ -6,8 +6,8 @@ import { useTonConnectUI } from "@tonconnect/ui-react";
 import { encodeCommentAsPayload } from "../utils/ton";
 
 // Helpers for QR progress ring
-const CIRCLE_RADIUS = 40;
-const CIRCLE_CIRC = 2 * Math.PI * CIRCLE_RADIUS;
+// const CIRCLE_RADIUS = 40;
+// const CIRCLE_CIRC = 2 * Math.PI * CIRCLE_RADIUS;
 
 /**
  * Преобразует TON в наноTON (1 TON = 1e9)
@@ -30,60 +30,60 @@ function tonToNano(ton: number): string {
 // }
 
 // Словарь UI по статусу ордера
-const statusUi: Record<
-  string,
-  { title: string; color: string; icon: string; animation?: string }
-> = {
-  NEW: {
-    title: "Ожидает оплаты",
-    color: "text-gray-700",
-    icon: "🕓",
-    animation: "animate-pulse",
-  },
-  WAITING_PAYMENT: {
-    title: "Ожидание перевода",
-    color: "text-blue-700",
-    icon: "⌛",
-    animation: "animate-pulse",
-  },
-  PAID: {
-    title: "Оплачен успешно",
-    color: "text-green-600",
-    icon: "✅",
-    animation: "animate-scale-pop",
-  },
-  EXPIRED: {
-    title: "Время оплаты истекло",
-    color: "text-red-500",
-    icon: "⏰",
-    animation: "animate-fade-in",
-  },
-  CANCELLED: {
-    title: "Отменён",
-    color: "text-yellow-600",
-    icon: "⚠️",
-    animation: "animate-fade-in",
-  },
-  FAILED: {
-    title: "Ошибка оплаты",
-    color: "text-red-600",
-    icon: "❌",
-    animation: "animate-shake",
-  },
-};
+// const statusUi: Record<
+//   string,
+//   { title: string; color: string; icon: string; animation?: string }
+// > = {
+//   NEW: {
+//     title: "Ожидает оплаты",
+//     color: "text-gray-700",
+//     icon: "🕓",
+//     animation: "animate-pulse",
+//   },
+//   WAITING_PAYMENT: {
+//     title: "Ожидание перевода",
+//     color: "text-blue-700",
+//     icon: "⌛",
+//     animation: "animate-pulse",
+//   },
+//   PAID: {
+//     title: "Оплачен успешно",
+//     color: "text-green-600",
+//     icon: "✅",
+//     animation: "animate-scale-pop",
+//   },
+//   EXPIRED: {
+//     title: "Время оплаты истекло",
+//     color: "text-red-500",
+//     icon: "⏰",
+//     animation: "animate-fade-in",
+//   },
+//   CANCELLED: {
+//     title: "Отменён",
+//     color: "text-yellow-600",
+//     icon: "⚠️",
+//     animation: "animate-fade-in",
+//   },
+//   FAILED: {
+//     title: "Ошибка оплаты",
+//     color: "text-red-600",
+//     icon: "❌",
+//     animation: "animate-shake",
+//   },
+// };
 
 const BankOrderModal: React.FC = () => {
   const { order } = store.bank;
 
-  const [timeLeft, setTimeLeft] = useState("00:00");
-  const [percent, setPercent] = useState(100);
+  // const [timeLeft, setTimeLeft] = useState("00:00");
+  // const [percent, setPercent] = useState(100);
 
   const [tonConnectUI] = useTonConnectUI();
   const wallet = useTonWallet();
 
   const isPaid = order?.status === "PAID";
   const isExpired = order?.status === "EXPIRED";
-  const statusInfo = order?.status ? statusUi[order.status] : null;
+  // const statusInfo = order?.status ? statusUi[order.status] : null;
   const numericAmountTon = Number(order?.amountTon ?? 0);
 
   // Таймер до истечения срока действия
@@ -91,17 +91,17 @@ const BankOrderModal: React.FC = () => {
     if (!order?.expiresAt || isPaid || isExpired) return;
 
     const exp = new Date(order.expiresAt).getTime();
-    const total = exp - Date.now();
+    // const total = exp - Date.now();
 
     const interval = setInterval(() => {
       const now = Date.now();
       const remaining = Math.max(exp - now, 0);
-      const progress = Math.max((remaining / total) * 100, 0);
+      // const progress = Math.max((remaining / total) * 100, 0);
 
-      const mins = Math.floor(remaining / 60000);
-      const secs = Math.floor((remaining % 60000) / 1000);
-      setPercent(Math.floor(progress));
-      setTimeLeft(`${mins}:${secs.toString().padStart(2, "0")}`);
+      // const mins = Math.floor(remaining / 60000);
+      // const secs = Math.floor((remaining % 60000) / 1000);
+      // setPercent(Math.floor(progress));
+      // setTimeLeft(`${mins}:${secs.toString().padStart(2, "0")}`);
 
       if (remaining <= 0) clearInterval(interval);
     }, 1000);
@@ -134,9 +134,9 @@ const BankOrderModal: React.FC = () => {
   if (!order) return null;
 
   const {
-    orderId,
+    // orderId,
     merchantAddr,
-    rate,
+    // rate,
     tonComment = order.tonComment || "",
   } = order;
 
@@ -171,7 +171,7 @@ const BankOrderModal: React.FC = () => {
           <strong className="text-blue-700">{numericAmountTon} TON</strong>
         </div>
 
-        {merchantAddr && (
+        {/* {merchantAddr && (
           <div className="mb-1 text-sm break-all text-gray-800">
             Платёжи на этот кошелёк: <strong>{merchantAddr}</strong>
           </div>
@@ -185,7 +185,7 @@ const BankOrderModal: React.FC = () => {
 
         <div className="mb-3 text-md font-semibold text-gray-800">
           Курс: 1 TON = {rate} PCoin
-        </div>
+        </div> */}
 
         {/* QR-код */}
         {/* <div className="my-4 flex justify-center">
@@ -209,17 +209,17 @@ const BankOrderModal: React.FC = () => {
         </div> */}
 
         {/* Статус */}
-        {statusInfo && (
+        {/* {statusInfo && (
           <div
             className={`mt-4 text-md font-semibold flex items-center justify-center gap-2 ${statusInfo.color} ${statusInfo.animation}`}
           >
             <span>{statusInfo.icon}</span>
             <span>{statusInfo.title}</span>
           </div>
-        )}
+        )} */}
 
         {/* Таб таймера */}
-        {!isPaid && !isExpired && (
+        {/* {!isPaid && !isExpired && (
           <div className="my-4 flex justify-center">
             <div className="relative w-[100px] h-[100px]">
               <svg className="w-full h-full transform -rotate-90">
@@ -262,7 +262,7 @@ const BankOrderModal: React.FC = () => {
               </div>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Подключение кошелька */}
         {!wallet && (
@@ -282,14 +282,14 @@ const BankOrderModal: React.FC = () => {
         )}
 
         {/* "Я оплатил" — ручной refresh */}
-        {!isPaid && !isExpired && (
+        {/* {!isPaid && !isExpired && (
           <button
             onClick={() => orderId && store.bank.fetchOrder(orderId)}
             className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
           >
             Я оплатил
           </button>
-        )}
+        )} */}
 
         {/* Закрыть */}
         <button
