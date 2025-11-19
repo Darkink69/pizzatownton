@@ -10,6 +10,13 @@ export interface FloorUpgradeData {
 }
 
 export const floorUpgradeData: FloorUpgradeData = {
+  0: [
+    { pcoinCost: 500, incomeBonus: 84 },
+    { pcoinCost: 625, incomeBonus: 104 },
+    { pcoinCost: 780, incomeBonus: 130 },
+    { pcoinCost: 970, incomeBonus: 164 },
+    { pcoinCost: 1200, incomeBonus: 206 },
+  ],
   1: [
     { pcoinCost: 500, incomeBonus: 84 },
     { pcoinCost: 625, incomeBonus: 104 },

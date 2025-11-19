@@ -372,7 +372,7 @@ const Home = observer(() => {
 
   // Функция для получения отображаемого номера этажа (исправленная)
   const getDisplayFloorNumber = (floorId: number): string => {
-    if (floorId === 1) return "Звездныйй этаж";
+    if (floorId === 1) return "Базовый этаж";
     if (floorId >= 2 && floorId <= 9) return `${floorId - 1} этаж`;
     return `${floorId} этаж`;
   };
@@ -380,7 +380,7 @@ const Home = observer(() => {
   const getFloorNameByIndex = (index: number): string => {
     const floorId = getFloorIdByIndex(index);
     if (index === 0) return "Крыша";
-    if (floorId === -1) return "Звездныйй этаж";
+    if (floorId === -1) return "Базовый этаж";
 
     return getDisplayFloorNumber(floorId);
   };
@@ -410,7 +410,7 @@ const Home = observer(() => {
     event.stopPropagation();
     if (floorId === 1) {
       showNotification(
-        "Звездныйй этаж сейчас нельзя улучшить — ждём звёздный апгрейд!",
+        "Базовый этаж сейчас нельзя улучшить — ждём звёздный апгрейд!",
         "error"
       );
       return;

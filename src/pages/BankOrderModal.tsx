@@ -275,6 +275,7 @@ const BankOrderModal: React.FC = () => {
         {wallet && !isPaid && !isExpired && (
           <button
             onClick={handleTonConnectPayment}
+            onMouseDown={() => (store.bank.order = null)}
             className="mb-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded transition"
           >
             💸 Оплатить через кошелёк
