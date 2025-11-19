@@ -5,6 +5,7 @@ import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
 import { Link } from "react-router-dom";
 import FooterHome from "../components/FooterHome";
+import GuideOverlay from "../pages/GuideOverlay";
 import { getFloorUpgradeData, getCurrentUpgradeCost } from "./floorUpgradeData";
 
 const Home = observer(() => {
@@ -31,6 +32,52 @@ const Home = observer(() => {
     minutes: 0,
     seconds: 0,
   });
+
+  const [showGuide, setShowGuide] = useState(false);
+
+  useEffect(() => {
+    if (!localStorage.getItem("main_tutorial_done")) {
+      setShowGuide(true);
+    }
+  }, []);
+
+  const introGuideSteps = [
+    {
+      id: "welcome",
+      center: true,
+      text: "🍕 Добро пожаловать в ПИЦЦЕРИЮ!\n\nЗдесь ты строишь свой первый ресторанный бизнес — пиццерию!\nПокупай этажи, улучшай их, нанимай персонал и собирай доход в PDollar!",
+    },
+    {
+      id: "floors",
+      selector: "#floors-block",
+      text: "🏗 Базовый этаж — бесплатный и фармит будущий мемкоин PizzaSlice.\nЭтажи 1–8 покупаются за PCoin и приносят PDollar.",
+    },
+    {
+      id: "balances",
+      selector: "#balances-block",
+      text: "💰 Здесь ты видишь свои балансы:\n\n— PCoin — для покупок;\n— PDollar — доход с этажей;\n— Доход PD/час — твоя мощность бизнеса!",
+    },
+    {
+      id: "claim",
+      selector: "#claim-button",
+      text: "🎁 Нажимай «Забрать» каждые 12 часов, чтобы собрать прибыль.\n\nНе хочешь следить вручную?\nНайми бухгалтера!",
+    },
+    {
+      id: "accountant",
+      selector: "#accountant-block",
+      text: "👔 Бухгалтер собирает прибыль каждые 12 часов автоматически.\nНанимай его на 7, 14 или 30 дней за PCoin — и спи спокойно!",
+    },
+    {
+      id: "bank",
+      selector: "#bank-link",
+      text: "🏦 В банке можно купить PCoin и обменять PDollar на TON.\nСледи за курсом и увеличивай доход!",
+    },
+    {
+      id: "finish",
+      center: true,
+      text: "🔥 Готово! Ты всё знаешь, чтобы построить пицца‑империю.\nУдачи, шеф!",
+    },
+  ];
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const soundRef = useRef<HTMLAudioElement | null>(null);
@@ -1654,6 +1701,16 @@ const Home = observer(() => {
           </div>
         )}
       </div>
+      {/* Обучающая подсказка — показывается один раз */}
+      {showGuide && (
+          <GuideOverlay
+              steps={introGuideSteps}
+              onFinish={() => {
+                setShowGuide(false);
+                localStorage.setItem("main_tutorial_done", "1");
+              }}
+          />
+      )}
 
       <FooterHome />
       <WebSocketComponent />
