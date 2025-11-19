@@ -38,8 +38,6 @@ const Home = observer(() => {
 
   // Эффект для анимации лифта
   useEffect(() => {
-    // if (!isLiftMoving) return;
-
     const liftAnimation = () => {
       // Поднимаем пустой лифт вверх
       if (!liftHasPizza) {
@@ -311,15 +309,19 @@ const Home = observer(() => {
   const handleUpgradeFromModal = () => {
     if (!selectedFloor) return;
     playSound("update.mp3");
+
+    // Исправляем уведомление - используем правильный номер этажа для отображения
+    const displayFloorNumber = getDisplayFloorNumber(selectedFloor.floorId);
     showNotification(
-      `🚀 Отправляем запрос на улучшение этажа ${selectedFloor.floorId}...`,
+      `🚀 Отправляем запрос на улучшение этажа ${displayFloorNumber}...`,
       "success"
     );
+
     const success = store.upgradeFloor(selectedFloor.floorId);
     if (success) {
       setTimeout(() => {
         showNotification(
-          `✅ Этаж ${selectedFloor.floorId} улучшен до уровня ${
+          `✅ Этаж ${displayFloorNumber} улучшен до уровня ${
             (selectedFloor.level ?? 0) + 1
           }!`,
           "success"
@@ -328,7 +330,7 @@ const Home = observer(() => {
     } else {
       setTimeout(() => {
         showNotification(
-          `❌ Не удалось улучшить этаж ${selectedFloor.floorId}. Недостаточно средств!`,
+          `❌ Не удалось улучшить этаж ${displayFloorNumber}. Недостаточно средств!`,
           "error"
         );
       }, 800);
@@ -368,29 +370,37 @@ const Home = observer(() => {
     return !floor?.owned;
   };
 
+  // Функция для получения отображаемого номера этажа (исправленная)
+  const getDisplayFloorNumber = (floorId: number): string => {
+    if (floorId === 1) return "Цокольный этаж";
+    if (floorId >= 2 && floorId <= 9) return `${floorId - 1} этаж`;
+    return `${floorId} этаж`;
+  };
+
   const getFloorNameByIndex = (index: number): string => {
     const floorId = getFloorIdByIndex(index);
     if (index === 0) return "Крыша";
-    if (floorId === -1) return "Basement";
+    if (floorId === -1) return "Цокольный этаж";
 
-    if (floorId === 1) return "Basement";
-    if (floorId >= 2 && floorId <= 9) return `${floorId - 1} этаж`;
-
-    return `${floorId} этаж`;
+    return getDisplayFloorNumber(floorId);
   };
+
   const handleBuyFloor = (index: number) => {
     const floorId = getFloorIdByIndex(index);
     playSound("buy.mp3");
     const success = store.buyNewFloor(floorId);
 
+    // Используем правильный номер этажа для уведомления
+    const displayFloorNumber = getDisplayFloorNumber(floorId);
+
     if (success) {
       showNotification(
-        `🏗 Запрос на покупку этажа ${floorId} отправлен!`,
+        `🏗 Запрос на покупку этажа ${displayFloorNumber} отправлен!`,
         "success"
       );
     } else {
       showNotification(
-        `❌ Не удалось купить этаж ${floorId}. Проверь баланс или соединение.`,
+        `❌ Не удалось купить этаж ${displayFloorNumber}. Проверь баланс или соединение.`,
         "error"
       );
     }
@@ -400,7 +410,7 @@ const Home = observer(() => {
     event.stopPropagation();
     if (floorId === 1) {
       showNotification(
-        "Basement сейчас нельзя улучшить — ждём звёздный апгрейд!",
+        "Цокольный этаж сейчас нельзя улучшить — ждём звёздный апгрейд!",
         "error"
       );
       return;
@@ -499,10 +509,12 @@ const Home = observer(() => {
     );
 
     if (ok) {
+      // Используем правильный номер этажа для уведомления
+      const displayFloorNumber = getDisplayFloorNumber(floorId);
       showNotification(
         `👔 ${staffType === "manager" ? "Менеджер" : "Охранник"} ${
           currentLevel ? "улучшен" : "нанят"
-        } (уровень ${nextLevel}) на этаже ${floorId}`,
+        } (уровень ${nextLevel}) на этаже ${displayFloorNumber}`,
         "success"
       );
     } else {
@@ -510,7 +522,7 @@ const Home = observer(() => {
     }
   };
 
-  // Функция для отображения уровней персонала с звездочками
+  // Функция для отображения уровней персонала с звездочками (исправленная)
   const renderStaffLevelWithStars = (
     currentLevel: number,
     labels: string[]
@@ -526,8 +538,8 @@ const Home = observer(() => {
               key={index}
               className={`w-10 h-10 flex flex-col items-center justify-center rounded text-xs shantell font-bold ${
                 isActive
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-100 text-amber-800"
+                  ? "bg-white text-amber-800 border border-amber-300"
+                  : "bg-gray-100 text-amber-800 border border-gray-300"
               }`}
             >
               {/* Звездочка над процентом */}
@@ -544,6 +556,24 @@ const Home = observer(() => {
         })}
       </div>
     );
+  };
+
+  // Расчет накопленного дохода для этажа на основе claimProgress
+  const calculateFloorBalance = (floor: any): number => {
+    if (!floor || !floor.yieldPerHour) return 0;
+
+    // claimProgress - процент от 12-часового периода (0-100)
+    // 12 часов = 43200 секунд
+    const totalSecondsInPeriod = 43200;
+    const progressSeconds = (store.claimProgress / 100) * totalSecondsInPeriod;
+
+    // Переводим секунды в часы для расчета дохода
+    const progressHours = progressSeconds / 3600;
+
+    // Рассчитываем накопленный доход
+    const accumulatedIncome = Math.floor(floor.yieldPerHour * progressHours);
+
+    return accumulatedIncome;
   };
 
   // Расчет общего дохода со всех этажей
@@ -566,6 +596,34 @@ const Home = observer(() => {
     const endDate = new Date(store.accountantEndTime);
     const now = new Date();
     return endDate.getTime() > now.getTime();
+  };
+
+  // Функция для получения правильных данных улучшения этажа (исправленный сдвиг)
+  const getCorrectFloorUpgradeData = (floorId: number) => {
+    // Сдвигаем данные: для basement (floorId=1) берем данные для 1 этажа и т.д.
+    let dataFloorId = floorId;
+
+    if (floorId >= 1 && floorId <= 8) {
+      // Сдвигаем данные на один этаж вниз
+      dataFloorId = floorId;
+    }
+
+    return getFloorUpgradeData(dataFloorId);
+  };
+
+  // Функция для получения правильной стоимости улучшения (исправленный сдвиг)
+  const getCorrectUpgradeCost = (
+    floorId: number,
+    currentLevel: number
+  ): number => {
+    let dataFloorId = floorId;
+
+    if (floorId >= 1 && floorId <= 8) {
+      // Сдвигаем данные на один этаж вниз
+      dataFloorId = floorId;
+    }
+
+    return getCurrentUpgradeCost(dataFloorId, currentLevel);
   };
 
   // Показываем загрузку пока данные не получены -----------------------------------------------------------
@@ -1160,9 +1218,7 @@ const Home = observer(() => {
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span className="text-amber-800 font-bold text-lg shantell">
-                      {getFloorNameByIndex(
-                        floors - 1 - (selectedFloor?.floorId ?? 0)
-                      )}
+                      {getDisplayFloorNumber(selectedFloor.floorId)}
                     </span>
                   </div>
                 </div>
@@ -1214,16 +1270,13 @@ const Home = observer(() => {
                       </span>
                       <div className="flex items-center gap-1">
                         <span className="font-bold text-amber-800 shantell">
-                          {selectedFloor.balance || 2755}
+                          {calculateFloorBalance(selectedFloor)}
                         </span>
                         <img
                           src={`${store.imgUrl}icon_dollar.png`}
                           alt="Доллар"
                           className="w-6 h-4"
                         />
-                        <span className="text-xs text-amber-800 shantell">
-                          / час
-                        </span>
                       </div>
                     </div>
                   </div>
@@ -1232,7 +1285,7 @@ const Home = observer(() => {
                   <div className="flex justify-between items-center">
                     {[1, 2, 3, 4, 5].map((star, index) => {
                       const isActive = index < (selectedFloor.level ?? 0);
-                      const floorUpgrades = getFloorUpgradeData(
+                      const floorUpgrades = getCorrectFloorUpgradeData(
                         selectedFloor.floorId
                       );
                       const bonus = floorUpgrades[index]?.incomeBonus || 0;
@@ -1292,7 +1345,7 @@ const Home = observer(() => {
                           className="w-5 h-5"
                         />
                         <span className="text-white font-bold shantell">
-                          {getCurrentUpgradeCost(
+                          {getCorrectUpgradeCost(
                             selectedFloor.floorId,
                             selectedFloor.level ?? 0
                           )}
