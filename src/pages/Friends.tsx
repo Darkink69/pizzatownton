@@ -9,7 +9,7 @@ const Friends = observer(() => {
   const [copied, setCopied] = useState(false);
   // -------------------- запросим статистику при загрузке --------------------
   useEffect(() => {
-    if (store.sessionId && store.user?.telegramId && !store.staffData) {
+    if (store.sessionId && store.user?.telegramId) {
       console.log("📨 Requesting staff info...");
       store.requestReferralInfo();
     }

@@ -171,6 +171,9 @@ class Store {
         console.warn("Ошибка чтения accountantData:", e);
       }
     }
+
+    const savedTon = localStorage.getItem("tonBalance");
+    if (savedTon) this.tonBalance = savedTon;
   }
 
 
@@ -416,7 +419,10 @@ class Store {
   }
 
   setTonBalance(b: string) {
-    this.tonBalance = b;
+    runInAction(() => {
+      this.tonBalance = b;
+      localStorage.setItem("tonBalance", b);
+    });
   }
 
   // -------------------------------------------------------------------------
