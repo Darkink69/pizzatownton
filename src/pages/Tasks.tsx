@@ -108,9 +108,9 @@ function Tasks() {
                               {block.reward}
                             </span>
                             <img
-                              src={`${store.imgUrl}icon_dollar.png`}
+                              src={`${store.imgUrl}icon_pizza.png`}
                               alt="dollar"
-                              className="w-8 h-auto sm:w-10"
+                              className="w-6 sm:w-8"
                             />
                           </div>
                         </div>
