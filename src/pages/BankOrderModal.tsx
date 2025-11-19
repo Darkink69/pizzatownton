@@ -274,8 +274,10 @@ const BankOrderModal: React.FC = () => {
         {/* Кнопка оплаты через TonConnect */}
         {wallet && !isPaid && !isExpired && (
           <button
-            onClick={handleTonConnectPayment}
-            onMouseDown={() => (store.bank.order = null)}
+            onClick={() => {
+              handleTonConnectPayment();
+              store.bank.order = null;
+            }}
             className="mb-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded transition"
           >
             💸 Оплатить через кошелёк
@@ -295,10 +297,13 @@ const BankOrderModal: React.FC = () => {
         {/* Закрыть */}
         <button
           onClick={() => (store.bank.order = null)}
-          className="absolute top-2 right-2 text-[20px] text-gray-700 hover:text-red-900"
-          title="Закрыть"
+          className="absolute top-2 right-2 w-8 h-8 bg-transparent hover:scale-110 transition-transform z-10"
         >
-          X
+          <img
+            src={`${store.imgUrl}b_close.png`}
+            alt="Закрыть"
+            className="w-full h-full"
+          />
         </button>
       </div>
     </div>
