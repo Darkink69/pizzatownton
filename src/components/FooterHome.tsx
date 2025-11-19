@@ -20,13 +20,13 @@ const Footer = () => {
     },
     {
       id: 10,
-      baseName: "null",
+      baseName: null,
       alt: "",
       to: "/",
     },
     {
       id: 20,
-      baseName: "null",
+      baseName: null,
       alt: "",
       to: "/",
     },
@@ -62,7 +62,7 @@ const Footer = () => {
               className="flex-1 flex justify-center items-center hover:opacity-80 transition-opacity"
             >
               <img
-                src={getImageSrc(button.baseName, button.to)}
+                src={getImageSrc(button.baseName || "", button.to)}
                 alt={button.alt}
                 className="h-12 w-auto object-contain md:h-14 lg:h-16"
               />

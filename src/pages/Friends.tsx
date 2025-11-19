@@ -108,7 +108,7 @@ const Friends = observer(() => {
                 value={link || "Загрузка..."}
                 readOnly
                 onFocus={(e) => e.currentTarget.select()}
-                className="bg-white rounded-xl px-4 py-1 h-16 mb-4 border-2 border-amber-800 shadow-inner text-center font-bold text-base sm:text-lg text-amber-800 shantell truncate"
+                className="bg-white rounded-xl px-4 py-3 mb-4 border-2 border-amber-800 shadow-inner text-center font-bold text-base sm:text-lg text-amber-800 shantell truncate"
               />
 
               {/* кнопка копировать */}
