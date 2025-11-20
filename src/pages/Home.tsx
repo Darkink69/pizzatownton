@@ -260,9 +260,10 @@ const Home = observer(() => {
     type: "error" | "success" = "error"
   ) => {
     setNotification({ message, type });
+
     setTimeout(() => {
       setNotification(null);
-    }, 3000);
+    }, 8000);
   };
 
   // Проверка, есть ли нанятый персонал на любом этаже
@@ -744,42 +745,38 @@ const Home = observer(() => {
           )}
         </button>
 
-        {/* Уведомление */}
+        {/* Адаптивное уведомление в стиле комикса */}
         {notification && (
-          <div
-            className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-8 py-2 rounded-lg shadow-lg ${
-              notification.type === "error"
-                ? "bg-red-500 text-white"
-                : "bg-green-500 text-white"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              {notification.type === "error" ? (
-                <svg
-                  className="w-5 h-5"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
+          <div className="fixed inset-0 z-[99] bg-black/50 flex items-end justify-center transition-opacity duration-300">
+            <div className="relative mb-4 sm:mb-16 flex items-end gap-2 sm:gap-4 max-w-5xl mx-auto px-4 w-full">
+              {/* Повар - крупнее и слева */}
+              <div className="flex-shrink-0">
+                <img
+                  src={`${store.imgUrl}img_chif_talk.png`}
+                  alt="Повар"
+                  className="w-36 sm:w-48 object-contain"
+                />
+              </div>
+
+              {/* Окно сообщения */}
+              <div className="relative bg-[#FFF3E0] border-4 border-amber-800 rounded-2xl shadow-2xl p-4 sm:p-6 flex-1 max-w-2xl">
+                <p
+                  className={`text-amber-800 shantell font-bold text-base sm:text-lg leading-relaxed whitespace-pre-wrap ${
+                    notification.type === "error"
+                      ? "text-red-600"
+                      : "text-green-600"
+                  }`}
                 >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  className="w-5 h-5"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
+                  {notification.message}
+                </p>
+
+                <button
+                  onClick={() => setNotification(null)}
+                  className="mt-4 bg-amber-500 hover:bg-amber-600 text-white px-8 py-2 rounded-full font-bold shantell text-base tracking-wide transition transform hover:scale-105"
                 >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              )}
-              <span className="shantell">{notification.message}</span>
+                  Понятно
+                </button>
+              </div>
             </div>
           </div>
         )}
