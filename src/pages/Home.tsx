@@ -20,6 +20,10 @@ const Home = observer(() => {
     message: string;
     type: "error" | "success";
   } | null>(null);
+  const [randomNotification, setRandomNotification] = useState<{
+    message: string;
+    type: "error" | "success";
+  } | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [staffModal, setStaffModal] = useState<"accountant" | null>(null);
   const [_selectedSubscription, setSelectedSubscription] = useState<
@@ -265,6 +269,123 @@ const Home = observer(() => {
       setNotification(null);
     }, 8000);
   };
+
+  // Функция для проверки условий сообщений
+  const getRandomNotification = () => {
+    const hasAccountant = isAccountantActive();
+    const hasAnyManager =
+      store.safeUserFloorList?.some((floor) =>
+        floor.staff?.some(
+          (staff) =>
+            staff.staffName === "Manager" && staff.owned && staff.staffLevel > 0
+        )
+      ) ?? false;
+
+    const hasAnyGuard =
+      store.safeUserFloorList?.some((floor) =>
+        floor.staff?.some(
+          (staff) =>
+            staff.staffName === "Guard" && staff.owned && staff.staffLevel > 0
+        )
+      ) ?? false;
+
+    const hasManagerNotMaxLevel =
+      store.safeUserFloorList?.some((floor) =>
+        floor.staff?.some(
+          (staff) =>
+            staff.staffName === "Manager" &&
+            staff.owned &&
+            staff.staffLevel > 0 &&
+            staff.staffLevel < 5
+        )
+      ) ?? false;
+
+    const hasGuardNotMaxLevel =
+      store.safeUserFloorList?.some((floor) =>
+        floor.staff?.some(
+          (staff) =>
+            staff.staffName === "Guard" &&
+            staff.owned &&
+            staff.staffLevel > 0 &&
+            staff.staffLevel < 5
+        )
+      ) ?? false;
+
+    // Массив возможных сообщений с условиями
+    const possibleMessages: Array<{
+      message: string;
+      type: "error" | "success";
+      condition: boolean;
+    }> = [
+      {
+        message:
+          "Шеф! Вы иногда забываете забрать прибыль. Может быть нам стоит нанять бухгалтера?",
+        type: "error",
+        condition: !hasAccountant,
+      },
+      {
+        message: "Шеф! Нам просто необходим хотя бы один менеджер!",
+        type: "error",
+        condition: !hasAnyManager,
+      },
+      {
+        message: "На кассе дырка… Потери пять процентов, шеф!",
+        type: "error",
+        condition: !hasAnyGuard,
+      },
+      {
+        message:
+          "Синьор! Один из ваших менеджеров нуждается в повышении квалификации. Это в наших интересах!",
+        type: "error",
+        condition: hasManagerNotMaxLevel,
+      },
+      {
+        message: "Хозяин! Нам нужен более опытный охранник. Большие потери!",
+        type: "error",
+        condition: hasGuardNotMaxLevel,
+      },
+      {
+        message:
+          "Отличная работа! Мы получили замечательные отзывы о нашей пицце!",
+        type: "success",
+        condition: true, // Всегда доступно
+      },
+      {
+        message:
+          "Отличная работа, синьор! Все этажи пашут, как танцы на тесте!",
+        type: "success",
+        condition: true, // Всегда доступно
+      },
+    ];
+
+    // Фильтруем сообщения по условиям
+    const availableMessages = possibleMessages.filter((msg) => msg.condition);
+
+    // Иногда не показываем никаких сообщений (30% chance)
+    if (availableMessages.length > 0 && Math.random() > 0.3) {
+      const randomIndex = Math.floor(Math.random() * availableMessages.length);
+      return availableMessages[randomIndex];
+    }
+
+    return null;
+  };
+
+  // Эффект для случайных уведомлений
+  useEffect(() => {
+    if (!store.areFloorsLoaded) return;
+
+    // Случайное время от 20 до 50 секунд
+    const randomTime = Math.floor(Math.random() * 30000) + 20000; // 20-50 секунд
+
+    const timer = setTimeout(() => {
+      const notification = getRandomNotification();
+      if (notification) {
+        setRandomNotification(notification);
+      }
+    }, randomTime);
+
+    return () => clearTimeout(timer);
+  }, [store.areFloorsLoaded]);
 
   // Проверка, есть ли нанятый персонал на любом этаже
   const hasAnyStaffHired = (): boolean => {
@@ -745,7 +866,7 @@ const Home = observer(() => {
           )}
         </button>
 
-        {/* Адаптивное уведомление в стиле комикса */}
+        {/* Уведомление по событию */}
         {notification && (
           <div className="fixed inset-0 z-[99] bg-black/50 flex items-end justify-center transition-opacity duration-300">
             <div className="relative mb-4 sm:mb-16 flex items-end gap-2 sm:gap-4 max-w-5xl mx-auto px-4 w-full">
@@ -773,6 +894,43 @@ const Home = observer(() => {
                 <button
                   onClick={() => setNotification(null)}
                   className="mt-4 bg-amber-500 hover:bg-amber-600 text-white px-8 py-2 rounded-full font-bold shantell text-base tracking-wide transition transform hover:scale-105"
+                >
+                  Понятно
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Случайное уведомление по таймеру */}
+        {randomNotification && (
+          <div className="fixed inset-0 z-[99] bg-black/50 flex items-end justify-center transition-opacity duration-300">
+            <div className="relative mb-4 sm:mb-20 flex items-end gap-3 sm:gap-6 max-w-4xl mx-auto px-4 w-full">
+              {/* Повар - всегда слева */}
+              <div className="flex-shrink-0">
+                <img
+                  src={`${store.imgUrl}img_chif_talk.png`}
+                  alt="Повар"
+                  className="w-28 h-28 sm:w-40 sm:h-40 object-contain"
+                />
+              </div>
+
+              {/* Окно сообщения */}
+              <div className="relative bg-[#FFF3E0] border-4 border-amber-800 rounded-2xl shadow-2xl p-4 sm:p-5 flex-1 max-w-2xl">
+                <p
+                  className={`text-amber-800 shantell font-bold text-sm sm:text-base leading-snug whitespace-pre-wrap ${
+                    randomNotification.type === "error"
+                      ? "text-red-600"
+                      : "text-green-600"
+                  }`}
+                >
+                  {randomNotification.message}
+                </p>
+
+                {/* Кнопка закрытия */}
+                <button
+                  onClick={() => setRandomNotification(null)}
+                  className="mt-3 bg-amber-500 hover:bg-amber-600 text-white px-6 py-1.5 rounded-full font-bold shantell text-sm tracking-wide transition"
                 >
                   Понятно
                 </button>
