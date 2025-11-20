@@ -45,37 +45,37 @@ const Home = observer(() => {
     {
       id: "welcome",
       center: true,
-      text: "🍕 Добро пожаловать в ПИЦЦЕРИЮ!\n\nЗдесь ты строишь свой первый ресторанный бизнес — пиццерию!\nПокупай этажи, улучшай их, нанимай персонал и собирай доход в PDollar!",
+      text: "Добро пожаловать в ПИЦЦЕРИЮ!\n\nЗдесь ты строишь свой первый ресторанный бизнес — пиццерию!\nПокупай этажи, улучшай их, нанимай персонал и собирай доход в PDollar!",
     },
     {
       id: "floors",
       selector: "#floors-block",
-      text: "🏗 Базовый этаж — бесплатный и фармит будущий мемкоин PizzaSlice.\nЭтажи 1–8 покупаются за PCoin и приносят PDollar.",
+      text: "Базовый этаж — бесплатный и фармит будущий мемкоин PizzaSlice.\nЭтажи 1–8 покупаются за PCoin и приносят PDollar.",
     },
     {
       id: "balances",
       selector: "#balances-block",
-      text: "💰 Здесь ты видишь свои балансы:\n\n— PCoin — для покупок;\n— PDollar — доход с этажей;\n— Доход PD/час — твоя мощность бизнеса!",
+      text: "Здесь ты видишь свои балансы:\n\n— PCoin — для покупок;\n— PDollar — доход с этажей;\n— Доход PD/час — твоя мощность бизнеса!",
     },
     {
       id: "claim",
       selector: "#claim-button",
-      text: "🎁 Нажимай «Забрать» каждые 12 часов, чтобы собрать прибыль.\n\nНе хочешь следить вручную?\nНайми бухгалтера!",
+      text: "Нажимай «Забрать» каждые 12 часов, чтобы собрать прибыль.\n\nНе хочешь следить вручную?\nНайми бухгалтера!",
     },
     {
       id: "accountant",
       selector: "#accountant-block",
-      text: "👔 Бухгалтер собирает прибыль каждые 12 часов автоматически.\nНанимай его на 7, 14 или 30 дней за PCoin — и спи спокойно!",
+      text: "Бухгалтер собирает прибыль каждые 12 часов автоматически.\nНанимай его на 7, 14 или 30 дней за PCoin — и спи спокойно!",
     },
     {
       id: "bank",
       selector: "#bank-link",
-      text: "🏦 В банке можно купить PCoin и обменять PDollar на TON.\nСледи за курсом и увеличивай доход!",
+      text: "В банке можно купить PCoin и обменять PDollar на TON.\nСледи за курсом и увеличивай доход!",
     },
     {
       id: "finish",
       center: true,
-      text: "🔥 Готово! Ты всё знаешь, чтобы построить пицца‑империю.\nУдачи, шеф!",
+      text: "Готово! Ты всё знаешь, чтобы построить пицца‑империю.\nУдачи, шеф!",
     },
   ];
 
@@ -284,7 +284,7 @@ const Home = observer(() => {
         "error"
       );
     } else {
-      showNotification("💰 Доход собирается...", "success");
+      showNotification("Доход собирается...", "success");
     }
 
     if (store.sendClaimDo(0)) {
@@ -368,7 +368,7 @@ const Home = observer(() => {
     if (success) {
       setTimeout(() => {
         showNotification(
-          `✅ Этаж ${displayFloorNumber} улучшен до уровня ${
+          `Этаж ${displayFloorNumber} улучшен до уровня ${
             (selectedFloor.level ?? 0) + 1
           }!`,
           "success"
@@ -377,7 +377,7 @@ const Home = observer(() => {
     } else {
       setTimeout(() => {
         showNotification(
-          `❌ Не удалось улучшить этаж ${displayFloorNumber}. Недостаточно средств!`,
+          `Не удалось улучшить этаж ${displayFloorNumber}. Недостаточно средств!`,
           "error"
         );
       }, 800);
@@ -442,12 +442,12 @@ const Home = observer(() => {
 
     if (success) {
       showNotification(
-        `🏗 Запрос на покупку этажа ${displayFloorNumber} отправлен!`,
+        `Запрос на покупку этажа ${displayFloorNumber} отправлен!`,
         "success"
       );
     } else {
       showNotification(
-        `❌ Не удалось купить этаж ${displayFloorNumber}. Проверь баланс или соединение.`,
+        `Не удалось купить этаж ${displayFloorNumber}. Проверь баланс или соединение.`,
         "error"
       );
     }
@@ -510,7 +510,7 @@ const Home = observer(() => {
     // Проверяем, есть ли данные по персоналу на этом этаже
     if (!Array.isArray(floor.staff) || floor.staff.length === 0) {
       showNotification("Персонал для этого этажа ещё не загружен", "error");
-      console.warn(`⚠️ Нет данных floor.staff для этажа ${floorId}`);
+      console.warn(`Нет данных floor.staff для этажа ${floorId}`);
       return;
     }
 
@@ -526,10 +526,7 @@ const Home = observer(() => {
         }`,
         "error"
       );
-      console.warn(
-        `⚠️ Не найден ${staffType} на этаже ${floorId}`,
-        floor.staff
-      );
+      console.warn(`Не найден ${staffType} на этаже ${floorId}`, floor.staff);
       return;
     }
 
@@ -559,13 +556,13 @@ const Home = observer(() => {
       // Используем правильный номер этажа для уведомления
       const displayFloorNumber = getDisplayFloorNumber(floorId);
       showNotification(
-        `👔 ${staffType === "manager" ? "Менеджер" : "Охранник"} ${
+        `${staffType === "manager" ? "Менеджер" : "Охранник"} ${
           currentLevel ? "улучшен" : "нанят"
         } (уровень ${nextLevel}) на этаже ${displayFloorNumber}`,
         "success"
       );
     } else {
-      showNotification("❌ Ошибка при покупке/апгрейде персонала", "error");
+      showNotification("Ошибка при покупке/апгрейде персонала", "error");
     }
   };
 
@@ -1690,8 +1687,8 @@ const Home = observer(() => {
                   {isAccountantActive() && (
                     <div className="bg-green-100 border border-green-400 rounded-lg p-4 mb-6 w-full">
                       <p className="text-green-800 shantell text-sm">
-                        ✅ Бухгалтер уже нанят и работает. Вы можете продлить
-                        найм после окончания текущего периода.
+                        Бухгалтер уже нанят и работает. Вы можете продлить найм
+                        после окончания текущего периода.
                       </p>
                     </div>
                   )}
@@ -1703,13 +1700,13 @@ const Home = observer(() => {
       </div>
       {/* Обучающая подсказка — показывается один раз */}
       {showGuide && (
-          <GuideOverlay
-              steps={introGuideSteps}
-              onFinish={() => {
-                setShowGuide(false);
-                localStorage.setItem("main_tutorial_done", "1");
-              }}
-          />
+        <GuideOverlay
+          steps={introGuideSteps}
+          onFinish={() => {
+            setShowGuide(false);
+            localStorage.setItem("main_tutorial_done", "1");
+          }}
+        />
       )}
 
       <FooterHome />

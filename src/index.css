@@ -1,15 +1,25 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Maki-Sans';
+  src: url('/fonts/Maki-Sans.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Maki-Sans';
+  src: url('https://s3.twcstorage.ru/c6bae09a-a5938890-9b68-453c-9c54-76c439a70d3e/Pizzatownton/Maki-Sans.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
 .shantell {
-  font-family: "Shantell Sans", cursive;
-  font-optical-sizing: auto;
+  font-family: 'Maki-Sans', sans-serif;
   font-weight: 500;
-  font-style: italic;
-  font-variation-settings:
-    "BNCE" 0,
-    "INFM" 0,
-    "SPAC" 0;
+  font-style: normal;
 }
 
 .slow-spin-animation {
