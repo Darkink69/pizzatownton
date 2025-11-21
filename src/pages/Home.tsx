@@ -67,7 +67,7 @@ const Home = observer(() => {
           top: document.documentElement.scrollHeight,
           behavior: "auto",
         });
-      }, 100);
+      }, 1000);
     }
   }, [store.areFloorsLoaded]);
 
@@ -1052,7 +1052,7 @@ const Home = observer(() => {
                             loop
                             muted
                             playsInline
-                            className="w-3/4 max-w-80 h-[90%] -translate-y-[8px] -translate-x-[20px]"
+                            className="w-3/4 max-w-80 h-[90%] -translate-y-[8px] -translate-x-[10px]"
                           >
                             <source
                               src={`${store.imgUrl}${getFloorVideo(floorData)}`}
