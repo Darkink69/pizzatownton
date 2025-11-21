@@ -1,49 +1,100 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom"; // Добавляем импорт Link
 import store from "../store/store";
+import { toast } from "react-toastify";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
 
 function Tasks() {
   const [showDailyCombo, setShowDailyCombo] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
-  // Функции для заданий
-  const handleTask1 = () => {
-    console.log("Задание 1: Пригласить друга");
+  useEffect(() => {
+    const done = localStorage.getItem("subscribedTaskDone");
+    if (done === "true") setIsSubscribed(true);
+  }, []);
+
+  // выполнение таски подписки
+  const handleSubscribe = () => {
+    if (isSubscribed) return;
+
+    const tgId = store.user?.telegramId ?? 0;
+    toast.info("🔔 Проверяем подписку...");
+
+    const timer = setTimeout(() => {
+      const rq = {
+        type: "TASKS_COMPLETE",
+        requestId: Math.random().toString(36).substring(2, 10),
+        // 👇 важно – проверяем, что session не null
+        session: store.sessionId ?? "",
+        taskRq: {
+          telegramId: tgId,
+          code: "SUBSCRIBE_MAIN_CHANNEL",
+        },
+      };
+
+      if (store.send(rq)) {
+        toast.dismiss();
+        toast.success("✅ Подписка подтверждена! Получаем награду...");
+        setIsSubscribed(true);
+        localStorage.setItem("subscribedTaskDone", "true");
+      } else {
+        toast.error("WebSocket не подключён");
+      }
+
+      clearTimeout(timer);
+    }, 8000);
   };
 
+  // Функции для заданий
   const handleTask2 = () => {
-    console.log("Задание 2: Забрать награду за уровень 2");
+    console.log("Задание 2: Пригласить друга");
   };
 
   const handleTask3 = () => {
-    console.log("Задание 3: Забрать награду за уровень 3.");
+    console.log("Задание 3: Забрать награду за уровень 2");
   };
 
+  const handleTask4 = () => {
+    console.log("Задание 4: Забрать награду за уровень 3.");
+  };
+
+  //  добавляем новую задачу
   const taskBlocks = [
     {
       id: 1,
+      title: "Подписаться на официальный канал 🍕",
+      rewardText: "+40PCoin +200Pizza",
+      link: "https://t.me/pizzatowerton",
+      buttonText: isSubscribed ? "ВЫПОЛНЕНО" : "ПЕРЕЙТИ",
+      buttonBg: isSubscribed ? "b_blue_small.png" : "b_red_small.png",
+      onClick: !isSubscribed ? handleSubscribe : undefined,
+      disabled: isSubscribed,
+    },
+
+    {
+      id: 2,
       title: "Пригласить 1 друга",
       reward: "500",
       buttonText: "ВЫПОЛНИТЬ",
       buttonBg: "b_red_small.png",
-      onClick: handleTask1,
-    },
-    {
-      id: 2,
-      title: "Достигнуть уровень 2",
-      reward: "750",
-      buttonText: "ЗАБРАТЬ",
-      buttonBg: "b_blue_small.png",
       onClick: handleTask2,
     },
     {
       id: 3,
+      title: "Достигнуть уровень 2",
+      reward: "750",
+      buttonText: "ЗАБРАТЬ",
+      buttonBg: "b_blue_small.png",
+      onClick: handleTask3,
+    },
+    {
+      id: 4,
       title: "Достигнуть уровень 3",
       reward: "1000",
       buttonText: "ЗАБРАТЬ",
       buttonBg: "b_blue_small.png",
-      onClick: handleTask3,
+      onClick: handleTask4,
     },
   ];
 
@@ -120,57 +171,91 @@ function Tasks() {
                           <div className="font-bold text-base sm:text-lg text-amber-800 shantell flex-1 leading-4">
                             {block.title}
                           </div>
-                          <div className="flex items-center gap-1 sm:gap-2 mx-2 sm:mx-4">
-                            <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
-                              {block.reward}
-                            </span>
+                          {/* награда под заголовком, как в заглушках */}
+                          <div className="flex items-center justify-end gap-1 sm:gap-2 mx-2 sm:mx-4">
+    <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
+      {block.id === 1 ? block.rewardText : block.reward}
+    </span>
                             <img
-                              src={`${store.imgUrl}icon_pizza.png`}
-                              alt="dollar"
-                              className="w-6 sm:w-8"
+                                src={`${store.imgUrl}icon_pizza.png`}
+                                alt="pizza"
+                                className="w-6 sm:w-8"
                             />
                           </div>
                         </div>
                       </div>
 
                       <div className="mt-auto px-2">
-                        {/* Для первого задания используем Link с кнопкой внутри */}
-                        {block.id === 1 ? (
-                          <Link to="/friends" className="block">
-                            <button
-                              onClick={block.onClick}
-                              className="relative w-full hover:opacity-90 transition-opacity"
+                        {block.id === 1 && block.link ? (
+                            /* для подписки открываем реальный Telegram‑канал */
+                            <a
+                                href={block.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={block.onClick}
+                                className="block"
                             >
-                              <img
-                                src={`${store.imgUrl}${block.buttonBg}`}
-                                alt="Выполнить задачу"
-                                className="w-full h-auto"
-                              />
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="text-white text-sm sm:text-base shantell">
-                                  {block.buttonText}
+                              <button
+                                  disabled={block.disabled}
+                                  className={`relative w-full transition-opacity ${
+                                      block.disabled
+                                          ? "opacity-70 cursor-not-allowed"
+                                          : "hover:opacity-90 cursor-pointer"
+                                  }`}
+                              >
+                                <img
+                                    src={`${store.imgUrl}${block.buttonBg}`}
+                                    alt="Выполнить задачу"
+                                    className="w-full h-auto"
+                                />
+                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                  <div className="text-white text-sm sm:text-base shantell font-bold">
+                                    {block.buttonText}
+                                  </div>
+                                  <div className="text-yellow-200 text-xs">{block.rewardText}</div>
                                 </div>
-                              </div>
-                            </button>
-                          </Link>
+                              </button>
+                            </a>
                         ) : (
-                          // Для остальных заданий без Link
-                          <button
-                            onClick={block.onClick}
-                            className="relative w-full hover:opacity-90 transition-opacity"
-                          >
-                            <img
-                              src={`${store.imgUrl}${block.buttonBg}`}
-                              alt="Выполнить задачу"
-                              className="w-full h-auto"
-                            />
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="text-white text-sm sm:text-base shantell">
-                                {block.buttonText}
-                              </div>
-                            </div>
-                          </button>
+                            <>
+                              {block.id === 2 ? (
+                                  <Link to="/friends" className="block">
+                                    <button
+                                        onClick={block.onClick}
+                                        className="relative w-full hover:opacity-90 transition-opacity"
+                                    >
+                                      <img
+                                          src={`${store.imgUrl}${block.buttonBg}`}
+                                          alt="Выполнить задачу"
+                                          className="w-full h-auto"
+                                      />
+                                      <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="text-white text-sm sm:text-base shantell">
+                                          {block.buttonText}
+                                        </div>
+                                      </div>
+                                    </button>
+                                  </Link>
+                              ) : (
+                                  <button
+                                      onClick={block.onClick}
+                                      className="relative w-full hover:opacity-90 transition-opacity"
+                                  >
+                                    <img
+                                        src={`${store.imgUrl}${block.buttonBg}`}
+                                        alt="Выполнить задачу"
+                                        className="w-full h-auto"
+                                    />
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                      <div className="text-white text-sm sm:text-base shantell">
+                                        {block.buttonText}
+                                      </div>
+                                    </div>
+                                  </button>
+                              )}
+                            </>
                         )}
+
                       </div>
                     </div>
                   </div>

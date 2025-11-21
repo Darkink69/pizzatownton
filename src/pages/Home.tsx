@@ -96,12 +96,12 @@ const Home = observer(() => {
     {
       id: "claim",
       selector: "#claim-button",
-      text: "Нажимай «Забрать» каждые 12 часов, чтобы собрать прибыль.\n\nНе хочешь следить вручную?\nНайми бухгалтера!",
+      text: "Нажимай «Забрать» каждые 12часов, чтобы собрать прибыль.\n\nНе хочешь следить вручную?\nНайми бухгалтера!",
     },
     {
       id: "accountant",
       selector: "#accountant-block",
-      text: "Бухгалтер собирает прибыль каждые 12 часов автоматически.\nНанимай его на 7, 14 или 30 дней за PCoin — и спи спокойно!",
+      text: "Бухгалтер собирает прибыль каждые 12часов автоматически.\nНанимай его на 7, 14 или 30дней за PCoin — и спи спокойно!",
     },
     {
       id: "bank",
@@ -435,9 +435,28 @@ const Home = observer(() => {
   const handleHireAccountant = (option?: number) => {
     if (!staffModal) return;
 
+    // ищем данные по выбранной подписке (7 / 14 / 30)
+    const accountantLevels = store.userStaff?.accountantLevel ?? [];
+    const selected = accountantLevels.find(
+        (lvl: { duration?: number; durationDay?: number }) =>
+            (lvl.duration ?? lvl.durationDay) === (option ?? 7)
+    );
+
+    const cost = selected?.cost ?? 0;
+
+    // проверяем, хватает ли PCoin
+    if (store.pcoin < cost) {
+      showNotification("Недостаточно средств. Нужно купить PCoin в банке!", "error");
+      return;
+    }
+
     playSound("staff.mp3");
+
     const ok = store.sendHireStaff(3, undefined, option ?? 7, 0);
+
     if (ok) {
+      // списываем PCoin и показываем успех
+      store.pcoin -= cost;
       showNotification("Бухгалтер нанят!", "success");
       handleCloseStaffModal();
     } else {
@@ -1227,7 +1246,7 @@ const Home = observer(() => {
                                     className="w-6 h-6 sm:w-8 sm:h-8"
                                   />
                                   <span className="text-amber-800 text-xs sm:text-sm shantell font-bold -translate-x-[3px]">
-                                    {store.pizza.toLocaleString()}
+                                     {(store.pizza ?? 0).toLocaleString()}
                                   </span>
                                 </div>
 
@@ -1397,7 +1416,7 @@ const Home = observer(() => {
                   </span>
                 </Link>
                 <span className="absolute top-8 text-xs text-white 500 shantell whitespace-nowrap tracking-tight">
-                  +{totalIncome.toLocaleString()}/час
+                 +{(totalIncome ?? 0).toLocaleString()}/час
                 </span>
               </div>
             </div>
@@ -1839,15 +1858,15 @@ const Home = observer(() => {
                           >
                             <img
                               src={`${store.imgUrl}b_white.png`}
-                              alt={`${opt.duration ?? opt.durationDay} дней`}
+                              alt={`${opt.duration ?? opt.durationDay}дней`}
                               className="w-full scale-y-110"
                             />
                             <span className="absolute inset-0 flex flex-col items-center justify-center text-amber-800 shantell text-sm">
                               <span>
-                                {opt.duration ?? opt.durationDay} дней
+                                {opt.duration ?? opt.durationDay}дней
                               </span>
                               <span className="text-xs text-blue-800 font-bold">
-                                {opt.cost} pcoin
+                                {opt.cost}pcoin
                               </span>
                             </span>
                           </button>

@@ -328,6 +328,27 @@ const WebSocketComponent = observer(() => {
                         break;
                     }
 
+                    /** ---------------- TASKS_COMPLETE ---------------- */
+                    case "TASKS_COMPLETE": {
+                        if (parsed.success) {
+                            // parsed.data — строка вида "🎉 Спасибо за участие! +40PCoin +200Pizza"
+                            toast.success(parsed.data || "🎉 Награда за подписку получена!");
+
+                            // обновляем балансы, чтобы Home и Bank сразу увидели изменения
+                           //Исправь это потом.
+                             //но для мгновенного UI-эффекта можно обновить сразу:
+                            runInAction(() => {
+                                store.pcoin = (store.pcoin ?? 0) + 40;
+                                store.pizza = (store.pizza ?? 0) + 200;
+                            });
+
+                            // если через секунду придёт от сервера новый snapshot, UI сам подхватит реальные цифры
+                        } else {
+                            toast.error(parsed.message || "Ошибка при получении награды");
+                        }
+                        break;
+                    }
+
                     /** ---------------- DEFAULT ---------------- */
                     default:
                         // другие типы можно обрабатывать позже

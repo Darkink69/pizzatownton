@@ -1,5 +1,5 @@
 # --- Этап 1: Сборка статических файлов ---
-FROM node:18-alpine AS build
+FROM node:20-bullseye AS build
 
 WORKDIR /app
 
@@ -9,6 +9,9 @@ RUN npm install
 
 # Копируем исходники и собираем проект
 COPY . .
+
+# Важно! Чтобы PostCSS/Vite не падал на hash
+ENV NODE_OPTIONS=--openssl-legacy-provider
 
 # --- Собираем с плейсхолдерами ---
 RUN VITE_API_URL="__VITE_API_URL__" \

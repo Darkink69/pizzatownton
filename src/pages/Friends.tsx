@@ -156,16 +156,16 @@ const Friends = observer(() => {
               {/* три блока статистики */}
               <div className="flex justify-between gap-3">
                 <StatBlock
-                  icon={`${store.imgUrl}icon_dollar.png`}
-                  value={`+${earnedPdollar.toLocaleString()}`}
+                    icon={`${store.imgUrl}icon_dollar.png`}
+                    value={`+${(earnedPdollar ?? 0).toLocaleString()}`}
                 />
                 <StatBlock
-                  icon={`${store.imgUrl}icon_dollar_coin.png`}
-                  value={`+${earnedPcoin.toLocaleString()}`}
+                    icon={`${store.imgUrl}icon_dollar_coin.png`}
+                    value={`+${(earnedPcoin ?? 0).toLocaleString()}`}
                 />
                 <StatBlock
-                  icon={`${store.imgUrl}icon_friends.png`}
-                  value={`+${totalReferrals}`}
+                    icon={`${store.imgUrl}icon_friends.png`}
+                    value={`+${totalReferrals ?? 0}`}
                 />
               </div>
             </div>
