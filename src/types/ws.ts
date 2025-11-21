@@ -1,19 +1,19 @@
 // -------------------- Типы операций --------------------
 export type OperationType =
-    | "AUTH_INIT"
-    | "FLOORS_GET"
-    | "FLOORS_BUY"
-    | "FLOORS_UPGRADE"
-    | "CLAIM_DO"
-    | "CLAIM_REFRESH"
-    | "BANK_BUY_PCOIN"
-    | "BANK_CONFIRM"
-    | "BANK_EXCHANGE_PDOLLAR"
-    | "BANK_ORDER_VIEW"
-    | "BANK_ORDER_STATUS_CHANGED"
-    | "PERSON_BUY"
-    | "BANK_MANUAL_WITHDRAW"
-    | (string & {}); // резерв на будущее
+  | "AUTH_INIT"
+  | "FLOORS_GET"
+  | "FLOORS_BUY"
+  | "FLOORS_UPGRADE"
+  | "CLAIM_DO"
+  | "CLAIM_REFRESH"
+  | "BANK_BUY_PCOIN"
+  | "BANK_CONFIRM"
+  | "BANK_EXCHANGE_PDOLLAR"
+  | "BANK_ORDER_VIEW"
+  | "BANK_ORDER_STATUS_CHANGED"
+  | "PERSON_BUY"
+  | "BANK_MANUAL_WITHDRAW"
+  | (string & {}); // резерв на будущее
 
 // -------------------- База запроса --------------------
 export interface WsBase {
@@ -26,6 +26,7 @@ export interface UserFloor {
   floorId: number;
   level: number;
   yieldPerHour: number;
+  earningsPerHour: number;
   yieldCurrency: string;
   floorName: string;
   floorType: string;
@@ -36,29 +37,32 @@ export interface UserFloor {
   owned: boolean;
   balance?: number;
 
-
-  staff?: {
-    staffId: number;
-    staffLevel: number;
-    staffName: string;
-    startDate: string | null;
-    endDate: string | null;
-    durationDay: number | null;
-    owned: boolean;
-    floorId?: number;
-    upgradeStaff: {
-      staff_id: number;
-      level: number;
-      cost: number;
-      incomePercent: number | null;
-      loosesPercent: number | null;
-    }[];
-    accountantLevel?: {
-      id: number;
-      cost: number;
-      durationDay: number;
-    }[] | null;
-  }[] | null;
+  staff?:
+    | {
+        staffId: number;
+        staffLevel: number;
+        staffName: string;
+        startDate: string | null;
+        endDate: string | null;
+        durationDay: number | null;
+        owned: boolean;
+        floorId?: number;
+        upgradeStaff: {
+          staff_id: number;
+          level: number;
+          cost: number;
+          incomePercent: number | null;
+          loosesPercent: number | null;
+        }[];
+        accountantLevel?:
+          | {
+              id: number;
+              cost: number;
+              durationDay: number;
+            }[]
+          | null;
+      }[]
+    | null;
 }
 
 export interface ManualWithdrawRq {
@@ -94,7 +98,6 @@ export interface UserState {
   [key: string]: any;
 }
 
-
 // -------------------- Новый блок: Персонал --------------------
 export interface StaffRq {
   telegramId: number;
@@ -102,12 +105,11 @@ export interface StaffRq {
 
 export interface BuyPersonRq {
   telegramId: number;
-  staffId: number;         // 1 Guard | 2 Manager | 3 Accountant
-  floorId?: number;        // Guard/Manager targeting floor
-  level?: number;          // new level (1–5)
-  subscription?: number;   // days (7/30/90) for Accountant
+  staffId: number; // 1 Guard | 2 Manager | 3 Accountant
+  floorId?: number; // Guard/Manager targeting floor
+  level?: number; // new level (1–5)
+  subscription?: number; // days (7/30/90) for Accountant
 }
-
 
 // -------------------- Запросы (RQ) --------------------
 
@@ -144,14 +146,14 @@ export interface ClaimRefreshRq {
 
 // Банк
 export interface CreateOrderRq {
-  telegramId: number;   // обязателен для бэка
-  amountPcoin: number;  // camelCase, точно как в Java
-  tonComment: string;   // комментарий для TON‑транзакции
+  telegramId: number; // обязателен для бэка
+  amountPcoin: number; // camelCase, точно как в Java
+  tonComment: string; // комментарий для TON‑транзакции
 }
 
 export interface ConfirmOrderRq {
   orderId: string;
-  telegramId: number;   // обязателен
+  telegramId: number; // обязателен
 }
 
 export interface PDollarExchangeRq {
@@ -177,10 +179,10 @@ export interface WsRequest extends WsBase {
   referralGetRq?: ReferralGetRq;
 
   // банк
-  createOrderRq?: CreateOrderRq;        // BANK_BUY_PCOIN
-  confirmOrderRq?: ConfirmOrderRq;      // BANK_CONFIRM
+  createOrderRq?: CreateOrderRq; // BANK_BUY_PCOIN
+  confirmOrderRq?: ConfirmOrderRq; // BANK_CONFIRM
   manualWithdrawRq?: ManualWithdrawRq;
-  pdollarExchangeRq?: PDollarExchangeRq;// BANK_EXCHANGE_PDOLLAR
+  pdollarExchangeRq?: PDollarExchangeRq; // BANK_EXCHANGE_PDOLLAR
 
   [key: string]: any;
 }
@@ -225,11 +227,11 @@ export interface ReferralInfoData {
 // Ответ после создания ордера PCoin
 export interface BankCreateOrderData {
   orderId: string;
-  amountTon: string;    // BigDecimal -> String
+  amountTon: string; // BigDecimal -> String
   rate: string;
-  expiresAt: string;    // ISO‑дата
+  expiresAt: string; // ISO‑дата
   merchantAddr: string; // merchantAddress из Java
-  comment: string;      // переданный tonComment
+  comment: string; // переданный tonComment
 }
 
 // Ответ на BANK_CONFIRM/BANK_ORDER_VIEW/STATUS_CHANGED
@@ -247,7 +249,6 @@ export interface BankOrderViewData {
   updatedAt?: string;
   telegramId?: number;
 }
-
 
 // -------------------- Персонал (Staff) --------------------
 export interface LevelsDto {
@@ -305,11 +306,13 @@ export interface StaffBuyUpdateResponse {
       incomePercent: number | null;
       loosesPercent: number | null;
     }[];
-    accountantLevel?: {
-      id: number;
-      cost: number;
-      durationDay: number;
-    }[] | null;
+    accountantLevel?:
+      | {
+          id: number;
+          cost: number;
+          durationDay: number;
+        }[]
+      | null;
   };
 }
 
@@ -321,13 +324,15 @@ export interface Accountant {
   endDate: string | null;
   durationDay: number | null;
   owned: boolean;
-  upgradeStaff: null | {
-    staff_id: number;
-    level: number;
-    cost: number;
-    incomePercent: number;
-    loosesPercent: number;
-  }[];
+  upgradeStaff:
+    | null
+    | {
+        staff_id: number;
+        level: number;
+        cost: number;
+        incomePercent: number;
+        loosesPercent: number;
+      }[];
   accountantLevel: {
     id: number;
     cost: number;

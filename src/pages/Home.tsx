@@ -39,6 +39,38 @@ const Home = observer(() => {
 
   const [showGuide, setShowGuide] = useState(false);
 
+  // Показываем загрузку пока данные не получены -----------------------------------------------------------
+  if (!store.areFloorsLoaded) {
+    return (
+      <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B] flex items-center justify-center">
+        <div className="text-white text-xl shantell">Загрузка этажей...</div>
+        <Footer />
+        <WebSocketComponent />
+      </div>
+    );
+  }
+
+  // Запрос данных при монтировании
+  useEffect(() => {
+    if (!store.areFloorsLoaded) {
+      console.log("Requesting floors data on component mount...");
+      store.requestFloorsData();
+    }
+  }, [store.areFloorsLoaded]);
+
+  // Автоскролл при загрузке.
+  useEffect(() => {
+    if (store.areFloorsLoaded) {
+      // Небольшая задержка чтобы DOM успел обновиться
+      setTimeout(() => {
+        window.scrollTo({
+          top: document.documentElement.scrollHeight,
+          behavior: "auto",
+        });
+      }, 100);
+    }
+  }, [store.areFloorsLoaded]);
+
   useEffect(() => {
     if (!localStorage.getItem("main_tutorial_done")) {
       setShowGuide(true);
@@ -87,19 +119,38 @@ const Home = observer(() => {
   const soundRef = useRef<HTMLAudioElement | null>(null);
   const floors = 11;
 
+  // Функция для получения максимального купленного этажа
+  const getHighestPurchasedFloor = (): number => {
+    if (!store.safeUserFloorList) return 0;
+
+    const purchasedFloors = store.safeUserFloorList
+      .filter((floor) => floor.owned && floor.floorId > 1) // Исключаем basement (floorId=1)
+      .map((floor) => floor.floorId);
+
+    return purchasedFloors.length > 0 ? Math.max(...purchasedFloors) : 0;
+  };
+
   // Эффект для анимации лифта
   useEffect(() => {
+    const highestFloor = getHighestPurchasedFloor();
+    // Если нет купленных этажей выше basement, лифт не двигается
+    if (highestFloor <= 1) return;
+
     const liftAnimation = () => {
+      // Рассчитываем максимальную позицию на основе самого высокого этажа
+      // Каждый этаж ≈ 9.09% высоты (100% / 11 этажей)
+      const maxPosition = 85 - (11 - highestFloor) * 9.09;
+
       // Поднимаем пустой лифт вверх
       if (!liftHasPizza) {
         setLiftPosition((prev) => {
           const newPosition = prev + 1;
-          if (newPosition >= 85) {
+          if (newPosition >= maxPosition) {
             // Достигли верха - меняем на лифт с пиццей
             setTimeout(() => {
               setLiftHasPizza(true);
             }, 500); // Небольшая пауза наверху
-            return 85;
+            return maxPosition;
           }
           return newPosition;
         });
@@ -123,19 +174,19 @@ const Home = observer(() => {
     const interval = setInterval(liftAnimation, 50);
 
     return () => clearInterval(interval);
-  }, [liftHasPizza]);
+  }, [liftHasPizza, store.safeUserFloorList]); // Добавляем зависимость от store.safeUserFloorList
 
   // Функция для расчета позиции лифта относительно этажей
   const getLiftStyle = (): React.CSSProperties => {
     const liftHeight = 10; // высота одного лифта в процентах (100% / 11 этажей ≈ 9.09%)
 
     // Позиция рассчитывается от низа контейнера
-    const bottomPosition = ((100 - liftHeight) * liftPosition) / 100;
+    const bottomPosition = ((100 - liftHeight) * liftPosition) / 100 - 2; // -2 коррекция
 
     return {
       position: "absolute",
       bottom: `${bottomPosition}%`,
-      right: "14px",
+      right: "20px",
       zIndex: 20,
       transition: "bottom 0.05s linear", // Плавное движение
       width: "60px",
@@ -242,22 +293,6 @@ const Home = observer(() => {
     setIsMusicPlaying(!isMusicPlaying);
   };
 
-  // Запрос данных при монтировании
-  useEffect(() => {
-    if (!store.areFloorsLoaded) {
-      console.log("Requesting floors data on component mount...");
-      store.requestFloorsData();
-    }
-  }, [store.areFloorsLoaded]);
-
-  // Автоскролл при загрузке
-  useEffect(() => {
-    window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      behavior: "auto",
-    });
-  }, []);
-
   // Показ уведомления
   const showNotification = (
     message: string,
@@ -353,6 +388,12 @@ const Home = observer(() => {
       {
         message:
           "Отличная работа, синьор! Все этажи пашут, как танцы на тесте!",
+        type: "success",
+        condition: true, // Всегда доступно
+      },
+      {
+        message:
+          "Все идеально, начальник! Но бизнес нужно расширять, хорошо бы купить еще один этаж.",
         type: "success",
         condition: true, // Всегда доступно
       },
@@ -458,6 +499,27 @@ const Home = observer(() => {
         className="w-4 h-4"
       />
     ));
+  };
+
+  // Функция для получения видео в зависимости от персонала на этаже
+  const getFloorVideo = (floorData: any): string => {
+    if (!floorData || !floorData.staff) return "chif.mp4";
+
+    const hasManager = floorData.staff.some(
+      (staff: any) =>
+        staff.staffName === "Manager" && staff.owned && staff.staffLevel > 0
+    );
+
+    const hasGuard = floorData.staff.some(
+      (staff: any) =>
+        staff.staffName === "Guard" && staff.owned && staff.staffLevel > 0
+    );
+
+    if (hasManager && hasGuard) return "manager_guard.mp4";
+    if (hasManager) return "manager.mp4";
+    if (hasGuard) return "guard.mp4";
+
+    return "chif.mp4";
   };
 
   // Модальное окно улучшения этажа
@@ -726,7 +788,7 @@ const Home = observer(() => {
 
   // Расчет накопленного дохода для этажа на основе claimProgress
   const calculateFloorBalance = (floor: any): number => {
-    if (!floor || !floor.yieldPerHour) return 0;
+    if (!floor || !floor.earningsPerHour) return 0;
 
     // claimProgress - процент от 12-часового периода (0-100)
     // 12 часов = 43200 секунд
@@ -737,7 +799,7 @@ const Home = observer(() => {
     const progressHours = progressSeconds / 3600;
 
     // Рассчитываем накопленный доход
-    const accumulatedIncome = Math.floor(floor.yieldPerHour * progressHours);
+    const accumulatedIncome = Math.floor(floor.earningsPerHour * progressHours);
 
     return accumulatedIncome;
   };
@@ -748,8 +810,8 @@ const Home = observer(() => {
 
     return store.safeUserFloorList.reduce((total, floor) => {
       // Суммируем доход только с купленных этажей
-      if (floor.owned && floor.yieldPerHour) {
-        return total + floor.yieldPerHour;
+      if (floor.owned && floor.earningsPerHour) {
+        return total + floor.earningsPerHour;
       }
       return total;
     }, 0);
@@ -791,17 +853,6 @@ const Home = observer(() => {
 
     return getCurrentUpgradeCost(dataFloorId, currentLevel);
   };
-
-  // Показываем загрузку пока данные не получены -----------------------------------------------------------
-  if (!store.areFloorsLoaded) {
-    return (
-      <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B] flex items-center justify-center">
-        <div className="text-white text-xl shantell">Загрузка этажей...</div>
-        <Footer />
-        <WebSocketComponent />
-      </div>
-    );
-  }
 
   return (
     <>
@@ -911,14 +962,14 @@ const Home = observer(() => {
                 <img
                   src={`${store.imgUrl}img_chif_talk.png`}
                   alt="Повар"
-                  className="w-28 h-28 sm:w-40 sm:h-40 object-contain"
+                  className="w-36 sm:w-48 object-contain"
                 />
               </div>
 
               {/* Окно сообщения */}
               <div className="relative bg-[#FFF3E0] border-4 border-amber-800 rounded-2xl shadow-2xl p-4 sm:p-5 flex-1 max-w-2xl">
                 <p
-                  className={`text-amber-800 shantell font-bold text-sm sm:text-base leading-snug whitespace-pre-wrap ${
+                  className={`text-amber-800 shantell font-bold text-base sm:text-lg leading-relaxed whitespace-pre-wrap ${
                     randomNotification.type === "error"
                       ? "text-red-600"
                       : "text-green-600"
@@ -1034,10 +1085,10 @@ const Home = observer(() => {
                             loop
                             muted
                             playsInline
-                            className="w-3/4 max-w-80 h-[90%] object-cover -translate-y-[15px] -translate-x-[20px]"
+                            className="w-3/4 max-w-80 h-[90%] -translate-y-[15px] -translate-x-[20px]"
                           >
                             <source
-                              src={`${store.imgUrl}chif.mp4`}
+                              src={`${store.imgUrl}${getFloorVideo(floorData)}`}
                               type="video/mp4"
                             />
                             Your browser does not support the video tag.
@@ -1451,7 +1502,7 @@ const Home = observer(() => {
                       </span>
                       <div className="flex items-center gap-1">
                         <span className="font-bold text-amber-800 shantell">
-                          {selectedFloor.yieldPerHour || 1000}
+                          {selectedFloor.earningsPerHour || 1000}
                         </span>
                         <img
                           src={`${store.imgUrl}icon_dollar.png`}

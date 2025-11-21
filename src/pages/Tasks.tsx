@@ -1,10 +1,24 @@
 import { useState } from "react";
+import { Link } from "react-router-dom"; // Добавляем импорт Link
 import store from "../store/store";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
 
 function Tasks() {
   const [showDailyCombo, setShowDailyCombo] = useState(false);
+
+  // Функции для заданий
+  const handleTask1 = () => {
+    console.log("Задание 1: Пригласить друга");
+  };
+
+  const handleTask2 = () => {
+    console.log("Задание 2: Забрать награду за уровень 2");
+  };
+
+  const handleTask3 = () => {
+    console.log("Задание 3: Забрать награду за уровень 3");
+  };
 
   const taskBlocks = [
     {
@@ -13,6 +27,7 @@ function Tasks() {
       reward: "500",
       buttonText: "ВЫПОЛНИТЬ",
       buttonBg: "b_red_small.png",
+      onClick: handleTask1,
     },
     {
       id: 2,
@@ -20,6 +35,7 @@ function Tasks() {
       reward: "750",
       buttonText: "ЗАБРАТЬ",
       buttonBg: "b_blue_small.png",
+      onClick: handleTask2,
     },
     {
       id: 3,
@@ -27,6 +43,7 @@ function Tasks() {
       reward: "1000",
       buttonText: "ЗАБРАТЬ",
       buttonBg: "b_blue_small.png",
+      onClick: handleTask3,
     },
   ];
 
@@ -117,19 +134,43 @@ function Tasks() {
                       </div>
 
                       <div className="mt-auto px-2">
-                        <button className="relative w-full hover:opacity-90 transition-opacity">
-                          <img
-                            src={`${store.imgUrl}${block.buttonBg}`}
-                            alt="Выполнить задачу"
-                            className="w-full h-auto"
-                          />
-
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="text-white text-sm sm:text-base shantell">
-                              {block.buttonText}
+                        {/* Для первого задания используем Link с кнопкой внутри */}
+                        {block.id === 1 ? (
+                          <Link to="/friends" className="block">
+                            <button
+                              onClick={block.onClick}
+                              className="relative w-full hover:opacity-90 transition-opacity"
+                            >
+                              <img
+                                src={`${store.imgUrl}${block.buttonBg}`}
+                                alt="Выполнить задачу"
+                                className="w-full h-auto"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="text-white text-sm sm:text-base shantell">
+                                  {block.buttonText}
+                                </div>
+                              </div>
+                            </button>
+                          </Link>
+                        ) : (
+                          // Для остальных заданий без Link
+                          <button
+                            onClick={block.onClick}
+                            className="relative w-full hover:opacity-90 transition-opacity"
+                          >
+                            <img
+                              src={`${store.imgUrl}${block.buttonBg}`}
+                              alt="Выполнить задачу"
+                              className="w-full h-auto"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="text-white text-sm sm:text-base shantell">
+                                {block.buttonText}
+                              </div>
                             </div>
-                          </div>
-                        </button>
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
