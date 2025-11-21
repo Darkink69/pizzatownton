@@ -17,7 +17,7 @@ function Tasks() {
   };
 
   const handleTask3 = () => {
-    console.log("Задание 3: Забрать награду за уровень 3");
+    console.log("Задание 3: Забрать награду за уровень 3.");
   };
 
   const taskBlocks = [

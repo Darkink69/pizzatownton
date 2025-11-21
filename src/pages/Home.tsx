@@ -119,38 +119,19 @@ const Home = observer(() => {
   const soundRef = useRef<HTMLAudioElement | null>(null);
   const floors = 11;
 
-  // Функция для получения максимального купленного этажа
-  const getHighestPurchasedFloor = (): number => {
-    if (!store.safeUserFloorList) return 0;
-
-    const purchasedFloors = store.safeUserFloorList
-      .filter((floor) => floor.owned && floor.floorId > 1) // Исключаем basement (floorId=1)
-      .map((floor) => floor.floorId);
-
-    return purchasedFloors.length > 0 ? Math.max(...purchasedFloors) : 0;
-  };
-
   // Эффект для анимации лифта
   useEffect(() => {
-    const highestFloor = getHighestPurchasedFloor();
-    // Если нет купленных этажей выше basement, лифт не двигается
-    if (highestFloor <= 1) return;
-
     const liftAnimation = () => {
-      // Рассчитываем максимальную позицию на основе самого высокого этажа
-      // Каждый этаж ≈ 9.09% высоты (100% / 11 этажей)
-      const maxPosition = 85 - (11 - highestFloor) * 9.09;
-
       // Поднимаем пустой лифт вверх
       if (!liftHasPizza) {
         setLiftPosition((prev) => {
           const newPosition = prev + 1;
-          if (newPosition >= maxPosition) {
+          if (newPosition >= 85) {
             // Достигли верха - меняем на лифт с пиццей
             setTimeout(() => {
               setLiftHasPizza(true);
             }, 500); // Небольшая пауза наверху
-            return maxPosition;
+            return 85;
           }
           return newPosition;
         });
@@ -174,39 +155,25 @@ const Home = observer(() => {
     const interval = setInterval(liftAnimation, 50);
 
     return () => clearInterval(interval);
-  }, [liftHasPizza, store.safeUserFloorList]); // Добавляем зависимость от store.safeUserFloorList
+  }, [liftHasPizza]);
 
   // Функция для расчета позиции лифта относительно этажей
   const getLiftStyle = (): React.CSSProperties => {
     const liftHeight = 10; // высота одного лифта в процентах (100% / 11 этажей ≈ 9.09%)
 
     // Позиция рассчитывается от низа контейнера
-    const bottomPosition = ((100 - liftHeight) * liftPosition) / 100 - 2; // -2 коррекция
+    const bottomPosition = ((100 - liftHeight) * liftPosition) / 100;
 
     return {
       position: "absolute",
       bottom: `${bottomPosition}%`,
-      right: "20px",
+      right: "14px",
       zIndex: 20,
       transition: "bottom 0.05s linear", // Плавное движение
       width: "60px",
       height: `${liftHeight}%`,
     };
   };
-
-  <div
-    className="absolute bottom-2 right-[20px] z-20"
-    style={{ height: "100%", width: "60px" }}
-  >
-    <img
-      src={`${store.imgUrl}${
-        liftHasPizza ? "lift_pizza.png" : "lift_empty.png"
-      }`}
-      alt="Lift"
-      style={getLiftStyle()}
-      className="w-full h-auto object-contain"
-    />
-  </div>;
 
   // Функция для воспроизведения звуков
   const playSound = (soundName: string) => {
@@ -1085,7 +1052,7 @@ const Home = observer(() => {
                             loop
                             muted
                             playsInline
-                            className="w-3/4 max-w-80 h-[90%] -translate-y-[15px] -translate-x-[20px]"
+                            className="w-3/4 max-w-80 h-[90%] -translate-y-[8px] -translate-x-[20px]"
                           >
                             <source
                               src={`${store.imgUrl}${getFloorVideo(floorData)}`}
@@ -1204,7 +1171,7 @@ const Home = observer(() => {
                               loop
                               muted
                               playsInline
-                              className="w-3/4 max-w-80 h-[90%] object-cover -translate-y-[15px] -translate-x-[20px]"
+                              className="w-3/4 max-w-80 h-[90%] -translate-y-[8px] -translate-x-[20px]"
                             >
                               <source
                                 src={`${store.imgUrl}chif.mp4`}
