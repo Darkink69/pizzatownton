@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom"; // Добавляем импорт Link
+import { Link } from "react-router-dom";
 import store from "../store/store";
 import { toast } from "react-toastify";
 import Footer from "../components/Footer";
@@ -25,7 +25,6 @@ function Tasks() {
       const rq = {
         type: "TASKS_COMPLETE",
         requestId: Math.random().toString(36).substring(2, 10),
-        // 👇 важно – проверяем, что session не null
         session: store.sessionId ?? "",
         taskRq: {
           telegramId: tgId,
@@ -59,19 +58,19 @@ function Tasks() {
     console.log("Задание 4: Забрать награду за уровень 3.");
   };
 
-  //  добавляем новую задачу
+  // Обновляем первую задачу
   const taskBlocks = [
     {
       id: 1,
-      title: "Подписаться на официальный канал 🍕",
-      rewardText: "+40PCoin +200Pizza",
+      title: "Подписаться на официальный канал",
+      rewardPcoin: "40",
+      rewardPizza: "200",
       link: "https://t.me/pizzatowerton",
       buttonText: isSubscribed ? "ВЫПОЛНЕНО" : "ПЕРЕЙТИ",
       buttonBg: isSubscribed ? "b_blue_small.png" : "b_red_small.png",
       onClick: !isSubscribed ? handleSubscribe : undefined,
       disabled: isSubscribed,
     },
-
     {
       id: 2,
       title: "Пригласить 1 друга",
@@ -125,7 +124,6 @@ function Tasks() {
     <>
       <div className="relative min-h-screen w-full overflow-hidden">
         <div className="absolute inset-0 bg-[#FFBC6B]">
-          {/* Фоновая картинка */}
           <div
             className="w-full h-full bg-cover bg-center bg-no-repeat sm:bg-auto sm:bg-center md:bg-auto md:bg-center lg:bg-contain lg:bg-center"
             style={{
@@ -148,10 +146,7 @@ function Tasks() {
 
         {/* Контейнер для скролла */}
         <div className="relative z-30 h-screen flex flex-col">
-          {/* Фиксированная верхняя часть */}
-          <div className="flex-shrink-0 pt-25">
-            {/* Можно добавить дополнительный контент здесь если нужно */}
-          </div>
+          <div className="flex-shrink-0 pt-25"></div>
 
           {/* Прокручиваемая область с блоками заданий */}
           <div className="flex-1 overflow-y-auto">
@@ -162,107 +157,137 @@ function Tasks() {
                     <img
                       src={`${store.imgUrl}img_block.png`}
                       alt="Task block"
-                      className="w-full h-auto object-contain"
+                      className={`w-full h-auto object-contain ${
+                        block.id === 1 ? "scale-y-110" : ""
+                      }`}
                     />
 
-                    <div className="absolute inset-0 flex flex-col p-4 sm:p-6 md:p-8">
+                    <div className="absolute inset-0 flex flex-col p-2 sm:p-6 md:p-8">
                       <div className="space-y-0 sm:space-y-1 px-2">
                         <div className="flex items-center justify-between">
                           <div className="font-bold text-base sm:text-lg text-amber-800 shantell flex-1 leading-4">
                             {block.title}
                           </div>
-                          {/* награда под заголовком, как в заглушках */}
-                          <div className="flex items-center justify-end gap-1 sm:gap-2 mx-2 sm:mx-4">
-    <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
-      {block.id === 1 ? block.rewardText : block.reward}
-    </span>
-                            <img
-                                src={`${store.imgUrl}icon_pizza.png`}
-                                alt="pizza"
-                                className="w-6 sm:w-8"
-                            />
+
+                          {/* Обновленная секция наград для первой задачи */}
+                          <div className="flex flex-col items-end gap-1 mx-2 sm:mx-4">
+                            {block.id === 1 ? (
+                              <>
+                                {/* Награда PCoin */}
+                                <div className="flex items-center gap-1">
+                                  <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
+                                    {block.rewardPcoin}
+                                  </span>
+                                  <img
+                                    src={`${store.imgUrl}icon_dollar_coin.png`}
+                                    alt="PCoin"
+                                    className="w-5 sm:w-6"
+                                  />
+                                </div>
+                                {/* Награда Pizza */}
+                                <div className="flex items-center gap-1">
+                                  <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
+                                    {block.rewardPizza}
+                                  </span>
+                                  <img
+                                    src={`${store.imgUrl}icon_pizza.png`}
+                                    alt="Pizza"
+                                    className="w-5 sm:w-6"
+                                  />
+                                </div>
+                              </>
+                            ) : (
+                              // Обычная награда для остальных задач
+                              <div className="flex items-center gap-1 sm:gap-2">
+                                <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
+                                  {block.reward}
+                                </span>
+                                <img
+                                  src={`${store.imgUrl}icon_pizza.png`}
+                                  alt="Pizza"
+                                  className="w-6 sm:w-8"
+                                />
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
 
+                      {/* Увеличиваем отступ для кнопки */}
                       <div className="mt-auto px-2">
                         {block.id === 1 && block.link ? (
-                            /* для подписки открываем реальный Telegram‑канал */
-                            <a
-                                href={block.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={block.onClick}
-                                className="block"
+                          <a
+                            href={block.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={block.onClick}
+                            className="block"
+                          >
+                            <button
+                              disabled={block.disabled}
+                              className={`relative w-full transition-opacity ${
+                                block.disabled
+                                  ? "opacity-70 cursor-not-allowed"
+                                  : "hover:opacity-90 cursor-pointer"
+                              }`}
                             >
-                              <button
-                                  disabled={block.disabled}
-                                  className={`relative w-full transition-opacity ${
-                                      block.disabled
-                                          ? "opacity-70 cursor-not-allowed"
-                                          : "hover:opacity-90 cursor-pointer"
-                                  }`}
-                              >
-                                <img
+                              <img
+                                src={`${store.imgUrl}${block.buttonBg}`}
+                                alt="Выполнить задачу"
+                                className="w-full h-auto"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="text-white text-sm sm:text-base shantell font-bold">
+                                  {block.buttonText}
+                                </div>
+                              </div>
+                            </button>
+                          </a>
+                        ) : (
+                          <>
+                            {block.id === 2 ? (
+                              <Link to="/friends" className="block">
+                                <button
+                                  onClick={block.onClick}
+                                  className="relative w-full hover:opacity-90 transition-opacity"
+                                >
+                                  <img
                                     src={`${store.imgUrl}${block.buttonBg}`}
                                     alt="Выполнить задачу"
                                     className="w-full h-auto"
+                                  />
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="text-white text-sm sm:text-base shantell">
+                                      {block.buttonText}
+                                    </div>
+                                  </div>
+                                </button>
+                              </Link>
+                            ) : (
+                              <button
+                                onClick={block.onClick}
+                                className="relative w-full hover:opacity-90 transition-opacity"
+                              >
+                                <img
+                                  src={`${store.imgUrl}${block.buttonBg}`}
+                                  alt="Выполнить задачу"
+                                  className="w-full h-auto"
                                 />
-                                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                  <div className="text-white text-sm sm:text-base shantell font-bold">
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="text-white text-sm sm:text-base shantell">
                                     {block.buttonText}
                                   </div>
-                                  <div className="text-yellow-200 text-xs">{block.rewardText}</div>
                                 </div>
                               </button>
-                            </a>
-                        ) : (
-                            <>
-                              {block.id === 2 ? (
-                                  <Link to="/friends" className="block">
-                                    <button
-                                        onClick={block.onClick}
-                                        className="relative w-full hover:opacity-90 transition-opacity"
-                                    >
-                                      <img
-                                          src={`${store.imgUrl}${block.buttonBg}`}
-                                          alt="Выполнить задачу"
-                                          className="w-full h-auto"
-                                      />
-                                      <div className="absolute inset-0 flex items-center justify-center">
-                                        <div className="text-white text-sm sm:text-base shantell">
-                                          {block.buttonText}
-                                        </div>
-                                      </div>
-                                    </button>
-                                  </Link>
-                              ) : (
-                                  <button
-                                      onClick={block.onClick}
-                                      className="relative w-full hover:opacity-90 transition-opacity"
-                                  >
-                                    <img
-                                        src={`${store.imgUrl}${block.buttonBg}`}
-                                        alt="Выполнить задачу"
-                                        className="w-full h-auto"
-                                    />
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                      <div className="text-white text-sm sm:text-base shantell">
-                                        {block.buttonText}
-                                      </div>
-                                    </div>
-                                  </button>
-                              )}
-                            </>
+                            )}
+                          </>
                         )}
-
                       </div>
                     </div>
                   </div>
                 </div>
               ))}
 
-              {/* Кнопка Daily Combo в скролле */}
               <button
                 onClick={handleDailyComboClick}
                 className="flex justify-center w-11/12 max-w-md hover:opacity-90 transition-opacity"
@@ -270,17 +295,15 @@ function Tasks() {
                 <img
                   src={`${store.imgUrl}b_daily_combo.png`}
                   alt="combo"
-                  className=" w-1/2 h-auto"
+                  className="w-1/2 h-auto"
                 />
               </button>
 
-              {/* Блок Daily Combo */}
               {showDailyCombo && (
                 <>
                   <div className="w-11/12 max-w-md">
                     <div className="relative">
                       <div className="absolute inset-0 flex flex-col">
-                        {/* Grid 4x4 с пиццами */}
                         <div className="grid grid-cols-4 gap-2 sm:gap-3 mb-4">
                           {pizzaList.map((pizzaName, index) => (
                             <div
@@ -294,7 +317,6 @@ function Tasks() {
                                   alt="Pizza background"
                                   className="w-full h-full object-contain"
                                 />
-
                                 <div className="absolute inset-0 flex items-center justify-center p-2">
                                   <img
                                     src={`${store.imgUrl}pizza_${pizzaName}.png`}
@@ -318,7 +340,6 @@ function Tasks() {
                             alt="Additional block"
                             className="w-full h-auto object-contain"
                           />
-
                           <div className="absolute inset-0 flex flex-col p-4 sm:p-6 md:p-8">
                             <div className="space-y-0 sm:space-y-1 px-2">
                               <div className="flex items-center justify-between">
@@ -327,12 +348,11 @@ function Tasks() {
                                   alt="combo"
                                   className="w-1/3 h-auto"
                                 />
-
                                 <div className="flex flex-col gap-1 sm:gap-2 mx-2 sm:mx-4">
                                   <div className="text-right leading-4 text-md sm:text-lg text-amber-800 shantell">
                                     MAX награда
                                   </div>
-                                  <span className="font-bold text-2xl sm:text-3xl text-amber-800 shantell ">
+                                  <span className="font-bold text-2xl sm:text-3xl text-amber-800 shantell">
                                     1000
                                     <img
                                       src={`${store.imgUrl}icon_pizza.png`}
@@ -343,7 +363,6 @@ function Tasks() {
                                 </div>
                               </div>
                             </div>
-
                             <div className="mt-auto px-2"></div>
                           </div>
                         </div>
@@ -355,7 +374,6 @@ function Tasks() {
             </div>
           </div>
 
-          {/* Отступ для футера */}
           <div className="flex-shrink-0 pb-20"></div>
         </div>
       </div>
