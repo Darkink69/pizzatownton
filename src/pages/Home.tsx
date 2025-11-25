@@ -438,15 +438,18 @@ const Home = observer(() => {
     // ищем данные по выбранной подписке (7 / 14 / 30)
     const accountantLevels = store.userStaff?.accountantLevel ?? [];
     const selected = accountantLevels.find(
-        (lvl: { duration?: number; durationDay?: number }) =>
-            (lvl.duration ?? lvl.durationDay) === (option ?? 7)
+      (lvl: { duration?: number; durationDay?: number }) =>
+        (lvl.duration ?? lvl.durationDay) === (option ?? 7)
     );
 
     const cost = selected?.cost ?? 0;
 
     // проверяем, хватает ли PCoin
     if (store.pcoin < cost) {
-      showNotification("Недостаточно средств. Нужно купить PCoin в банке!", "error");
+      showNotification(
+        "Недостаточно средств. Нужно купить PCoin в банке!",
+        "error"
+      );
       return;
     }
 
@@ -728,7 +731,7 @@ const Home = observer(() => {
       showNotification(
         `${staffType === "manager" ? "Менеджер" : "Охранник"} ${
           currentLevel ? "улучшен" : "нанят"
-        } (уровень ${nextLevel}) на этаже ${displayFloorNumber}`,
+        } (уровень ${nextLevel}) ${displayFloorNumber}`,
         "success"
       );
     } else {
@@ -1246,7 +1249,7 @@ const Home = observer(() => {
                                     className="w-6 h-6 sm:w-8 sm:h-8"
                                   />
                                   <span className="text-amber-800 text-xs sm:text-sm shantell font-bold -translate-x-[3px]">
-                                     {(store.pizza ?? 0).toLocaleString()}
+                                    {(store.pizza ?? 0).toLocaleString()}
                                   </span>
                                 </div>
 
@@ -1416,7 +1419,7 @@ const Home = observer(() => {
                   </span>
                 </Link>
                 <span className="absolute top-8 text-xs text-white 500 shantell whitespace-nowrap tracking-tight">
-                 +{(totalIncome ?? 0).toLocaleString()}/час
+                  +{(totalIncome ?? 0).toLocaleString()}/час
                 </span>
               </div>
             </div>
@@ -1862,9 +1865,7 @@ const Home = observer(() => {
                               className="w-full scale-y-110"
                             />
                             <span className="absolute inset-0 flex flex-col items-center justify-center text-amber-800 shantell text-sm">
-                              <span>
-                                {opt.duration ?? opt.durationDay}дней
-                              </span>
+                              <span>{opt.duration ?? opt.durationDay}дней</span>
                               <span className="text-xs text-blue-800 font-bold">
                                 {opt.cost}pcoin
                               </span>
