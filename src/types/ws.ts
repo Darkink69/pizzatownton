@@ -1,19 +1,22 @@
 // -------------------- Типы операций --------------------
 export type OperationType =
-  | "AUTH_INIT"
-  | "FLOORS_GET"
-  | "FLOORS_BUY"
-  | "FLOORS_UPGRADE"
-  | "CLAIM_DO"
-  | "CLAIM_REFRESH"
-  | "BANK_BUY_PCOIN"
-  | "BANK_CONFIRM"
-  | "BANK_EXCHANGE_PDOLLAR"
-  | "BANK_ORDER_VIEW"
-  | "BANK_ORDER_STATUS_CHANGED"
-  | "PERSON_BUY"
-  | "BANK_MANUAL_WITHDRAW"
-  | (string & {}); // резерв на будущее
+    | "AUTH_INIT"
+    | "FLOORS_GET"
+    | "FLOORS_BUY"
+    | "FLOORS_UPGRADE"
+    | "CLAIM_DO"
+    | "CLAIM_REFRESH"
+    | "BANK_BUY_PCOIN"
+    | "BANK_CONFIRM"
+    | "BANK_EXCHANGE_PDOLLAR"
+    | "BANK_ORDER_VIEW"
+    | "BANK_ORDER_STATUS_CHANGED"
+    | "PERSON_BUY"
+    | "BANK_MANUAL_WITHDRAW"
+    | "TASKS_GET"
+    | "TASKS_VERIFY"
+    | "TASKS_COMPLETE"
+    | (string & {}); // резерв на будущее
 
 // -------------------- База запроса --------------------
 export interface WsBase {
@@ -79,6 +82,26 @@ export interface StaffUpgrade {
   cost: number;
   incomePercent: number;
   loosesPercent: number;
+}
+
+// -------------------- Задания (Tasks) --------------------
+export interface TaskRq {
+  telegramId: number;
+  code: string; // "SUBSCRIBE_MAIN_CHANNEL" | "INVITE_3_FRIENDS" | ...
+}
+
+export interface TaskVerifyResponse {
+  code: string;
+  status: string; // "verified" | "not_enough_referrals" | "error" и т.п.
+  message: string;
+}
+
+export interface TaskCompleteResponse {
+  code: string;
+  rewardPcoin: string | number;
+  rewardPizza: string | number;
+  rewardPdollar: string | number;
+  message: string;
 }
 
 // -------------------- Пользователь --------------------
@@ -184,6 +207,8 @@ export interface WsRequest extends WsBase {
   manualWithdrawRq?: ManualWithdrawRq;
   pdollarExchangeRq?: PDollarExchangeRq; // BANK_EXCHANGE_PDOLLAR
 
+  // задачи
+  taskRq?: TaskRq;
   [key: string]: any;
 }
 

@@ -23,10 +23,22 @@ class BankStore {
   lastOrderId: string | null = null;
   creating = false;
   error: string | null = null;
+  lastBuyAt: number = 0;
 
 
   constructor() {
     makeAutoObservable(this);
+    const saved = localStorage.getItem("lastBuyAt");
+    if (saved) this.lastBuyAt = parseInt(saved);
+  }
+
+  get buyCooldown(): number {
+    const diff = Math.floor((Date.now() - this.lastBuyAt) / 1000);
+    return diff < 10 ? 10 - diff : 0;
+  }
+
+  get canBuy(): boolean {
+    return this.buyCooldown === 0 && !this.creating;
   }
 
   /** Сброс состояния хранилища */
@@ -47,6 +59,13 @@ class BankStore {
   // ------------------------------------------------------------------------
 
   async createOrder(amountPcoin: number) {
+    if (!this.canBuy) {
+      const wait = this.buyCooldown;
+      this.error = `Подождите ${wait}с до следующей покупки`;
+      console.warn(this.error);
+      return;
+    }
+
     this.creating = true;
     this.error = null;
     const tonComment = this.generateOrderComment();
@@ -64,12 +83,24 @@ class BankStore {
         },
       });
 
+
+      // Запускаем кулдаун
+      this.lastBuyAt = Date.now();
+      localStorage.setItem("lastBuyAt", String(this.lastBuyAt));
+
+      console.log(
+          "🪙 Отправлен запрос на создание ордера PCoin:",
+          amountPcoin,
+          "— кулдаун активирован"
+      );
+
       // Ответ придёт в websocket.tsx → case "BANK_BUY_PCOIN"
       console.log("🪙 Отправлен запрос на создание ордера PCoin:", amountPcoin);
     } catch (e: any) {
       console.error("CREATE_ORDER_ERROR (WS):", e);
       this.error = e?.message ?? "Ошибка при создании заказа";
-      this.creating = false;
+    } finally {
+      this.creating = false; // важно сбрасывать, иначе canBuy остаётся false
     }
   }
 

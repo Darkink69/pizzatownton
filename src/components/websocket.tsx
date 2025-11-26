@@ -6,7 +6,7 @@ import type {
     AuthData,
     BankCreateOrderData,
     BankOrderViewData,
-    ReferralInfoData,
+    ReferralInfoData, TaskCompleteResponse, TaskVerifyResponse,
     WsRequest,
     WsResponse,
 } from "../types/ws";
@@ -328,24 +328,83 @@ const WebSocketComponent = observer(() => {
                         break;
                     }
 
+                    /** ---------------- TASKS_VERIFY ---------------- */
+                    case "TASKS_VERIFY": {
+                        const data = parsed.data as TaskVerifyResponse | undefined;
+
+                        if (!data?.code) {
+                            console.warn("TASKS_VERIFY без code", parsed);
+                            break;
+                        }
+
+                        if (data.code === "INVITE_3_FRIENDS") {
+                            if (parsed.success && data.status === "verified") {
+                                runInAction(() => {
+                                    store.taskInvite3Status = "verified";
+                                    store.taskInvite3Error = null;
+                                });
+                                toast.success("✅ Условие задания выполнено! Заберите награду.");
+                            } else {
+                                runInAction(() => {
+                                    store.taskInvite3Status = "error";
+                                    store.taskInvite3Error = data.message || parsed.message || null;
+                                });
+
+                                if (data.message === "NOT_ENOUGH_REFERRALS_WITH_FLOOR") {
+                                    toast.error("У вас ещё меньше 3 друзей, которые купили хотя бы 1 этаж.");
+                                } else {
+                                    toast.error(data.message || parsed.message || "Ошибка проверки задания");
+                                }
+                            }
+                        }
+
+                        break;
+                    }
+
                     /** ---------------- TASKS_COMPLETE ---------------- */
                     case "TASKS_COMPLETE": {
-                        if (parsed.success) {
-                            // parsed.data — строка вида "🎉 Спасибо за участие! +40PCoin +200Pizza"
-                            toast.success(parsed.data || "🎉 Награда за подписку получена!");
+                        const data = parsed.data as TaskCompleteResponse | undefined;
 
-                            // обновляем балансы, чтобы Home и Bank сразу увидели изменения
-                           //Исправь это потом.
-                             //но для мгновенного UI-эффекта можно обновить сразу:
-                            runInAction(() => {
-                                store.pcoin = (store.pcoin ?? 0) + 40;
-                                store.pizza = (store.pizza ?? 0) + 200;
-                            });
-
-                            // если через секунду придёт от сервера новый snapshot, UI сам подхватит реальные цифры
-                        } else {
+                        if (!parsed.success || !data?.code) {
                             toast.error(parsed.message || "Ошибка при получении награды");
+                            break;
                         }
+
+                        toast.success(data.message || parsed.message || "🎉 Награда получена!");
+
+                        // INVITE_3_FRIENDS
+                        if (data.code === "INVITE_3_FRIENDS") {
+                            runInAction(() => {
+                                store.taskInvite3Status = "rewarded";
+                                store.taskInvite3Error = null;
+
+                                if (data.rewardPcoin != null) {
+                                    store.pcoin = (store.pcoin ?? 0) + Number(data.rewardPcoin);
+                                }
+                                if (data.rewardPizza != null) {
+                                    store.pizza = (store.pizza ?? 0) + Number(data.rewardPizza);
+                                }
+                            });
+                            break;
+                        }
+
+                        // SUBSCRIBE_MAIN_CHANNEL — старое задание
+                        if (data.code === "SUBSCRIBE_MAIN_CHANNEL") {
+                            runInAction(() => {
+                                if (data.rewardPcoin != null) {
+                                    store.pcoin = (store.pcoin ?? 0) + Number(data.rewardPcoin);
+                                } else {
+                                    store.pcoin = (store.pcoin ?? 0) + 40;
+                                }
+
+                                if (data.rewardPizza != null) {
+                                    store.pizza = (store.pizza ?? 0) + Number(data.rewardPizza);
+                                } else {
+                                    store.pizza = (store.pizza ?? 0) + 200;
+                                }
+                            });
+                        }
+
                         break;
                     }
 

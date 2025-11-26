@@ -8,11 +8,23 @@ import WebSocketComponent from "../components/websocket";
 function Tasks() {
   const [showDailyCombo, setShowDailyCombo] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isInviteTaskDone, setIsInviteTaskDone] = useState(false);
 
   useEffect(() => {
     const done = localStorage.getItem("subscribedTaskDone");
     if (done === "true") setIsSubscribed(true);
+
+    const inviteDone = localStorage.getItem("invite3TaskDone");
+    if (inviteDone === "true") setIsInviteTaskDone(true);
   }, []);
+
+  // следим за статусом INVITE_3_FRIENDS из стора:
+  useEffect(() => {
+    if (store.taskInvite3Status === "rewarded") {
+      setIsInviteTaskDone(true);
+      localStorage.setItem("invite3TaskDone", "true");
+    }
+  }, [store.taskInvite3Status]);
 
   // выполнение таски подписки
   const handleSubscribe = () => {
@@ -45,20 +57,32 @@ function Tasks() {
     }, 8000);
   };
 
-  // Функции для заданий
-  const handleTask2 = () => {
-    console.log("Задание 2: Пригласить друга");
+  // выполнение таски INVITE_3_FRIENDS (инициируем проверку)
+  const handleInvite3Task = () => {
+    if (isInviteTaskDone) return;
+    if (!store.sessionId || !store.user?.telegramId) {
+      toast.error("Авторизуйтесь, чтобы выполнить задание");
+      return;
+    }
+
+    toast.info("🧾 Проверяем выполнение задания с друзьями...");
+    store.verifyInvite3Task();
   };
 
-  const handleTask3 = () => {
-    console.log("Задание 3: Забрать награду за уровень 2");
-  };
+  // // Функции для фейковых заданий — оставляем, но не используем в taskBlocks
+  // const handleTask2 = () => {
+  //   console.log("Задание 2: Пригласить друга");
+  // };
+  //
+  // const handleTask3 = () => {
+  //   console.log("Задание 3: Забрать награду за уровень 2");
+  // };
+  //
+  // const handleTask4 = () => {
+  //   console.log("Задание 4: Забрать награду за уровень 3.");
+  // };
 
-  const handleTask4 = () => {
-    console.log("Задание 4: Забрать награду за уровень 3.");
-  };
-
-  // Обновляем первую задачу
+  // Обновляем блоки задач: оставляем реальное #1 (подписка) и новое #2 (3 друзей)
   const taskBlocks = [
     {
       id: 1,
@@ -73,28 +97,41 @@ function Tasks() {
     },
     {
       id: 2,
-      title: "Пригласить 1 друга",
-      reward: "500",
-      buttonText: "ВЫПОЛНИТЬ",
-      buttonBg: "b_red_small.png",
-      onClick: handleTask2,
+      title: "Пригласи 3 друзей, которые купят 1 этаж",
+      rewardPcoin: "60",
+      rewardPizza: "200",
+      link: "/friends",
+      buttonText: isInviteTaskDone ? "ВЫПОЛНЕНО" : "ВЫПОЛНИТЬ",
+      buttonBg: isInviteTaskDone ? "b_blue_small.png" : "b_red_small.png",
+      onClick: !isInviteTaskDone ? handleInvite3Task : undefined,
+      disabled: isInviteTaskDone,
     },
-    {
-      id: 3,
-      title: "Достигнуть уровень 2",
-      reward: "750",
-      buttonText: "ЗАБРАТЬ",
-      buttonBg: "b_blue_small.png",
-      onClick: handleTask3,
-    },
-    {
-      id: 4,
-      title: "Достигнуть уровень 3",
-      reward: "1000",
-      buttonText: "ЗАБРАТЬ",
-      buttonBg: "b_blue_small.png",
-      onClick: handleTask4,
-    },
+
+    // ----- СТАРЫЕ ФЕЙКОВЫЕ ЗАДАНИЯ — оставлены в комментариях -----
+    // {
+    //   id: 2,
+    //   title: "Пригласить 1 друга",
+    //   reward: "500",
+    //   buttonText: "ВЫПОЛНИТЬ",
+    //   buttonBg: "b_red_small.png",
+    //   onClick: handleTask2,
+    // },
+    // {
+    //   id: 3,
+    //   title: "Достигнуть уровень 2",
+    //   reward: "750",
+    //   buttonText: "ЗАБРАТЬ",
+    //   buttonBg: "b_blue_small.png",
+    //   onClick: handleTask3,
+    // },
+    // {
+    //   id: 4,
+    //   title: "Достигнуть уровень 3",
+    //   reward: "1000",
+    //   buttonText: "ЗАБРАТЬ",
+    //   buttonBg: "b_blue_small.png",
+    //   onClick: handleTask4,
+    // },
   ];
 
   const handleDailyComboClick = () => {
@@ -121,265 +158,246 @@ function Tasks() {
   ];
 
   return (
-    <>
-      <div className="relative min-h-screen w-full overflow-hidden">
-        <div className="absolute inset-0 bg-[#FFBC6B]">
-          <div
-            className="w-full h-full bg-cover bg-center bg-no-repeat sm:bg-auto sm:bg-center md:bg-auto md:bg-center lg:bg-contain lg:bg-center"
-            style={{
-              backgroundImage: `url('${store.imgUrl}bg_pizza.png')`,
-            }}
-          />
-        </div>
+      <>
+        <div className="relative min-h-screen w-full overflow-hidden">
+          <div className="absolute inset-0 bg-[#FFBC6B]">
+            <div
+                className="w-full h-full bg-cover bg-center bg-no-repeat sm:bg-auto sm:bg-center md:bg-auto md:bg-center lg:bg-contain lg:bg-center"
+                style={{
+                  backgroundImage: `url('${store.imgUrl}bg_pizza.png')`,
+                }}
+            />
+          </div>
 
-        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-[600px] sm:max-w-[800px] md:max-w-[1000px] lg:max-w-[2000px] xl:max-w-[1550px]">
-          <img
-            src={`${store.imgUrl}testo.png`}
-            alt="Testo"
-            className="w-full max-w-full h-auto object-cover"
-          />
-        </div>
+          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-[600px] sm:max-w-[800px] md:max-w-[1000px] lg:max-w-[2000px] xl:max-w-[1550px]">
+            <img
+                src={`${store.imgUrl}testo.png`}
+                alt="Testo"
+                className="w-full max-w-full h-auto object-cover"
+            />
+          </div>
 
-        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-20">
-          <img src={`${store.imgUrl}img_task_list.png`} alt="tasks" />
-        </div>
+          <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-20">
+            <img src={`${store.imgUrl}img_task_list.png`} alt="tasks" />
+          </div>
 
-        {/* Контейнер для скролла */}
-        <div className="relative z-30 h-screen flex flex-col">
-          <div className="flex-shrink-0 pt-25"></div>
+          {/* Контейнер для скролла */}
+          <div className="relative z-30 h-screen flex flex-col">
+            <div className="flex-shrink-0 pt-25"></div>
 
-          {/* Прокручиваемая область с блоками заданий */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="flex flex-col items-center gap-3 sm:gap-4 md:gap-5 py-4">
-              {taskBlocks.map((block) => (
-                <div key={block.id} className="w-11/12 max-w-md">
-                  <div className="relative">
-                    <img
-                      src={`${store.imgUrl}img_block.png`}
-                      alt="Task block"
-                      className={`w-full h-auto object-contain ${
-                        block.id === 1 ? "scale-y-110" : ""
-                      }`}
-                    />
+            {/* Прокручиваемая область с блоками заданий */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="flex flex-col items-center gap-3 sm:gap-4 md:gap-5 py-4">
+                {taskBlocks.map((block) => (
+                    <div key={block.id} className="w-11/12 max-w-md">
+                      <div className="relative">
+                        <img
+                            src={`${store.imgUrl}img_block.png`}
+                            alt="Task block"
+                            className={`w-full h-auto object-contain ${
+                                block.id === 1 ? "scale-y-110" : ""
+                            }`}
+                        />
 
-                    <div className="absolute inset-0 flex flex-col p-2 sm:p-6 md:p-8">
-                      <div className="space-y-0 sm:space-y-1 px-2">
-                        <div className="flex items-center justify-between">
-                          <div className="font-bold text-base sm:text-lg text-amber-800 shantell flex-1 leading-4">
-                            {block.title}
+                        <div className="absolute inset-0 flex flex-col p-2 sm:p-6 md:p-8">
+                          <div className="space-y-0 sm:space-y-1 px-2">
+                            <div className="flex items-center justify-between">
+                              <div className="font-bold text-base sm:text-lg text-amber-800 shantell flex-1 leading-4">
+                                {block.title}
+                              </div>
+
+                              {/* Награда PCoin + Pizza для двух реальных задач */}
+                              <div className="flex flex-col items-end gap-1 mx-2 sm:mx-4">
+                                {"rewardPcoin" in block && (
+                                    <div className="flex items-center gap-1">
+                                <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
+                                  {(block as any).rewardPcoin}
+                                </span>
+                                      <img
+                                          src={`${store.imgUrl}icon_dollar_coin.png`}
+                                          alt="PCoin"
+                                          className="w-5 sm:w-6"
+                                      />
+                                    </div>
+                                )}
+                                {"rewardPizza" in block && (
+                                    <div className="flex items-center gap-1">
+                                <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
+                                  {(block as any).rewardPizza}
+                                </span>
+                                      <img
+                                          src={`${store.imgUrl}icon_pizza.png`}
+                                          alt="Pizza"
+                                          className="w-5 sm:w-6"
+                                      />
+                                    </div>
+                                )}
+                              </div>
+                            </div>
                           </div>
 
-                          {/* Обновленная секция наград для первой задачи */}
-                          <div className="flex flex-col items-end gap-1 mx-2 sm:mx-4">
+                          {/* Кнопки действий */}
+                          <div className="mt-auto px-2">
                             {block.id === 1 ? (
-                              <>
-                                {/* Награда PCoin */}
-                                <div className="flex items-center gap-1">
-                                  <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
-                                    {block.rewardPcoin}
-                                  </span>
-                                  <img
-                                    src={`${store.imgUrl}icon_dollar_coin.png`}
-                                    alt="PCoin"
-                                    className="w-5 sm:w-6"
-                                  />
-                                </div>
-                                {/* Награда Pizza */}
-                                <div className="flex items-center gap-1">
-                                  <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
-                                    {block.rewardPizza}
-                                  </span>
-                                  <img
-                                    src={`${store.imgUrl}icon_pizza.png`}
-                                    alt="Pizza"
-                                    className="w-5 sm:w-6"
-                                  />
-                                </div>
-                              </>
+                                // Задание 1: Подписка
+                                block.link ? (
+                                    <a
+                                        href={block.link}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={block.onClick}
+                                        className="block"
+                                    >
+                                      <button
+                                          disabled={block.disabled}
+                                          className={`relative w-full transition-opacity ${
+                                              block.disabled
+                                                  ? "opacity-70 cursor-not-allowed"
+                                                  : "hover:opacity-90 cursor-pointer"
+                                          }`}
+                                      >
+                                        <img
+                                            src={`${store.imgUrl}${block.buttonBg}`}
+                                            alt="Выполнить задачу"
+                                            className="w-full h-auto"
+                                        />
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                          <div className="text-white text-sm sm:text-base shantell font-bold">
+                                            {block.buttonText}
+                                          </div>
+                                        </div>
+                                      </button>
+                                    </a>
+                                ) : null
                             ) : (
-                              // Обычная награда для остальных задач
-                              <div className="flex items-center gap-1 sm:gap-2">
-                                <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
-                                  {block.reward}
-                                </span>
-                                <img
-                                  src={`${store.imgUrl}icon_pizza.png`}
-                                  alt="Pizza"
-                                  className="w-6 sm:w-8"
-                                />
-                              </div>
+                                // Задание 2: Пригласи 3 друзей (одна кнопка в стиле подписки)
+                                <Link to="/friends" className="block">
+                                  <button
+                                      disabled={block.disabled}
+                                      onClick={block.onClick}
+                                      className={`relative w-full transition-opacity ${
+                                          block.disabled
+                                              ? "opacity-70 cursor-not-allowed"
+                                              : "hover:opacity-90 cursor-pointer"
+                                      }`}
+                                  >
+                                    <img
+                                        src={`${store.imgUrl}${block.buttonBg}`}
+                                        alt="Выполнить задачу"
+                                        className="w-full h-auto"
+                                    />
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                      <div className="text-white text-sm sm:text-base shantell font-bold">
+                                        {block.buttonText}
+                                      </div>
+                                    </div>
+                                  </button>
+                                </Link>
                             )}
                           </div>
                         </div>
                       </div>
-
-                      {/* Увеличиваем отступ для кнопки */}
-                      <div className="mt-auto px-2">
-                        {block.id === 1 && block.link ? (
-                          <a
-                            href={block.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={block.onClick}
-                            className="block"
-                          >
-                            <button
-                              disabled={block.disabled}
-                              className={`relative w-full transition-opacity ${
-                                block.disabled
-                                  ? "opacity-70 cursor-not-allowed"
-                                  : "hover:opacity-90 cursor-pointer"
-                              }`}
-                            >
-                              <img
-                                src={`${store.imgUrl}${block.buttonBg}`}
-                                alt="Выполнить задачу"
-                                className="w-full h-auto"
-                              />
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="text-white text-sm sm:text-base shantell font-bold">
-                                  {block.buttonText}
-                                </div>
-                              </div>
-                            </button>
-                          </a>
-                        ) : (
-                          <>
-                            {block.id === 2 ? (
-                              <Link to="/friends" className="block">
-                                <button
-                                  onClick={block.onClick}
-                                  className="relative w-full hover:opacity-90 transition-opacity"
-                                >
-                                  <img
-                                    src={`${store.imgUrl}${block.buttonBg}`}
-                                    alt="Выполнить задачу"
-                                    className="w-full h-auto"
-                                  />
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="text-white text-sm sm:text-base shantell">
-                                      {block.buttonText}
-                                    </div>
-                                  </div>
-                                </button>
-                              </Link>
-                            ) : (
-                              <button
-                                onClick={block.onClick}
-                                className="relative w-full hover:opacity-90 transition-opacity"
-                              >
-                                <img
-                                  src={`${store.imgUrl}${block.buttonBg}`}
-                                  alt="Выполнить задачу"
-                                  className="w-full h-auto"
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <div className="text-white text-sm sm:text-base shantell">
-                                    {block.buttonText}
-                                  </div>
-                                </div>
-                              </button>
-                            )}
-                          </>
-                        )}
-                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                ))}
 
-              <button
-                onClick={handleDailyComboClick}
-                className="flex justify-center w-11/12 max-w-md hover:opacity-90 transition-opacity"
-              >
-                <img
-                  src={`${store.imgUrl}b_daily_combo.png`}
-                  alt="combo"
-                  className="w-1/2 h-auto"
-                />
-              </button>
+                {/* Кнопка и блок Daily Combo — оставлены, как были */}
+                <button
+                    onClick={handleDailyComboClick}
+                    className="flex justify-center w-11/12 max-w-md hover:opacity-90 transition-opacity"
+                >
+                  <img
+                      src={`${store.imgUrl}b_daily_combo.png`}
+                      alt="combo"
+                      className="w-1/2 h-auto"
+                  />
+                </button>
 
-              {showDailyCombo && (
-                <>
-                  <div className="w-11/12 max-w-md">
-                    <div className="relative">
-                      <div className="absolute inset-0 flex flex-col">
-                        <div className="grid grid-cols-4 gap-2 sm:gap-3 mb-4">
-                          {pizzaList.map((pizzaName, index) => (
-                            <div
-                              key={index}
-                              className="flex flex-col items-center"
-                              onClick={() => alert(pizzaName)}
-                            >
-                              <div className="relative aspect-square w-full">
-                                <img
-                                  src={`${store.imgUrl}img_block_pizza.png`}
-                                  alt="Pizza background"
-                                  className="w-full h-full object-contain"
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center p-2">
-                                  <img
-                                    src={`${store.imgUrl}pizza_${pizzaName}.png`}
-                                    alt={pizzaName}
-                                    className="w-full h-full object-contain"
-                                  />
-                                </div>
-                              </div>
-                              <div className="text-center mt-1">
+                {showDailyCombo && (
+                    <>
+                      <div className="w-11/12 max-w-md">
+                        <div className="relative">
+                          <img
+                              src={`${store.imgUrl}img_block.png`}
+                              alt="Daily combo bg"
+                              className="w-full h-auto object-contain"
+                          />
+                          <div className="absolute inset-0 flex flex-col p-4 sm:p-6 md:p-8">
+                            <div className="grid grid-cols-4 gap-2 sm:gap-3 mb-4">
+                              {pizzaList.map((pizzaName, index) => (
+                                  <div
+                                      key={index}
+                                      className="flex flex-col items-center"
+                                      onClick={() => alert(pizzaName)}
+                                  >
+                                    <div className="relative aspect-square w-full">
+                                      <img
+                                          src={`${store.imgUrl}img_block_pizza.png`}
+                                          alt="Pizza background"
+                                          className="w-full h-full object-contain"
+                                      />
+                                      <div className="absolute inset-0 flex items-center justify-center p-2">
+                                        <img
+                                            src={`${store.imgUrl}pizza_${pizzaName}.png`}
+                                            alt={pizzaName}
+                                            className="w-full h-full object-contain"
+                                        />
+                                      </div>
+                                    </div>
+                                    <div className="text-center mt-1">
                                 <span className="text-white text-xs font-bold shantell leading-tight">
                                   {pizzaName}
                                 </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div className="relative">
-                          <img
-                            src={`${store.imgUrl}img_block.png`}
-                            alt="Additional block"
-                            className="w-full h-auto object-contain"
-                          />
-                          <div className="absolute inset-0 flex flex-col p-4 sm:p-6 md:p-8">
-                            <div className="space-y-0 sm:space-y-1 px-2">
-                              <div className="flex items-center justify-between">
-                                <img
-                                  src={`${store.imgUrl}img_daily_combo.png`}
-                                  alt="combo"
-                                  className="w-1/3 h-auto"
-                                />
-                                <div className="flex flex-col gap-1 sm:gap-2 mx-2 sm:mx-4">
-                                  <div className="text-right leading-4 text-md sm:text-lg text-amber-800 shantell">
-                                    MAX награда
+                                    </div>
                                   </div>
-                                  <span className="font-bold text-2xl sm:text-3xl text-amber-800 shantell">
+                              ))}
+                            </div>
+
+                            <div className="relative mt-auto">
+                              <img
+                                  src={`${store.imgUrl}img_block.png`}
+                                  alt="Additional block"
+                                  className="w-full h-auto object-contain"
+                              />
+                              <div className="absolute inset-0 flex flex-col p-4 sm:p-6 md:p-8">
+                                <div className="space-y-0 sm:space-y-1 px-2">
+                                  <div className="flex items-center justify-between">
+                                    <img
+                                        src={`${store.imgUrl}img_daily_combo.png`}
+                                        alt="combo"
+                                        className="w-1/3 h-auto"
+                                    />
+                                    <div className="flex flex-col gap-1 sm:gap-2 mx-2 sm:mx-4">
+                                      <div className="text-right leading-4 text-md sm:text-lg text-amber-800 shantell">
+                                        MAX награда
+                                      </div>
+                                      <span className="font-bold text-2xl sm:text-3xl text-amber-800 shantell">
                                     1000
                                     <img
-                                      src={`${store.imgUrl}icon_pizza.png`}
-                                      alt="dollar"
-                                      className="ml-2 inline-block w-12 h-auto sm:w-18"
+                                        src={`${store.imgUrl}icon_pizza.png`}
+                                        alt="dollar"
+                                        className="ml-2 inline-block w-12 h-auto sm:w-18"
                                     />
                                   </span>
+                                    </div>
+                                  </div>
                                 </div>
+                                <div className="mt-auto px-2"></div>
                               </div>
                             </div>
-                            <div className="mt-auto px-2"></div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                </>
-              )}
+                    </>
+                )}
+              </div>
             </div>
-          </div>
 
-          <div className="flex-shrink-0 pb-20"></div>
+            <div className="flex-shrink-0 pb-20"></div>
+          </div>
         </div>
-      </div>
-      <Footer />
-      <WebSocketComponent />
-    </>
+        <Footer />
+        <WebSocketComponent />
+      </>
   );
 }
 

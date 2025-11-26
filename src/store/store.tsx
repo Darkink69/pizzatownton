@@ -35,6 +35,11 @@ class Store {
     link: "",
   };
 
+  // ---------------- TASK: INVITE_3_FRIENDS ----------------
+  taskInvite3Status: "idle" | "checking" | "verified" | "rewarded" | "error" =
+      "idle";
+  taskInvite3Error: string | null = null;
+
   staffData: any = null;
   userStaff: any = null;
   accountantEndTime: any;
@@ -470,6 +475,68 @@ class Store {
   }
 
   // -------------------------------------------------------------------------
+  // TASKS: INVITE_3_FRIENDS
+  // -------------------------------------------------------------------------
+  verifyInvite3Task() {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) {
+      console.warn("⚠️ Не удалось отправить TASKS_VERIFY — нет сессии или ws");
+      return;
+    }
+
+    runInAction(() => {
+      this.taskInvite3Status = "checking";
+      this.taskInvite3Error = null;
+    });
+
+    const rq: WsRequest = {
+      type: "TASKS_VERIFY",
+      requestId: genId(),
+      session: this.sessionId!,
+      taskRq: {
+        telegramId: this.user.telegramId!,
+        code: "INVITE_3_FRIENDS",
+      },
+    };
+
+    console.log("📨 TASKS_VERIFY INVITE_3_FRIENDS:", rq);
+    this.wsSend(rq);
+  }
+
+  completeInvite3Task() {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) {
+      console.warn("⚠️ Не удалось отправить TASKS_COMPLETE — нет сессии или ws");
+      return;
+    }
+
+    if (this.taskInvite3Status !== "verified") {
+      console.warn("⚠️ TASKS_COMPLETE возможен только после verified");
+      return;
+    }
+
+    const rq: WsRequest = {
+      type: "TASKS_COMPLETE",
+      requestId: genId(),
+      session: this.sessionId!,
+      taskRq: {
+        telegramId: this.user.telegramId!,
+        code: "INVITE_3_FRIENDS",
+      },
+    };
+
+    console.log("📨 TASKS_COMPLETE INVITE_3_FRIENDS:", rq);
+    this.wsSend(rq);
+  }
+
+  resetInvite3TaskState() {
+    runInAction(() => {
+      this.taskInvite3Status = "idle";
+      this.taskInvite3Error = null;
+    });
+  }
+
+
+
+  // -------------------------------------------------------------------------
   // FLOORS OPERATIONS
   // -------------------------------------------------------------------------
   buyNewFloor(floorId: number): boolean {
@@ -729,6 +796,8 @@ class Store {
       this.staffData = null;
       this.userStaff = null;
       this.referral = { totalReferrals: 0, earnedPcoin: 0, earnedPdollar: 0, link: "" };
+      this.taskInvite3Status = "idle";
+      this.taskInvite3Error = null;
       this.claimProgress = 0;
     });
 

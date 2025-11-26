@@ -798,8 +798,7 @@ const Home = observer(() => {
     if (!store.safeUserFloorList) return 0;
 
     return store.safeUserFloorList.reduce((total, floor) => {
-      // Суммируем доход только с купленных этажей
-      if (floor.owned && floor.earningsPerHour) {
+      if (floor.owned && floor.earningsPerHour && floor.floorId !== 1) {
         return total + floor.earningsPerHour;
       }
       return total;
@@ -1249,7 +1248,7 @@ const Home = observer(() => {
                                     className="w-6 h-6 sm:w-8 sm:h-8"
                                   />
                                   <span className="text-amber-800 text-xs sm:text-sm shantell font-bold -translate-x-[3px]">
-                                    {(store.pizza ?? 0).toLocaleString()}
+                                   {Number(store.pizza ?? 0).toLocaleString()}
                                   </span>
                                 </div>
 
@@ -1384,7 +1383,7 @@ const Home = observer(() => {
                     className="w-4"
                   />
                 </span>
-                {store.pcoin}
+                {Number(store.pcoin) || 0}
                 <Link to="/bank">
                   <span className="absolute -top-0.5 -right-14">
                     <img
@@ -1408,7 +1407,7 @@ const Home = observer(() => {
                     className="w-6"
                   />
                 </span>
-                {store.pdollar}
+                {Number(store.pdollar) || 0}
                 <Link to="/bank">
                   <span className="absolute -top-0.5 -right-14">
                     <img
@@ -1419,7 +1418,7 @@ const Home = observer(() => {
                   </span>
                 </Link>
                 <span className="absolute top-8 text-xs text-white 500 shantell whitespace-nowrap tracking-tight">
-                  +{(totalIncome ?? 0).toLocaleString()}/час
+                  +{Number(totalIncome ?? 0).toLocaleString()}/час
                 </span>
               </div>
             </div>
