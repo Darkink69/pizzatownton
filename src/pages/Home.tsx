@@ -555,7 +555,7 @@ const Home = observer(() => {
         );
       }, 800);
     }
-    handleCloseModal();
+    // handleCloseModal();
   };
 
   const getFloorIdByIndex = (index: number): number => {
@@ -1248,7 +1248,7 @@ const Home = observer(() => {
                                     className="w-6 h-6 sm:w-8 sm:h-8"
                                   />
                                   <span className="text-amber-800 text-xs sm:text-sm shantell font-bold -translate-x-[3px]">
-                                   {Number(store.pizza ?? 0).toLocaleString()}
+                                    {Number(store.pizza ?? 0).toLocaleString()}
                                   </span>
                                 </div>
 
