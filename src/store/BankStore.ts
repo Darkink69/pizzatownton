@@ -108,7 +108,7 @@ class BankStore {
   // 📤 РУЧНОЙ ВЫВОД PDollar → TON
   // ------------------------------------------------------------------------
 
-  async createManualWithdraw(pdollarAmount: number, tonAddress: string) {
+  async createManualWithdraw(pdollarAmount: number) {
     this.creating = true;
     this.error = null;
     const requestId = `withdraw_${Math.random().toString(36).slice(2, 10)}`;
@@ -121,13 +121,14 @@ class BankStore {
         telegramId: store.user.telegramId!,
         username: store.user.username ?? "",
         firstName: store.user.firstName ?? "",
-        pdollarAmount,
-        tonAddress,
+        pdollarAmount
+
       },
     });
 
     if (success) {
       console.log("📤 Запрос на ручной вывод PDollar отправлен:", pdollarAmount);
+      this.creating = false;
     } else {
       this.error = "Ошибка при создании заявки: WebSocket не подключён.";
       this.creating = false;
@@ -135,7 +136,7 @@ class BankStore {
   }
 
   // ------------------------------------------------------------------------
-  // 🔁 ПРОСМОТР СТАТУСА ОРДЕРА (например, PCoin‑оплата)
+  //  ПРОСМОТР СТАТУСА ОРДЕРА (например, PCoin‑оплата)
   // ------------------------------------------------------------------------
 
   async fetchOrder(orderId: string) {

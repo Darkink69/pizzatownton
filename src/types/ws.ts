@@ -73,7 +73,7 @@ export interface ManualWithdrawRq {
   username?: string;
   firstName?: string;
   pdollarAmount: number;
-  tonAddress: string;
+
 }
 
 export interface StaffUpgrade {

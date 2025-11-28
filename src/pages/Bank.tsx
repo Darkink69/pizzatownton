@@ -17,24 +17,19 @@ const ExchangeModal = observer(
     onClose: () => void;
     initialAmount: string;
   }) => {
-    const [walletAddress, setWalletAddress] = useState("");
+    //const [walletAddress, setWalletAddress] = useState("");
     const [exchangeAmount, setExchangeAmount] = useState(initialAmount);
 
     const userPdollarBalance = Number(store.pdollar) || 0;
     const hasSufficientBalance = userPdollarBalance >= 100000;
 
     const canSubmit =
-      walletAddress.trim() !== "" &&
+     // walletAddress.trim() !== "" &&
       exchangeAmount !== "" &&
       Number(exchangeAmount) >= 100000 &&
       Number(exchangeAmount) <= userPdollarBalance;
 
     const handleSubmit = async () => {
-      if (!walletAddress.trim()) {
-        alert("Введите адрес кошелька TON");
-        return;
-      }
-
       const amount = Number(exchangeAmount);
       if (!amount || amount < 100000) {
         alert("Минимум для вывода — 100000 PDollar");
@@ -46,11 +41,10 @@ const ExchangeModal = observer(
       }
 
       try {
-        await bankStore.createManualWithdraw(amount, walletAddress.trim());
+        await bankStore.createManualWithdraw(amount);
         alert(
           "Ваша заявка на вывод принята и будет обработана в течении 24 часов. Статус вашей заявке вы можете посмотреть в Истории транзакций."
         );
-        setWalletAddress("");
         setExchangeAmount("");
         onClose();
       } catch (e) {
@@ -90,20 +84,6 @@ const ExchangeModal = observer(
             )}
           </div>
 
-          {/* Ввод адреса */}
-          <div className="mb-4">
-            <label className="block text-left text-sm font-medium text-amber-800 mb-2">
-              Введите адрес кошелька TON
-            </label>
-            <input
-              type="text"
-              value={walletAddress}
-              onChange={(e) => setWalletAddress(e.target.value)}
-              placeholder="UQ..."
-              className="w-full px-3 py-2 border-2 border-amber-800 rounded-lg text-amber-800 placeholder-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
-            />
-          </div>
-
           {/* Ввод суммы */}
           <div className="mb-6">
             <label className="block text-left text-sm font-medium text-amber-800 mb-2">
@@ -133,10 +113,8 @@ const ExchangeModal = observer(
             }`}
           >
             {Number(exchangeAmount) < 100000
-              ? "Минимум 100,000"
-              : !walletAddress
-              ? "Введите адрес"
-              : "Подтвердить"}
+                ? "Минимум 100,000"
+                : "Подтвердить"}
           </button>
 
           <button
