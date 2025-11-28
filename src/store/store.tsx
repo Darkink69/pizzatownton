@@ -1,10 +1,10 @@
-import {makeAutoObservable, runInAction} from "mobx";
-import type {TgUser, UserFloor, UserState, WsRequest} from "../types/ws";
-import {bankStore} from "./BankStore";
+import { makeAutoObservable, runInAction } from "mobx";
+import type { TgUser, UserFloor, UserState, WsRequest } from "../types/ws";
+import { bankStore } from "./BankStore";
 
 class Store {
   imgUrl =
-      "https://s3.twcstorage.ru/c6bae09a-a5938890-9b68-453c-9c54-76c439a70d3e/Pizzatownton/";
+    "https://s3.twcstorage.ru/c6bae09a-a5938890-9b68-453c-9c54-76c439a70d3e/Pizzatownton/";
 
   initDataRaw = "";
   referrerId: string | null = null;
@@ -18,7 +18,7 @@ class Store {
   userState: UserState = {};
 
   tonBalance: string = "0";
-  adrss!: string;
+  adrss: string = "Подключите кошелек чтобы увидеть адрес";
 
   pcoin = 0;
   pdollar = 0;
@@ -37,7 +37,7 @@ class Store {
 
   // ---------------- TASK: INVITE_3_FRIENDS ----------------
   taskInvite3Status: "idle" | "checking" | "verified" | "rewarded" | "error" =
-      "idle";
+    "idle";
   taskInvite3Error: string | null = null;
 
   staffData: any = null;
@@ -45,18 +45,18 @@ class Store {
   accountantEndTime: any;
 
   sendHireStaff(
-      staffId: number,
-      level?: number,
-      subscription?: number,
-      floorId?: number,
-      staffName?: string
+    staffId: number,
+    level?: number,
+    subscription?: number,
+    floorId?: number,
+    staffName?: string
   ): boolean {
     if (!this.wsSend || !this.sessionId || !this.user?.telegramId) return false;
 
     //  для бухгалтера (floorId = 0)
     if (floorId === 0) {
       // подставляем правильные staffId из Redis/БД
-      if (subscription === 7)  staffId = 81;
+      if (subscription === 7) staffId = 81;
       if (subscription === 14) staffId = 82;
       if (subscription === 30) staffId = 83;
     } else if (floorId && staffName && level) {
@@ -82,14 +82,18 @@ class Store {
     return true;
   }
 
-  getNextStaffId(floorId: number, staffName: string, nextLevel: number): number | undefined {
+  getNextStaffId(
+    floorId: number,
+    staffName: string,
+    nextLevel: number
+  ): number | undefined {
     const floor = this.getFloorById(floorId);
     if (!floor || !Array.isArray(floor.staff)) return undefined;
 
-    const current = floor.staff.find(s => s.staffName === staffName);
+    const current = floor.staff.find((s) => s.staffName === staffName);
     if (!current || !Array.isArray(current.upgradeStaff)) return undefined;
 
-    const next = current.upgradeStaff.find(up => up.level === nextLevel);
+    const next = current.upgradeStaff.find((up) => up.level === nextLevel);
 
     console.group(`🔍 getNextStaffId debug`);
     console.log("floorId:", floorId);
@@ -130,7 +134,7 @@ class Store {
         type: "REFERRAL_GET",
         requestId: genId(),
         session: this.sessionId,
-        referralGetRq: {telegramId: this.user.telegramId},
+        referralGetRq: { telegramId: this.user.telegramId },
       };
       this.wsSend(rq);
       console.log("📨 REFERRAL_GET запрос отправлен:", rq);
@@ -166,13 +170,12 @@ class Store {
     if (savedStaff) this.staffData = JSON.parse(savedStaff);
     if (savedFloors) this.userFloors = JSON.parse(savedFloors);
 
-
     const savedAccountant = localStorage.getItem("accountantData");
     if (savedAccountant) {
       try {
         this.userStaff = JSON.parse(savedAccountant);
         this.accountantEndTime = this.userStaff?.endDate ?? null;
-      } catch(e) {
+      } catch (e) {
         console.warn("Ошибка чтения accountantData:", e);
       }
     }
@@ -180,9 +183,6 @@ class Store {
     const savedTon = localStorage.getItem("tonBalance");
     if (savedTon) this.tonBalance = savedTon;
   }
-
-
-
 
   // -------------------------------------------------------------------------
   // BASIC GETTERS
@@ -256,111 +256,111 @@ class Store {
   // FLOORS
   // -------------------------------------------------------------------------
 
-    setFloorsData(payload: any) {
-      try {
-        const response = payload || {};
-        const data = response.data || {};
-        const incoming = data.userFloorList ?? [];
+  setFloorsData(payload: any) {
+    try {
+      const response = payload || {};
+      const data = response.data || {};
+      const incoming = data.userFloorList ?? [];
 
-        runInAction(() => {
-          // 1. Сохраняем бухгалтера в стор и в localStorage
-          if (data.accountant !== undefined && data.accountant !== null) {
-            this.userStaff = data.accountant;
-            this.accountantEndTime = data.accountant.endDate ?? null;
-            localStorage.setItem("accountantData", JSON.stringify(data.accountant));
-          }
+      runInAction(() => {
+        // 1. Сохраняем бухгалтера в стор и в localStorage
+        if (data.accountant !== undefined && data.accountant !== null) {
+          this.userStaff = data.accountant;
+          this.accountantEndTime = data.accountant.endDate ?? null;
+          localStorage.setItem(
+            "accountantData",
+            JSON.stringify(data.accountant)
+          );
+        }
 
+        if (data.user) {
+          this.pcoin = Number(data.user.pcoin ?? this.pcoin);
+          this.pdollar = Number(data.user.pdollar ?? this.pdollar);
+          this.pizza = Number(
+            // берём сначала pizzaAmount, потом user.pizza, потом текущее
+            data.pizzaAmount ?? data.user.pizza ?? this.pizza
+          );
+        } else if (
+          data.pizzaAmount !== undefined &&
+          data.pizzaAmount !== null
+        ) {
+          this.pizza = Number(data.pizzaAmount);
+        }
 
-          if (data.user) {
-            this.pcoin = Number(data.user.pcoin ?? this.pcoin);
-            this.pdollar = Number(data.user.pdollar ?? this.pdollar);
-            this.pizza = Number(
-                // берём сначала pizzaAmount, потом user.pizza, потом текущее
-                data.pizzaAmount ?? data.user.pizza ?? this.pizza
-            );
-          } else if (data.pizzaAmount !== undefined && data.pizzaAmount !== null) {
-            this.pizza = Number(data.pizzaAmount);
-          }
+        if (data.pizzaAmount !== undefined && data.pizzaAmount !== null) {
+          this.pizza = Number(data.pizzaAmount);
+        }
 
-          if (data.pizzaAmount !== undefined && data.pizzaAmount !== null) {
-            this.pizza = Number(data.pizzaAmount);
-          }
+        let normalized = Array.isArray(incoming)
+          ? incoming.map((f: any) => ({
+              ...f,
+              owned: f.owned ?? f.isOwned ?? false,
+              earned: f.earned ?? 0,
+            }))
+          : [];
 
-
-          let normalized = Array.isArray(incoming)
-              ? incoming.map((f: any) => ({
+        normalized = normalized.map((f: any) =>
+          f.floorId === 1
+            ? {
                 ...f,
-                owned: f.owned ?? f.isOwned ?? false,
-                earned: f.earned ?? 0,
-              }))
-              : [];
+                owned: true,
+                purchaseCost: null,
+                upgradeCurrency: "stars",
+              }
+            : f
+        );
 
-
-          normalized = normalized.map((f: any) =>
-              f.floorId === 1
-                  ? {
-                    ...f,
-                    owned: true,
-                    purchaseCost: null,
-                    upgradeCurrency: "stars",
-                  }
-                  : f
+        const merged = normalized.map((floor) => {
+          const existing = this.safeUserFloorList.find(
+            (x) => x.floorId === floor.floorId
           );
 
+          // если сервер прислал staff → используем его
+          const preservedStaff = Array.isArray(floor.staff)
+            ? floor.staff
+            : existing?.staff ?? [];
 
-          const merged = normalized.map((floor) => {
-            const existing = this.safeUserFloorList.find(
-                (x) => x.floorId === floor.floorId
-            );
+          const preservedBalance = existing?.balance ?? floor.balance ?? 0;
 
-            // если сервер прислал staff → используем его
-            const preservedStaff = Array.isArray(floor.staff)
-                ? floor.staff
-                : existing?.staff ?? [];
-
-            const preservedBalance = existing?.balance ?? floor.balance ?? 0;
-
-            return {
-              ...floor,
-              staff: preservedStaff,
-              balance: preservedBalance,
-            };
-          });
-
-
-          this.userFloors = {
-            success: !!response.success,
-            message: response.message ?? "",
-            type: response.type ?? "FLOORS_GET",
-            requestId: response.requestId ?? "",
-            data: {
-              userFloorList: merged,
-              pdollarAmount: Number(data.pdollarAmount ?? 0),
-              pizzaAmount: Number(data.pizzaAmount ?? 0),
-              user: data.user ?? {},
-              accountant: data.accountant ?? this.userStaff ?? null
-            } as any,
+          return {
+            ...floor,
+            staff: preservedStaff,
+            balance: preservedBalance,
           };
-          localStorage.setItem("userFloors", JSON.stringify(this.userFloors));
-          this.floorsLoaded = true;
         });
 
+        this.userFloors = {
+          success: !!response.success,
+          message: response.message ?? "",
+          type: response.type ?? "FLOORS_GET",
+          requestId: response.requestId ?? "",
+          data: {
+            userFloorList: merged,
+            pdollarAmount: Number(data.pdollarAmount ?? 0),
+            pizzaAmount: Number(data.pizzaAmount ?? 0),
+            user: data.user ?? {},
+            accountant: data.accountant ?? this.userStaff ?? null,
+          } as any,
+        };
+        localStorage.setItem("userFloors", JSON.stringify(this.userFloors));
+        this.floorsLoaded = true;
+      });
 
-        console.group("📊 Floors after fresh update from server");
-        console.log("💰 pcoin сейчас:", this.pcoin);
+      console.group("📊 Floors after fresh update from server");
+      console.log("💰 pcoin сейчас:", this.pcoin);
 
-        this.safeUserFloorList.forEach((f) => {
-          console.log(
-              `id=${f.floorId} | owned=${f.owned} | staff=${
-                  Array.isArray(f.staff) ? f.staff.length : "—"
-              }`
-          );
-        });
-        console.groupEnd();
-      } catch (e) {
-        console.warn("setFloorsData failed:", e);
-      }
+      this.safeUserFloorList.forEach((f) => {
+        console.log(
+          `id=${f.floorId} | owned=${f.owned} | staff=${
+            Array.isArray(f.staff) ? f.staff.length : "—"
+          }`
+        );
+      });
+      console.groupEnd();
+    } catch (e) {
+      console.warn("setFloorsData failed:", e);
     }
+  }
 
   lastClaimRewards: {
     floorId: number;
@@ -371,12 +371,12 @@ class Store {
   claimAnimations: { floorId: number; amount: number; currency: string }[] = [];
 
   addClaimAnimation(floorId: number, amount: number, currency: string) {
-    this.claimAnimations.push({floorId, amount, currency});
+    this.claimAnimations.push({ floorId, amount, currency });
     // автоматически удалить через пару секунд
     setTimeout(() => {
       runInAction(() => {
         this.claimAnimations = this.claimAnimations.filter(
-            (a) => a.floorId !== floorId
+          (a) => a.floorId !== floorId
         );
       });
     }, 2000);
@@ -407,12 +407,11 @@ class Store {
 
   setUserState(userState?: UserState) {
     if (!userState) return;
-    runInAction(() => (this.userState = {...this.userState, ...userState}));
+    runInAction(() => (this.userState = { ...this.userState, ...userState }));
   }
 
   setSessionId(sessionId?: string | null) {
     this.sessionId = sessionId ?? null;
-
   }
 
   setAuthError(message: string | null) {
@@ -448,7 +447,7 @@ class Store {
         type: "FLOORS_GET",
         requestId: genId(),
         session: this.sessionId,
-        getFloorRq: {telegramId: this.user.telegramId},
+        getFloorRq: { telegramId: this.user.telegramId },
       });
       return true;
     }
@@ -464,7 +463,7 @@ class Store {
         type: "CLAIM_DO",
         requestId: genId(),
         session: this.sessionId!,
-        claimDoRq: {telegramId: tgId, floorId},
+        claimDoRq: { telegramId: tgId, floorId },
       });
 
       return true;
@@ -504,7 +503,9 @@ class Store {
 
   completeInvite3Task() {
     if (!this.wsSend || !this.sessionId || !this.user?.telegramId) {
-      console.warn("⚠️ Не удалось отправить TASKS_COMPLETE — нет сессии или ws");
+      console.warn(
+        "⚠️ Не удалось отправить TASKS_COMPLETE — нет сессии или ws"
+      );
       return;
     }
 
@@ -534,8 +535,6 @@ class Store {
     });
   }
 
-
-
   // -------------------------------------------------------------------------
   // FLOORS OPERATIONS
   // -------------------------------------------------------------------------
@@ -561,7 +560,7 @@ class Store {
         type: "FLOORS_BUY",
         requestId: genId(),
         session: this.sessionId!,
-        buyFloorRq: {telegramId: tgId, floorId},
+        buyFloorRq: { telegramId: tgId, floorId },
       });
 
       this.deductCurrency(price, currency);
@@ -569,7 +568,7 @@ class Store {
       // обновляем массив этажей
       runInAction(() => {
         this.userFloors.data.userFloorList = this.safeUserFloorList.map((f) =>
-            f.floorId === floorId ? {...f, owned: true, purchaseCost: null} : f
+          f.floorId === floorId ? { ...f, owned: true, purchaseCost: null } : f
         );
       });
 
@@ -599,17 +598,17 @@ class Store {
         type: "FLOORS_UPGRADE",
         requestId: genId(),
         session: this.sessionId!,
-        updateFloorRq: {telegramId: tgId, floorId},
+        updateFloorRq: { telegramId: tgId, floorId },
       });
 
       this.deductCurrency(cost, currency);
 
       runInAction(() => {
         this.userFloors.data.userFloorList = this.safeUserFloorList.map(
-            (f: UserFloor) =>
-                f.floorId === floorId
-                    ? {...f, owned: true, purchaseCost: null}
-                    : f
+          (f: UserFloor) =>
+            f.floorId === floorId
+              ? { ...f, owned: true, purchaseCost: null }
+              : f
         );
       });
       return true;
@@ -630,8 +629,8 @@ class Store {
     const floor = this.getFloorById(floorId);
     if (!floor || !floor.owned || !floor.upgradeAmount) return false;
     return this.hasEnoughCurrency(
-        floor.upgradeAmount,
-        floor.upgradeCurrency ?? "pcoin"
+      floor.upgradeAmount,
+      floor.upgradeCurrency ?? "pcoin"
     );
   }
 
@@ -657,14 +656,14 @@ class Store {
   // AUTHENTICATION STUB
   // -------------------------------------------------------------------------
   async authenticateUser(
-      initDataRaw: string,
-      referralCode: string | null
+    initDataRaw: string,
+    referralCode: string | null
   ): Promise<void> {
     this.authError = null;
     this.isAuthenticating = true;
     this.initDataRaw = initDataRaw;
     try {
-      console.log("authenticateUser called", {initDataRaw, referralCode});
+      console.log("authenticateUser called", { initDataRaw, referralCode });
     } catch (err: any) {
       console.warn("authenticateUser error:", err);
       this.authError = "Ошибка при авторизации";
@@ -674,8 +673,8 @@ class Store {
   }
 
   // -------------------------------------------------------------------------
-// STAFF UPDATE
-// -------------------------------------------------------------------------
+  // STAFF UPDATE
+  // -------------------------------------------------------------------------
   updateAfterStaffBuy(data: any) {
     if (!data?.userStaff) return;
     const { userStaff, user } = data;
@@ -686,17 +685,19 @@ class Store {
         this.userStaff = userStaff; // сохраняем отдельно
         this.accountantEndTime = userStaff.endDate;
         console.log(
-            `💼 Accountant обновлён: длительность ${userStaff.durationDay} дн., до ${userStaff.endDate}`
+          `💼 Accountant обновлён: длительность ${userStaff.durationDay} дн., до ${userStaff.endDate}`
         );
         //  Выходим из метода, бухгалтер не принадлежит этажу
         return;
       }
       // ищем нужный этаж
       const floor = this.safeUserFloorList.find(
-          (f) => f.floorId === userStaff.floorId
+        (f) => f.floorId === userStaff.floorId
       );
       if (!floor) {
-        console.warn(`⚠️ Этаж ${userStaff.floorId} не найден для обновления staff`);
+        console.warn(
+          `⚠️ Этаж ${userStaff.floorId} не найден для обновления staff`
+        );
         return;
       }
 
@@ -755,7 +756,7 @@ class Store {
       }
 
       console.log(
-          `🧍 ${userStaff.staffName} обновлён/добавлен: lvl=${userStaff.staffLevel}, floor=${userStaff.floorId}`
+        `🧍 ${userStaff.staffName} обновлён/добавлен: lvl=${userStaff.staffLevel}, floor=${userStaff.floorId}`
       );
     });
   }
@@ -795,7 +796,12 @@ class Store {
 
       this.staffData = null;
       this.userStaff = null;
-      this.referral = { totalReferrals: 0, earnedPcoin: 0, earnedPdollar: 0, link: "" };
+      this.referral = {
+        totalReferrals: 0,
+        earnedPcoin: 0,
+        earnedPdollar: 0,
+        link: "",
+      };
       this.taskInvite3Status = "idle";
       this.taskInvite3Error = null;
       this.claimProgress = 0;

@@ -24,7 +24,7 @@ const ExchangeModal = observer(
     const hasSufficientBalance = userPdollarBalance >= 100000;
 
     const canSubmit =
-     // walletAddress.trim() !== "" &&
+      // walletAddress.trim() !== "" &&
       exchangeAmount !== "" &&
       Number(exchangeAmount) >= 100000 &&
       Number(exchangeAmount) <= userPdollarBalance;
@@ -43,8 +43,9 @@ const ExchangeModal = observer(
       try {
         await bankStore.createManualWithdraw(amount);
         alert(
-          "Ваша заявка на вывод принята и будет обработана в течении 24 часов. Статус вашей заявке вы можете посмотреть в Истории транзакций."
+          "Ваша заявка на вывод принята и будет обработана в течении 24 часов. Вывод средств осуществляется на тот же адрес кошелька, с которого была сделана последняя покупка."
         );
+        // Статус вашей заявки вы можете посмотреть в Истории транзакций.
         setExchangeAmount("");
         onClose();
       } catch (e) {
@@ -83,6 +84,12 @@ const ExchangeModal = observer(
               </div>
             )}
           </div>
+          <div className="text-left text-sm font-medium text-amber-800 ">
+            Кошелек для вывода:
+          </div>
+          <div className="text-left text-xs text-amber-400 mb-4">
+            {store.adrss.slice(0, 40)}...
+          </div>
 
           {/* Ввод суммы */}
           <div className="mb-6">
@@ -113,15 +120,19 @@ const ExchangeModal = observer(
             }`}
           >
             {Number(exchangeAmount) < 100000
-                ? "Минимум 100,000"
-                : "Подтвердить"}
+              ? "Минимум 100,000"
+              : "Подтвердить"}
           </button>
 
           <button
             onClick={onClose}
-            className="absolute top-2 right-2 text-[20px] text-gray-700 hover:text-red-900"
+            className="absolute -top-10 right-2 w-8 h-8 bg-transparent hover:scale-110 transition-transform z-10"
           >
-            X
+            <img
+              src={`${store.imgUrl}b_close.png`}
+              alt="Закрыть"
+              className="w-full h-full"
+            />
           </button>
         </div>
       </div>
