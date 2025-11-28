@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { bankStore } from "../store/BankStore";
 import BankOrderModal from "./BankOrderModal";
@@ -47,7 +47,9 @@ const ExchangeModal = observer(
 
       try {
         await bankStore.createManualWithdraw(amount, walletAddress.trim());
-        alert("✅ Заявка на вывод отправлена");
+        alert(
+          "Ваша заявка на вывод принята и будет обработана в течении 24 часов. Статус вашей заявке вы можете посмотреть в Истории транзакций."
+        );
         setWalletAddress("");
         setExchangeAmount("");
         onClose();
@@ -159,7 +161,6 @@ const Bank = observer(() => {
   const [tonExchangeAmount, setTonExchangeAmount] = useState("1");
   const [pcoinAmount, setPcoinAmount] = useState("500");
   const [buying, setBuying] = useState(false);
-  const [cooldown, setCooldown] = useState(0); // Локальное состояние для таймера
 
   const [isExchangeModalOpen, setIsExchangeModalOpen] = useState(false);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
@@ -167,31 +168,7 @@ const Bank = observer(() => {
 
   const PDOLLAR_TO_TON_RATE = 0.00001; // 1 PDollar = 0.00001 TON
 
-  // --- обновляем визуал таймера каждую секунду ---
-  //   useEffect(() => {
-  //     const t = setInterval(() => {
-  //       bankStore.buyCooldown; // реактивный доступ, MobX пересчитает
-  //     }, 1000);
-  //     return () => clearInterval(t);
-  //   }, []);
-
-  // Таймер для обратного отсчета
-  useEffect(() => {
-    const timer = setInterval(() => {
-      if (bankStore.buyCooldown > 0) {
-        setCooldown(bankStore.buyCooldown);
-      } else {
-        setCooldown(0);
-      }
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
   const handleBuy = async () => {
-    // если кулдаун идёт – просто выходим
-    if (!bankStore.canBuy) return;
-
     const parsed = parseInt(pcoinAmount);
     if (Number.isNaN(parsed) || parsed < 100) {
       alert("Минимум — 100 PCoin");
@@ -201,7 +178,7 @@ const Bank = observer(() => {
     try {
       setBuying(true);
       bankStore.order = null;
-      await bankStore.createOrder(parsed); // внутри стора сохраняется timestamp для cooldown
+      await bankStore.createOrder(parsed);
 
       let attempts = 0;
       const checkOrder = () => {
@@ -357,17 +334,9 @@ const Bank = observer(() => {
                     </div>
 
                     {/* Кнопка покупки */}
-
                     <ActionButton
-                      label={
-                        cooldown > 0
-                          ? "Подождите"
-                          : buying
-                          ? "Создание заказа..."
-                          : "Купить"
-                      }
-                      disabled={buying || !bankStore.canBuy}
-                      cooldown={bankStore.buyCooldown} // <‑‑ чтобы полоска видела значение
+                      label={buying ? "Создание заказа..." : "Купить"}
+                      disabled={buying}
                       onClick={handleBuy}
                       img={`${store.imgUrl}b_blue2.png`}
                       textColor="text-blue-900"
@@ -550,17 +519,13 @@ function ActionButton({
   disabled,
   img,
   textColor,
-  cooldown = 0,
 }: {
   label: string;
   onClick: () => void;
   disabled?: boolean;
   img: string;
   textColor?: string;
-  cooldown?: number;
 }) {
-  const progress = cooldown > 0 ? (10 - cooldown) / 10 : 0;
-
   return (
     <button
       onClick={onClick}
@@ -572,7 +537,7 @@ function ActionButton({
       }`}
     >
       {/* фон‑текстура кнопки */}
-      <img src={img} alt={label} className="w-1/2 h-1/2" />
+      <img src={img} alt={label} className="w-1/2 h-2/3" />
 
       {/* надпись */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -581,18 +546,8 @@ function ActionButton({
             textColor || "text-amber-800"
           } text-md sm:text-lg shantell font-bold`}
         >
-          {cooldown > 0 ? `${label} (${cooldown}s)` : label}
+          {label}
         </span>
-
-        {/* полоска прогресса под текстом */}
-        {cooldown > 0 && (
-          <div className="w-1/2 h-[2px] mt-1 bg-[#F6AD55] rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#9A3412] transition-all duration-1000 ease-linear"
-              style={{ width: `${progress * 100}%` }}
-            />
-          </div>
-        )}
       </div>
     </button>
   );
