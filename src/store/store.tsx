@@ -254,6 +254,29 @@ class Store {
     });
   }
 
+  linkWallet(tonAddress: string): boolean {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) {
+      console.warn(
+        "⚠️ Не удалось отправить BANK_LINK_WALLET — нет сессии или ws"
+      );
+      return false;
+    }
+
+    const rq: WsRequest = {
+      type: "BANK_LINK_WALLET",
+      requestId: genId(),
+      session: this.sessionId,
+      linkWalletRq: {
+        telegramId: this.user.telegramId,
+        tonAddress: tonAddress,
+      },
+    };
+
+    console.log("📨 BANK_LINK_WALLET отправлен:", rq);
+    this.wsSend(rq);
+    return true;
+  }
+
   // -------------------------------------------------------------------------
   // FLOORS
   // -------------------------------------------------------------------------

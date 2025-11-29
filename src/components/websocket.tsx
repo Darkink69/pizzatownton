@@ -134,6 +134,17 @@ const WebSocketComponent = observer(() => {
             break;
           }
 
+          case "BANK_LINK_WALLET": {
+            if (parsed.success) {
+              console.log("✅ Кошелёк успешно привязан к аккаунту");
+              toast.success("Кошелёк успешно привязан");
+            } else {
+              console.error("❌ Ошибка привязки кошелька:", parsed.message);
+              toast.error(parsed.message || "Ошибка привязки кошелька");
+            }
+            break;
+          }
+
           /** ------------------ FLOORS_GET ------------------ */
           case "FLOORS_GET": {
             if (parsed.success) {

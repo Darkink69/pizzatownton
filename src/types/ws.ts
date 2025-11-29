@@ -16,6 +16,7 @@ export type OperationType =
     | "TASKS_GET"
     | "TASKS_VERIFY"
     | "TASKS_COMPLETE"
+    | "BANK_LINK_WALLET"
     | (string & {}); // резерв на будущее
 
 // -------------------- База запроса --------------------
@@ -82,6 +83,12 @@ export interface StaffUpgrade {
   cost: number;
   incomePercent: number;
   loosesPercent: number;
+}
+
+// -------------------- Запрос на привязку кошелька --------------------
+export interface LinkWalletRq {
+  telegramId: number;
+  tonAddress: string;
 }
 
 // -------------------- Задания (Tasks) --------------------
@@ -189,6 +196,9 @@ export interface PDollarExchangeRq {
 export interface WsRequest extends WsBase {
   // авторизация
   authReq?: AuthReq;
+
+  // привязка кошелька
+  linkWalletRq?: LinkWalletRq;
 
   // этажи
   getFloorRq?: GetFloorRq;

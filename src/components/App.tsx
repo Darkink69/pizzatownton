@@ -9,7 +9,6 @@ import {
 } from "@telegram-apps/sdk-react";
 import { AppRoot, Placeholder } from "@telegram-apps/telegram-ui";
 import { observer } from "mobx-react-lite";
-import { useTonAddress } from "@tonconnect/ui-react";
 
 import { routes } from "../navigation/routes";
 import store from "../store/store";
@@ -73,8 +72,6 @@ export const App = observer(() => {
   const [debugInfo] = useState<string | null>(null);
   const [showLoading, setShowLoading] = useState(false);
 
-  const walletAddress = useTonAddress();
-
   useEffect(() => {
     miniApp.ready();
 
@@ -87,11 +84,6 @@ export const App = observer(() => {
         : null;
 
     store.setReferralContext(startParam, referrerId);
-
-    if (walletAddress) {
-      store.setAdrss(walletAddress);
-      console.log("✅ Адрес кошелька получен при запуске:", walletAddress);
-    }
 
     if (referrerId) {
       console.log(`РЕФЕРАЛ ОБНАРУЖЕН! ID родителя: ${referrerId}`);
@@ -112,7 +104,7 @@ export const App = observer(() => {
     });
 
     return () => clearTimeout(loadingTimer);
-  }, [rawInitData, lp.startParam, startParam, walletAddress]);
+  }, [rawInitData, lp.startParam, startParam]);
 
   if (!showLoading) {
     // Можно убрать ! чтобы запускалось локально

@@ -77,7 +77,7 @@ export const TONConnectPage: FC = observer(() => {
   // ---------------- useEffect при подключении кошелька ----------------
   useEffect(() => {
     if (!adrss) return;
-    // store.setAdrss(adrss);
+    store.setAdrss(adrss);
 
     console.log("✅ Кошелёк подключен:", {
       address: adrss,
@@ -86,11 +86,14 @@ export const TONConnectPage: FC = observer(() => {
       chain: wallet?.account?.chain,
     });
 
+    // Отправляем запрос на привязку кошелька на сервер
+    store.linkWallet(adrss);
+
     const ac = new AbortController();
     void getTonBalance(adrss, ac.signal);
 
     return () => ac.abort();
-  }, [adrss]);
+  }, [adrss, wallet]);
 
   // ---------------- UI ----------------
   if (!wallet) {
@@ -141,14 +144,7 @@ export const TONConnectPage: FC = observer(() => {
                 alt="Wallet logo"
                 className="w-40"
               />
-              <div className="flex-1">
-                {/* <div className="text-lg font-bold text-amber-800 shantell">
-                  {wallet.device?.appName ?? "Подключенный кошелёк"}
-                </div>
-                <div className="text-sm text-amber-600 shantell">
-                  {wallet.device?.platform ?? "TON Wallet"}
-                </div> */}
-              </div>
+              <div className="flex-1"></div>
             </div>
 
             {/* Адрес кошелька */}
