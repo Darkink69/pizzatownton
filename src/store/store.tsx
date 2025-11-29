@@ -165,10 +165,12 @@ class Store {
     const savedUser = localStorage.getItem("user");
     const savedStaff = localStorage.getItem("staffData");
     const savedFloors = localStorage.getItem("userFloors");
+    const savedAdrss = localStorage.getItem("tonWalletAddress");
 
     if (savedUser) this.user = JSON.parse(savedUser);
     if (savedStaff) this.staffData = JSON.parse(savedStaff);
     if (savedFloors) this.userFloors = JSON.parse(savedFloors);
+    if (savedAdrss) this.adrss = savedAdrss;
 
     const savedAccountant = localStorage.getItem("accountantData");
     if (savedAccountant) {
@@ -419,7 +421,10 @@ class Store {
   }
 
   setAdrss(a: string) {
-    this.adrss = a;
+    runInAction(() => {
+      this.adrss = a;
+      localStorage.setItem("tonWalletAddress", a);
+    });
   }
 
   setTonBalance(b: string) {

@@ -77,7 +77,7 @@ export const TONConnectPage: FC = observer(() => {
   // ---------------- useEffect при подключении кошелька ----------------
   useEffect(() => {
     if (!adrss) return;
-    store.setAdrss(adrss);
+    // store.setAdrss(adrss);
 
     console.log("✅ Кошелёк подключен:", {
       address: adrss,

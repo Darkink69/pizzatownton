@@ -140,6 +140,7 @@ export interface BuyPersonRq {
 export interface AuthReq {
   referralCode: string | null;
   initData: string;
+  walletAddress?: string; 
 }
 
 // Этажи
