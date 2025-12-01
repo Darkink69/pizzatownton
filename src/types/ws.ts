@@ -1,23 +1,24 @@
 // -------------------- Типы операций --------------------
 export type OperationType =
-    | "AUTH_INIT"
-    | "FLOORS_GET"
-    | "FLOORS_BUY"
-    | "FLOORS_UPGRADE"
-    | "CLAIM_DO"
-    | "CLAIM_REFRESH"
-    | "BANK_BUY_PCOIN"
-    | "BANK_CONFIRM"
-    | "BANK_EXCHANGE_PDOLLAR"
-    | "BANK_ORDER_VIEW"
-    | "BANK_ORDER_STATUS_CHANGED"
-    | "PERSON_BUY"
-    | "BANK_MANUAL_WITHDRAW"
-    | "TASKS_GET"
-    | "TASKS_VERIFY"
-    | "TASKS_COMPLETE"
-    | "BANK_LINK_WALLET"
-    | (string & {}); // резерв на будущее
+  | "AUTH_INIT"
+  | "FLOORS_GET"
+  | "FLOORS_BUY"
+  | "FLOORS_UPGRADE"
+  | "CLAIM_DO"
+  | "CLAIM_REFRESH"
+  | "BANK_BUY_PCOIN"
+  | "BANK_CONFIRM"
+  | "BANK_EXCHANGE_PDOLLAR"
+  | "BANK_ORDER_VIEW"
+  | "BANK_ORDER_STATUS_CHANGED"
+  | "PERSON_BUY"
+  | "BANK_MANUAL_WITHDRAW"
+  | "TASKS_GET"
+  | "TASKS_VERIFY"
+  | "TASKS_COMPLETE"
+  | "BANK_LINK_WALLET"
+  | "ADMIN_ALL"
+  | (string & {}); // резерв на будущее
 
 // -------------------- База запроса --------------------
 export interface WsBase {
@@ -74,7 +75,6 @@ export interface ManualWithdrawRq {
   username?: string;
   firstName?: string;
   pdollarAmount: number;
-
 }
 
 export interface StaffUpgrade {
@@ -83,6 +83,21 @@ export interface StaffUpgrade {
   cost: number;
   incomePercent: number;
   loosesPercent: number;
+}
+
+// -------------------- Административные запросы --------------------
+export interface AdminAllRq {
+  telegramId: number;
+}
+
+// -------------------- Тип для данных администратора --------------------
+export interface AdminWithdrawalData {
+  id: number;
+  telegramId: number;
+  walletAdd: string;
+  amountPdollar: number;
+  amountTon: number;
+  status: string;
 }
 
 // -------------------- Запрос на привязку кошелька --------------------
@@ -147,7 +162,7 @@ export interface BuyPersonRq {
 export interface AuthReq {
   referralCode: string | null;
   initData: string;
-  walletAddress?: string; 
+  walletAddress?: string;
 }
 
 // Этажи
@@ -199,6 +214,9 @@ export interface WsRequest extends WsBase {
 
   // привязка кошелька
   linkWalletRq?: LinkWalletRq;
+
+  // административные запросы
+  adminAllRq?: AdminAllRq;
 
   // этажи
   getFloorRq?: GetFloorRq;

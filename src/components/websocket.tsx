@@ -134,6 +134,17 @@ const WebSocketComponent = observer(() => {
             break;
           }
 
+          case "ADMIN_ALL": {
+            if (parsed.success && Array.isArray(parsed.data)) {
+              store.setAdminData(parsed.data);
+              console.log("✅ Админ данные загружены:", parsed.data);
+            } else {
+              console.error("❌ Ошибка загрузки админ данных:", parsed.message);
+              toast.error(parsed.message || "Ошибка загрузки админ данных");
+            }
+            break;
+          }
+
           case "BANK_LINK_WALLET": {
             if (parsed.success) {
               console.log("✅ Кошелёк успешно привязан к аккаунту");

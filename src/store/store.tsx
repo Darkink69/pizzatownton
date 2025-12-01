@@ -17,6 +17,9 @@ class Store {
   user: TgUser = {};
   userState: UserState = {};
 
+  adminData: any[] = [];
+  isAdmin = false;
+
   tonBalance: string = "0";
   adrss: string = "Подключите кошелек чтобы увидеть адрес";
 
@@ -275,6 +278,42 @@ class Store {
     console.log("📨 BANK_LINK_WALLET отправлен:", rq);
     this.wsSend(rq);
     return true;
+  }
+
+  // Проверка является ли пользователь администратором
+  checkIsAdmin(): boolean {
+    const adminIds = [813012401, 223867086, 1135470704];
+    const userTgId = this.user?.telegramId || this.user?.id;
+    return adminIds.includes(Number(userTgId));
+  }
+
+  // Запрос административных данных
+  requestAdminData(): boolean {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) {
+      console.warn("⚠️ Не удалось отправить ADMIN_ALL — нет сессии или ws");
+      return false;
+    }
+
+    const rq: WsRequest = {
+      type: "ADMIN_ALL",
+      requestId: `admin_${genId()}`,
+      session: this.sessionId,
+      adminAllRq: {
+        telegramId: this.user.telegramId,
+      },
+    };
+
+    console.log("📨 ADMIN_ALL отправлен:", rq);
+    this.wsSend(rq);
+    return true;
+  }
+
+  // Установка административных данных
+  setAdminData(data: any[]) {
+    runInAction(() => {
+      this.adminData = data;
+      console.log("📊 Админ данные получены:", data);
+    });
   }
 
   // -------------------------------------------------------------------------

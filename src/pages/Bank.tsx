@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { bankStore } from "../store/BankStore";
 import BankOrderModal from "./BankOrderModal";
@@ -141,6 +141,110 @@ const ExchangeModal = observer(
 );
 
 /* =======================================================================
+   Административная модалка
+   ======================================================================= */
+const AdminModal = observer(
+  ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+    useEffect(() => {
+      if (isOpen) {
+        store.requestAdminData();
+      }
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    const formatWalletAddress = (address: string) => {
+      if (address.length <= 12) return address;
+      return `${address.slice(0, 6)}...${address.slice(-6)}`;
+    };
+
+    return (
+      <div className="fixed inset-0 z-70 bg-black flex items-center justify-center p-4">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-2 w-8 h-8 bg-transparent hover:scale-110 transition-transform z-80"
+        >
+          <img
+            src={`${store.imgUrl}b_close.png`}
+            alt="Закрыть"
+            className="w-full h-full"
+          />
+        </button>
+        <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-lg border-2 border-amber-800 shantell text-amber-800 relative">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">Админка</h2>
+          </div>
+          {/* Таблица */}
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse border border-amber-300">
+              <thead>
+                <tr className="bg-amber-100">
+                  <th className="border border-amber-300 px-3 py-2 text-left">
+                    Telegram ID
+                  </th>
+                  <th className="border border-amber-300 px-3 py-2 text-left">
+                    Wallet Address
+                  </th>
+                  <th className="border border-amber-300 px-3 py-2 text-left">
+                    Amount TON
+                  </th>
+                  <th className="border border-amber-300 px-3 py-2 text-left">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {store.adminData.map((item) => (
+                  <tr key={item.id} className="hover:bg-amber-50">
+                    <td className="border border-amber-300 px-3 py-2">
+                      {item.telegramId}
+                    </td>
+                    <td className="border border-amber-300 px-3 py-2 font-mono text-sm">
+                      {formatWalletAddress(item.walletAdd)}
+                    </td>
+                    <td className="border border-amber-300 px-3 py-2">
+                      {item.amountTon.toFixed(2)}
+                    </td>
+                    <td className="border border-amber-300 px-3 py-2">
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-bold ${
+                          item.status === "APPROVED"
+                            ? "bg-green-100 text-green-800"
+                            : item.status === "PENDING"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {item.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {store.adminData.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="border border-amber-300 px-3 py-4 text-center text-gray-500"
+                    >
+                      Нет данных для отображения
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Информация о количестве записей */}
+          <div className="mt-4 text-sm text-gray-600">
+            Всего записей: {store.adminData.length}
+          </div>
+        </div>
+      </div>
+    );
+  }
+);
+
+/* =======================================================================
    Основной компонент Bank
    ======================================================================= */
 
@@ -153,9 +257,18 @@ const Bank = observer(() => {
 
   const [isExchangeModalOpen, setIsExchangeModalOpen] = useState(false);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   //   const { buyCooldown } = bankStore;
 
   const PDOLLAR_TO_TON_RATE = 0.00001; // 1 PDollar = 0.00001 TON
+
+  useEffect(() => {
+    const isAdmin = store.checkIsAdmin();
+    if (isAdmin) {
+      console.log("👑 Администратор обнаружен, открываем админку");
+      setIsAdminModalOpen(true);
+    }
+  }, []);
 
   const handleBuy = async () => {
     const parsed = parseInt(pcoinAmount);
@@ -413,6 +526,12 @@ const Bank = observer(() => {
           initialAmount={pdollarAmount}
         />
       )}
+
+      {/* Административная модалка */}
+      <AdminModal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
+      />
 
       <Footer />
       <WebSocketComponent />
