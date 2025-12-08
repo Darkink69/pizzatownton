@@ -21,18 +21,18 @@ const ExchangeModal = observer(
     const [exchangeAmount, setExchangeAmount] = useState(initialAmount);
 
     const userPdollarBalance = Number(store.pdollar) || 0;
-    const hasSufficientBalance = userPdollarBalance >= 100000;
+    const hasSufficientBalance = userPdollarBalance >= 25000;
 
     const canSubmit =
       // walletAddress.trim() !== "" &&
       exchangeAmount !== "" &&
-      Number(exchangeAmount) >= 100000 &&
+      Number(exchangeAmount) >= 25000 &&
       Number(exchangeAmount) <= userPdollarBalance;
 
     const handleSubmit = async () => {
       const amount = Number(exchangeAmount);
-      if (!amount || amount < 100000) {
-        alert("Минимум для вывода — 100000 PDollar");
+      if (!amount || amount < 25000) {
+        alert("Минимум для вывода — 25000 PDollar");
         return;
       }
       if (amount > userPdollarBalance) {
@@ -94,13 +94,13 @@ const ExchangeModal = observer(
           {/* Ввод суммы */}
           <div className="mb-6">
             <label className="block text-left text-sm font-medium text-amber-800 mb-2">
-              Сумма вывода (мин. 100 000)
+              Сумма вывода (мин. 25 000)
             </label>
             <input
               type="number"
               value={exchangeAmount}
               onChange={(e) => setExchangeAmount(e.target.value)}
-              placeholder="100000"
+              placeholder="25000"
               step="1000"
               className="w-full px-3 py-2 border-2 border-amber-800 rounded-lg text-amber-800 placeholder-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
@@ -119,9 +119,7 @@ const ExchangeModal = observer(
                 : "bg-gray-400 text-gray-200 cursor-not-allowed"
             }`}
           >
-            {Number(exchangeAmount) < 100000
-              ? "Минимум 100,000"
-              : "Подтвердить"}
+            {Number(exchangeAmount) < 25000 ? "Минимум 25,000" : "Подтвердить"}
           </button>
 
           <button
@@ -250,7 +248,7 @@ const AdminModal = observer(
 
 const Bank = observer(() => {
   const [tonAmount, setTonAmount] = useState(0.5);
-  const [pdollarAmount, setPdollarAmount] = useState("100000");
+  const [pdollarAmount, setPdollarAmount] = useState("25000");
   const [tonExchangeAmount, setTonExchangeAmount] = useState("1");
   const [pcoinAmount, setPcoinAmount] = useState("500");
   const [buying, setBuying] = useState(false);
@@ -303,9 +301,9 @@ const Bank = observer(() => {
   const handleExchange = () => {
     const amount = Number(pdollarAmount);
 
-    // Если введено число меньше 100000 или вообще не число - не открываем
-    if (!amount || amount < 100000) {
-      alert("Минимальная сумма для обмена — 100 000 PDollar");
+    // Если введено число меньше 25000 или вообще не число - не открываем
+    if (!amount || amount < 25000) {
+      alert("Минимальная сумма для обмена — 25 000 PDollar");
       return;
     }
 
@@ -475,7 +473,7 @@ const Bank = observer(() => {
                           setTonExchangeAmount(tonValue.toFixed(5));
                         }
                       }}
-                      placeholder="100000"
+                      placeholder="25000"
                     />
 
                     <ArrowDown />
