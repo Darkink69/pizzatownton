@@ -80,7 +80,7 @@ const ExchangeModal = observer(
             </div>
             {!hasSufficientBalance && (
               <div className="text-xs text-red-600 mt-1">
-                У вас пока меньше 100,000 PDollar
+                У вас пока меньше 25,000 PDollar
               </div>
             )}
           </div>

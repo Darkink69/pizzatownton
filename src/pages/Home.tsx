@@ -38,6 +38,9 @@ const Home = observer(() => {
   });
 
   const [showGuide, setShowGuide] = useState(false);
+  const [showPizzaNotification, setShowPizzaNotification] = useState(false);
+  const [wonPcoins, setWonPcoins] = useState(0);
+  const audioNotificationRef = useRef<HTMLAudioElement | null>(null);
 
   // Показываем загрузку пока данные не получены -----------------------------------------------------------
   if (!store.areFloorsLoaded) {
@@ -75,6 +78,23 @@ const Home = observer(() => {
     if (!localStorage.getItem("main_tutorial_done")) {
       setShowGuide(true);
     }
+    if (store.pizza <= 2000) return; // Показываем только если pizza > 2000
+
+    const delay = Math.floor(Math.random() * 5000); // 5 секунд
+    const timer = setTimeout(() => {
+      setShowPizzaNotification(true);
+
+      // Воспроизводим звук
+      audioNotificationRef.current = new Audio(
+        `${store.imgUrl}message-notification.m4a`
+      );
+      if (audioNotificationRef.current) {
+        audioNotificationRef.current.currentTime = 0;
+        audioNotificationRef.current.play().catch(console.error);
+      }
+    }, delay);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const introGuideSteps = [
@@ -270,6 +290,18 @@ const Home = observer(() => {
     setTimeout(() => {
       setNotification(null);
     }, 8000);
+  };
+
+  // Для окна с пиццей-лутбоксом
+  const handlePizzaNotificationClick = () => {
+    setShowPizzaNotification(false);
+
+    const randomPcoins = Math.floor(Math.random() * 50) + 1;
+    setWonPcoins(randomPcoins);
+  };
+
+  const handleClosePrizeModal = () => {
+    setWonPcoins(0);
   };
 
   // Функция для проверки условий сообщений
@@ -1899,6 +1931,96 @@ const Home = observer(() => {
             localStorage.setItem("main_tutorial_done", "1");
           }}
         />
+      )}
+
+      {/* Уведомление с пиццей */}
+      {showPizzaNotification && (
+        <button
+          onClick={handlePizzaNotificationClick}
+          className="fixed bottom-20 -right-68 z-50 animate-bounce hover:scale-105 transition-transform"
+          style={{ animationDuration: "2s" }}
+        >
+          <img
+            src={`${store.imgUrl}img_pizza2000.png`}
+            alt="Pizza Notification"
+            className="w-1/3 object-contain"
+          />
+        </button>
+      )}
+
+      {/* Модальное окно с выигрышем */}
+      {wonPcoins > 0 && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4">
+          <div
+            className="relative w-full max-w-md mx-auto bg-cover bg-center rounded-2xl"
+            style={{
+              backgroundImage: `url('${store.imgUrl}img_window_big.png')`,
+            }}
+          >
+            {/* Заголовок */}
+            <div className="relative -top-4 flex justify-center">
+              <div className="w-1/2 relative">
+                <img
+                  src={`${store.imgUrl}img_window_header.png`}
+                  alt="Header"
+                  className="w-full h-auto"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-amber-800 font-bold text-lg shantell">
+                    ЛУТБОКС
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleClosePrizeModal}
+              className="absolute -top-2 -right-2 w-8 h-8 hover:scale-110 transition-transform z-10"
+            >
+              <img
+                src={`${store.imgUrl}b_close.png`}
+                alt="Закрыть"
+                className="w-full h-full"
+              />
+            </button>
+
+            {/* Контент */}
+            <div className="p-6 text-center pt-2">
+              <div className="mb-2">
+                <img
+                  src={`${store.imgUrl}img_pizza2000.png`}
+                  alt="Prize Pizza"
+                  className="w-2/3 mx-auto mb-4"
+                />
+                <h3 className="text-2xl font-bold text-amber-800 shantell mb-2">
+                  Поздравляю!
+                </h3>
+                <p className="text-lg text-amber-700 shantell">
+                  Вы выиграли{" "}
+                  <span className="font-bold">{wonPcoins} pcoin</span>!
+                </p>
+              </div>
+
+              <div className="flex items-center justify-center gap-3 mb-6">
+                <img
+                  src={`${store.imgUrl}icon_dollar_coin.png`}
+                  alt="PCoin"
+                  className="w-12 h-12"
+                />
+                <span className="text-4xl font-bold shantell text-amber-800">
+                  +{wonPcoins}
+                </span>
+              </div>
+
+              <button
+                onClick={handleClosePrizeModal}
+                className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-3 rounded-full font-bold shantell text-lg tracking-wide transition transform hover:scale-105"
+              >
+                Забрать награду
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <FooterHome />

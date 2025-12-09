@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@adsgram/react": "^1.0.2",
     "@tailwindcss/vite": "^4.1.14",
     "@telegram-apps/bridge": "^2.11.0",
     "@telegram-apps/sdk-react": "^3.3.9",
