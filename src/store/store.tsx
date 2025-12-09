@@ -38,6 +38,9 @@ class Store {
     link: "",
   };
 
+  //  РЕЗУЛЬТАТ КОРОБКИ ПИЦЦЫ
+  lastPizzaBoxResult: { pizzaSpent: number; pcoinReward: number } | null = null;
+
   // ---------------- TASK: INVITE_3_FRIENDS ----------------
   taskInvite3Status: "idle" | "checking" | "verified" | "rewarded" | "error" =
     "idle";
@@ -314,6 +317,38 @@ class Store {
       this.adminData = data;
       console.log("📊 Админ данные получены:", data);
     });
+  }
+
+  // -------------------------------------------------------------------------
+  // PIZZA BOX (лутбокс за 2000 pizza)
+  // -------------------------------------------------------------------------
+
+  setLastPizzaBoxResult(
+      result: { pizzaSpent: number; pcoinReward: number } | null
+  ) {
+    runInAction(() => {
+      this.lastPizzaBoxResult = result;
+    });
+  }
+
+  openPizzaBox(): boolean {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) {
+      console.warn("⚠️ Не удалось отправить PIZZA_BOX_OPEN — нет сессии или ws");
+      return false;
+    }
+
+    const rq: WsRequest = {
+      type: "PIZZA_BOX_OPEN",
+      requestId: genId(),
+      session: this.sessionId!,
+      pizzaBoxOpenRq: {
+        telegramId: this.user.telegramId!,
+      },
+    };
+
+    console.log("📨 PIZZA_BOX_OPEN:", rq);
+    this.wsSend(rq);
+    return true;
   }
 
   // -------------------------------------------------------------------------
@@ -815,7 +850,7 @@ class Store {
         }
       }
 
-      // 🔁 обновляем балансы пользователя, если сервер прислал fresh‑данные
+      // обновляем балансы пользователя, если сервер прислал fresh‑данные
       if (user) {
         if (user.pcoin !== undefined) this.pcoin = user.pcoin;
         if (user.pdollar !== undefined) this.pdollar = user.pdollar;

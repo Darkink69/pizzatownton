@@ -1,39 +1,39 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import store from "../store/store";
 import { toast } from "react-toastify";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
-import { useAdsgram } from "../components/useAdsgram";
+// import { useAdsgram } from "../components/useAdsgram";
 
 function Tasks() {
   const [showDailyCombo, setShowDailyCombo] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isInviteTaskDone, setIsInviteTaskDone] = useState(false);
 
-  // Реклама
-  const onReward = useCallback(() => {
-    console.log("Ad!");
-  }, []);
+  // // Реклама
+  // const onReward = useCallback(() => {
+  //   console.log("Ad!");
+  // }, []);
 
-  const onError = useCallback(() => {
-    console.log("Ошибка при показе рекламы");
-  }, []);
+  // const onError = useCallback(() => {
+  //   console.log("Ошибка при показе рекламы");
+  // }, []);
 
-  const showAd = useAdsgram({
-    blockId: "task-18813",
-    onReward,
-    onError,
-  });
+  // const showAd = useAdsgram({
+  //   blockId: "task-18813",
+  //   onReward,
+  //   onError,
+  // });
 
-  useEffect(() => {
-    showAd();
-    const done = localStorage.getItem("subscribedTaskDone");
-    if (done === "true") setIsSubscribed(true);
-
-    const inviteDone = localStorage.getItem("invite3TaskDone");
-    if (inviteDone === "true") setIsInviteTaskDone(true);
-  }, []);
+  // useEffect(() => {
+  //   showAd();
+  //   const done = localStorage.getItem("subscribedTaskDone");
+  //   if (done === "true") setIsSubscribed(true);
+  //
+  //   const inviteDone = localStorage.getItem("invite3TaskDone");
+  //   if (inviteDone === "true") setIsInviteTaskDone(true);
+  // }, []);
 
   // следим за статусом INVITE_3_FRIENDS из стора:
   useEffect(() => {

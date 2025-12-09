@@ -1,11 +1,13 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
+
 import store from "../store/store";
 import { toast } from "react-toastify";
 import type {
   AuthData,
   BankCreateOrderData,
   BankOrderViewData,
+  PizzaBoxOpenResp,
   ReferralInfoData,
   TaskCompleteResponse,
   TaskVerifyResponse,
@@ -219,6 +221,37 @@ const WebSocketComponent = observer(() => {
               toast.error(
                 parsed.message || "Ошибка загрузки реферальных данных"
               );
+            }
+            break;
+          }
+
+            /** ------------------ PIZZA_BOX_OPEN ------------------ */
+          case "PIZZA_BOX_OPEN": {
+            if (parsed.success && parsed.data) {
+              const d = parsed.data as PizzaBoxOpenResp;
+
+              // обновляем балансы
+              if (d.user) {
+                store.updateUserData({
+                  pizza: d.user.pizza,
+                  pcoin: d.user.pcoin,
+                  pdollar: d.user.pdollar,
+                });
+              }
+
+
+              store.setLastPizzaBoxResult({
+                pizzaSpent: d.pizzaSpent,
+                pcoinReward: d.pcoinReward,
+              });
+
+            } else {
+              store.setLastPizzaBoxResult(null);
+              if (parsed.message === "NOT_ENOUGH_PIZZA") {
+                toast.error("Недостаточно Pizza (нужно 2000)");
+              } else {
+                toast.error(parsed.message || "Ошибка при открытии коробки");
+              }
             }
             break;
           }

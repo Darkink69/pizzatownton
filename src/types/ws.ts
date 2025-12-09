@@ -18,6 +18,7 @@ export type OperationType =
   | "TASKS_COMPLETE"
   | "BANK_LINK_WALLET"
   | "ADMIN_ALL"
+  | "PIZZA_BOX_OPEN"
   | (string & {}); // резерв на будущее
 
 // -------------------- База запроса --------------------
@@ -170,6 +171,22 @@ export interface GetFloorRq {
   telegramId: number;
 }
 
+export interface PizzaBoxOpenRq {
+  telegramId: number;
+}
+
+export interface PizzaBoxOpenResp {
+  user: {
+    tgId: number;
+    pizza: number;
+    pcoin: number;
+    pdollar: number;
+  };
+  pizzaSpent: number;
+  pcoinReward: number;
+}
+
+
 export interface BuyFloorRq {
   telegramId: number;
   floorId: number;
@@ -229,6 +246,9 @@ export interface WsRequest extends WsBase {
 
   //рефка
   referralGetRq?: ReferralGetRq;
+
+  // лутбокс (коробка пиццы)
+  pizzaBoxOpenRq?: PizzaBoxOpenRq;
 
   // банк
   createOrderRq?: CreateOrderRq; // BANK_BUY_PCOIN

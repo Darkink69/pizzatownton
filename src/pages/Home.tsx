@@ -314,37 +314,31 @@ const Home = observer(() => {
       showNotification("Недостаточно pizza для покупки лутбокса!", "error");
       return;
     }
+    const ok = store.openPizzaBox();
+    if (!ok) {
+      showNotification("Не удалось отправить запрос на лутбокс", "error");
+    }
+  };
 
-    // Генерируем призы
-    const pcoinPrize = Math.floor(Math.random() * 100) + 1; // 1-100 pcoin
-    const pdollarPrize = Math.floor(Math.random() * 5000) + 1000; // 1000-6000 pdollar
-    const hasTonPrize = Math.random() < 0.1; // 10% шанс на TON
+  // Реакция на результат открытия лутбокса с сервера
+  useEffect(() => {
+    const res = store.lastPizzaBoxResult;
+    if (!res) return;
 
-    // Списываем pizza
-    // store.pizza -= 2000;
-
-    // Добавляем призы
-    // store.pcoin += pcoinPrize;
-    // store.pdollar += pdollarPrize;
-
-    // Если выпал TON, также добавляем его
-    const tonPrize = hasTonPrize ? Math.floor(Math.random() * 5) + 1 : 0;
-
-    setWonPcoins(pcoinPrize);
-
-    // Переходим на экран с результатами
+    // переключаем модалку в режим результата
     setPrizeModalStage("result");
+    setWonPcoins(res.pcoinReward);
 
     playSound("win.mp3");
 
-    // Показываем уведомление о покупке
     showNotification(
-      `Лутбокс куплен! Вы получили: ${pcoinPrize} PCoin, ${pdollarPrize} PDollar${
-        hasTonPrize ? ` и ${tonPrize} TON` : ""
-      }`,
-      "success"
+        `Лутбокс открыт! Вы получили: ${res.pcoinReward} PCoin`,
+        "success"
     );
-  };
+
+    // очищаем результат, чтобы следующее открытие сработало корректно
+    store.setLastPizzaBoxResult(null);
+  }, [store.lastPizzaBoxResult]);
 
   // Функция для проверки условий сообщений
   const getRandomNotification = () => {

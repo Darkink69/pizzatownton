@@ -5,7 +5,7 @@ WORKDIR /app
 
 # Кэшируем зависимости
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm install --verbose
 
 # Копируем исходники и собираем проект
 COPY . .
@@ -17,6 +17,7 @@ ENV NODE_OPTIONS=--openssl-legacy-provider
 RUN VITE_API_URL="__VITE_API_URL__" \
     VITE_WS_URL="__VITE_WS_URL__" \
     npm run build
+
 
 # --- Этап 2: Запуск на Nginx ---
 FROM nginx:1.25-alpine
