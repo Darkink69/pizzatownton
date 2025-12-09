@@ -104,6 +104,7 @@ const WebSocketComponent = observer(() => {
               const { user, sessionId } = (parsed.data || {}) as AuthData;
               store.setUser?.(user);
               store.setSessionId?.(sessionId);
+              store.isAuthed = true;
 
               // сначала только этажи
               sendFloorsGetRequest();

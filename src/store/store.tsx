@@ -27,6 +27,14 @@ class Store {
   pdollar = 0;
   pizza = 20000;
 
+
+  isAuthed = false;
+  setAuthState(state: boolean) {
+    runInAction(() => {
+      this.isAuthed = state;
+    });
+  }
+
   claimProgress = 0;
 
   floorsLoaded = false;
@@ -332,8 +340,13 @@ class Store {
   }
 
   openPizzaBox(): boolean {
-    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) {
-      console.warn("⚠️ Не удалось отправить PIZZA_BOX_OPEN — нет сессии или ws");
+    if (!this.wsSend || !this.sessionId) {
+      console.warn("⚠️ Нет ws или sessionId");
+      return false;
+    }
+    const tgId = this.user?.telegramId ?? this.user?.id;
+    if (!tgId) {
+      console.warn("⚠️ Нет telegramId/id для PIZZA_BOX_OPEN");
       return false;
     }
 
@@ -341,9 +354,7 @@ class Store {
       type: "PIZZA_BOX_OPEN",
       requestId: genId(),
       session: this.sessionId!,
-      pizzaBoxOpenRq: {
-        telegramId: this.user.telegramId!,
-      },
+      pizzaBoxOpenRq: { telegramId: tgId },
     };
 
     console.log("📨 PIZZA_BOX_OPEN:", rq);

@@ -79,10 +79,14 @@ const Home = observer(() => {
   }, [store.areFloorsLoaded]);
 
   useEffect(() => {
+    if (!store.sessionId || (!store.user?.telegramId && !store.user?.id)) {
+      console.log("⏳ Ждём AUTH_INIT: sessionId или telegramId ещё нет");
+      return;
+    }
+    if (store.pizza <= 2000) return; // Показываем только если pizza > 2000
     if (!localStorage.getItem("main_tutorial_done")) {
       setShowGuide(true);
     }
-    if (store.pizza <= 2000) return; // Показываем только если pizza > 2000
 
     const delay = Math.floor(Math.random() * 5000); // 5 секунд
     const timer = setTimeout(() => {
@@ -99,7 +103,7 @@ const Home = observer(() => {
     }, delay);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [store.sessionId, store.user.telegramId]);
 
   const introGuideSteps = [
     {
@@ -298,7 +302,7 @@ const Home = observer(() => {
 
   // Для окна с пиццей-лутбоксом
   const handlePizzaNotificationClick = () => {
-    setShowPizzaNotification(false);
+
     setShowPrizeModal(true);
     setPrizeModalStage("intro");
   };
@@ -310,6 +314,20 @@ const Home = observer(() => {
   };
 
   const handleBuyLootbox = () => {
+    if (!store.isAuthed) {
+      showNotification("⏳ Авторизация с сервером не завершена. Подождите...", "error");
+      return;
+    }
+    // 🌐 Контроль сессии и авторизации
+    if (!store.sessionId) {
+      showNotification("Сессия не установлена. Подождите загрузки.", "error");
+      return;
+    }
+    if (!store.user?.telegramId && !store.user?.id) {
+      showNotification("Пользователь не авторизован. Подождите загрузки профиля.", "error");
+      return;
+    }
+
     if (store.pizza < 2000) {
       showNotification("Недостаточно pizza для покупки лутбокса!", "error");
       return;
@@ -1973,7 +1991,7 @@ const Home = observer(() => {
       {showPizzaNotification && (
         <button
           onClick={handlePizzaNotificationClick}
-          className="fixed bottom-20 -right-68 z-50 animate-bounce hover:scale-105 transition-transform"
+          className="fixed bottom-20 -right-68 z-40 animate-bounce hover:scale-105 transition-transform"
           style={{ animationDuration: "2s" }}
         >
           <img
