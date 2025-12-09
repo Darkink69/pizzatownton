@@ -40,6 +40,10 @@ const Home = observer(() => {
   const [showGuide, setShowGuide] = useState(false);
   const [showPizzaNotification, setShowPizzaNotification] = useState(false);
   const [wonPcoins, setWonPcoins] = useState(0);
+  const [showPrizeModal, setShowPrizeModal] = useState(false);
+  const [prizeModalStage, setPrizeModalStage] = useState<"intro" | "result">(
+    "intro"
+  );
   const audioNotificationRef = useRef<HTMLAudioElement | null>(null);
 
   // Показываем загрузку пока данные не получены -----------------------------------------------------------
@@ -295,13 +299,51 @@ const Home = observer(() => {
   // Для окна с пиццей-лутбоксом
   const handlePizzaNotificationClick = () => {
     setShowPizzaNotification(false);
-
-    const randomPcoins = Math.floor(Math.random() * 50) + 1;
-    setWonPcoins(randomPcoins);
+    setShowPrizeModal(true);
+    setPrizeModalStage("intro");
   };
 
   const handleClosePrizeModal = () => {
+    setShowPrizeModal(false);
+    setPrizeModalStage("intro");
     setWonPcoins(0);
+  };
+
+  const handleBuyLootbox = () => {
+    if (store.pizza < 2000) {
+      showNotification("Недостаточно pizza для покупки лутбокса!", "error");
+      return;
+    }
+
+    // Генерируем призы
+    const pcoinPrize = Math.floor(Math.random() * 100) + 1; // 1-100 pcoin
+    const pdollarPrize = Math.floor(Math.random() * 5000) + 1000; // 1000-6000 pdollar
+    const hasTonPrize = Math.random() < 0.1; // 10% шанс на TON
+
+    // Списываем pizza
+    // store.pizza -= 2000;
+
+    // Добавляем призы
+    // store.pcoin += pcoinPrize;
+    // store.pdollar += pdollarPrize;
+
+    // Если выпал TON, также добавляем его
+    const tonPrize = hasTonPrize ? Math.floor(Math.random() * 5) + 1 : 0;
+
+    setWonPcoins(pcoinPrize);
+
+    // Переходим на экран с результатами
+    setPrizeModalStage("result");
+
+    playSound("win.mp3");
+
+    // Показываем уведомление о покупке
+    showNotification(
+      `Лутбокс куплен! Вы получили: ${pcoinPrize} PCoin, ${pdollarPrize} PDollar${
+        hasTonPrize ? ` и ${tonPrize} TON` : ""
+      }`,
+      "success"
+    );
   };
 
   // Функция для проверки условий сообщений
@@ -1948,8 +1990,8 @@ const Home = observer(() => {
         </button>
       )}
 
-      {/* Модальное окно с выигрышем */}
-      {wonPcoins > 0 && (
+      {/* Модальное окно лутбокса */}
+      {showPrizeModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4">
           <div
             className="relative w-full max-w-md mx-auto bg-cover bg-center rounded-2xl"
@@ -1967,15 +2009,16 @@ const Home = observer(() => {
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="text-amber-800 font-bold text-lg shantell">
-                    ЛУТБОКС
+                    {prizeModalStage === "intro" ? "Лутбокс" : "Поздравляем!"}
                   </span>
                 </div>
               </div>
             </div>
 
+            {/* Кнопка закрытия */}
             <button
               onClick={handleClosePrizeModal}
-              className="absolute -top-2 -right-2 w-8 h-8 hover:scale-110 transition-transform z-10"
+              className="absolute -top-4 -right-2 w-8 h-8 hover:scale-110 transition-transform z-10"
             >
               <img
                 src={`${store.imgUrl}b_close.png`}
@@ -1986,38 +2029,102 @@ const Home = observer(() => {
 
             {/* Контент */}
             <div className="p-6 text-center pt-2">
-              <div className="mb-2">
-                <img
-                  src={`${store.imgUrl}img_pizza2000.png`}
-                  alt="Prize Pizza"
-                  className="w-2/3 mx-auto mb-4"
-                />
-                <h3 className="text-2xl font-bold text-amber-800 shantell mb-2">
-                  Поздравляю!
-                </h3>
-                <p className="text-lg text-amber-700 shantell">
-                  Вы выиграли{" "}
-                  <span className="font-bold">{wonPcoins} pcoin</span>!
-                </p>
-              </div>
+              {prizeModalStage === "intro" ? (
+                /* Экран с предложением купить лутбокс */
+                <>
+                  <div className="mb-2">
+                    <img
+                      src={`${store.imgUrl}img_pizza2000.png`}
+                      alt="Lootbox"
+                      className="w-2/3 mx-auto"
+                    />
+                    <h3 className="text-2xl font-bold text-amber-800 shantell mb-4">
+                      Открой Лутбокс за 2000 pizza
+                    </h3>
+                    <p className="text-lg text-amber-700 shantell mb-2">
+                      и получи гарантированно pcoin!
+                    </p>
+                  </div>
 
-              <div className="flex items-center justify-center gap-3 mb-6">
-                <img
-                  src={`${store.imgUrl}icon_dollar_coin.png`}
-                  alt="PCoin"
-                  className="w-12 h-12"
-                />
-                <span className="text-4xl font-bold shantell text-amber-800">
-                  +{wonPcoins}
-                </span>
-              </div>
+                  <div className="mb-8 bg-white/50 rounded-xl p-4 border border-amber-300">
+                    <div className="flex items-center justify-center gap-3 mb-3">
+                      <img
+                        src={`${store.imgUrl}icon_pizza.png`}
+                        alt="Pizza"
+                        className="w-8 h-8"
+                      />
+                      <span className="text-2xl font-bold text-amber-800 shantell">
+                        2000
+                      </span>
+                    </div>
+                    <p className="text-sm text-amber-600 shantell">
+                      Ваш баланс: {store.pizza.toLocaleString()} pizza
+                    </p>
+                  </div>
 
-              <button
-                onClick={handleClosePrizeModal}
-                className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-3 rounded-full font-bold shantell text-lg tracking-wide transition transform hover:scale-105"
-              >
-                Забрать награду
-              </button>
+                  <div className="flex gap-4 justify-center">
+                    <button
+                      onClick={handleClosePrizeModal}
+                      className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-full font-bold shantell text-lg transition transform hover:scale-105"
+                    >
+                      Закрыть
+                    </button>
+                    <button
+                      onClick={handleBuyLootbox}
+                      disabled={store.pizza < 2000}
+                      className={`px-6 py-3 rounded-full font-bold shantell text-lg transition transform hover:scale-105 ${
+                        store.pizza >= 2000
+                          ? "bg-amber-500 hover:bg-amber-600 text-white"
+                          : "bg-gray-400 text-gray-700 cursor-not-allowed"
+                      }`}
+                    >
+                      Купить
+                    </button>
+                  </div>
+                </>
+              ) : (
+                /* Экран с результатами */
+                <>
+                  <div className="mb-6">
+                    <img
+                      src={`${store.imgUrl}img_pizza2000.png`}
+                      alt="Prize"
+                      className="w-32 h-32 mx-auto mb-4"
+                    />
+                    <h3 className="text-2xl font-bold text-amber-800 shantell mb-2">
+                      Вы выиграли!
+                    </h3>
+                    <p className="text-lg text-amber-700 shantell">
+                      <span className="font-bold">{wonPcoins} pcoin</span>
+                    </p>
+                  </div>
+
+                  <div className="space-y-4 mb-8">
+                    <div className="flex items-center justify-center gap-3 bg-white/50 rounded-xl p-3">
+                      <img
+                        src={`${store.imgUrl}icon_dollar_coin.png`}
+                        alt="PCoin"
+                        className="w-10 h-10"
+                      />
+                      <div className="text-left">
+                        <p className="text-lg font-bold text-amber-800">
+                          +{wonPcoins} PCoin
+                        </p>
+                        <p className="text-sm text-amber-600">
+                          Для покупок в игре
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleClosePrizeModal}
+                    className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-3 rounded-full font-bold shantell text-lg tracking-wide transition transform hover:scale-105"
+                  >
+                    Забрать призы
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

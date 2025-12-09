@@ -25,7 +25,7 @@ class Store {
 
   pcoin = 0;
   pdollar = 0;
-  pizza = 0;
+  pizza = 20000;
 
   claimProgress = 0;
 
