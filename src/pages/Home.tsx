@@ -46,17 +46,6 @@ const Home = observer(() => {
   );
   const audioNotificationRef = useRef<HTMLAudioElement | null>(null);
 
-  // Показываем загрузку пока данные не получены -----------------------------------------------------------
-  if (!store.areFloorsLoaded) {
-    return (
-      <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B] flex items-center justify-center">
-        <div className="text-white text-xl shantell">Загрузка этажей...</div>
-        <Footer />
-        <WebSocketComponent />
-      </div>
-    );
-  }
-
   // Запрос данных при монтировании
   useEffect(() => {
     if (!store.areFloorsLoaded) {
@@ -927,6 +916,17 @@ const Home = observer(() => {
 
     return getCurrentUpgradeCost(dataFloorId, currentLevel);
   };
+
+  // Показываем загрузку пока данные не получены -----------------------------------------------------------
+  if (!store.areFloorsLoaded) {
+    return (
+        <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B] flex items-center justify-center">
+          <div className="text-white text-xl shantell">Загрузка этажей...</div>
+          <Footer />
+          <WebSocketComponent />
+        </div>
+    );
+  }
 
   return (
     <>
