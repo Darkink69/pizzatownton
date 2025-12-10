@@ -72,7 +72,6 @@ const Home = observer(() => {
       console.log("⏳ Ждём AUTH_INIT: sessionId или telegramId ещё нет");
       return;
     }
-    if (store.pizza <= 2000) return; // Показываем только если pizza > 2000
     if (!localStorage.getItem("main_tutorial_done")) {
       setShowGuide(true);
     }
@@ -118,7 +117,7 @@ const Home = observer(() => {
     {
       id: "accountant",
       selector: "#accountant-block",
-      text: "Бухгалтер собирает прибыль каждые 12часов автоматически.\nНанимай его на 7, 14 или 30дней за PCoin — и спи спокойно!",
+      text: "Бухгалтер собирает прибыль каждые 12часов автоматически.\nНанимай его на 7, 14 или 30 дней за PCoin — и спи спокойно!",
     },
     {
       id: "bank",
@@ -291,7 +290,6 @@ const Home = observer(() => {
 
   // Для окна с пиццей-лутбоксом
   const handlePizzaNotificationClick = () => {
-
     setShowPrizeModal(true);
     setPrizeModalStage("intro");
   };
@@ -304,7 +302,10 @@ const Home = observer(() => {
 
   const handleBuyLootbox = () => {
     if (!store.isAuthed) {
-      showNotification("⏳ Авторизация с сервером не завершена. Подождите...", "error");
+      showNotification(
+        "⏳ Авторизация с сервером не завершена. Подождите...",
+        "error"
+      );
       return;
     }
     // 🌐 Контроль сессии и авторизации
@@ -313,7 +314,10 @@ const Home = observer(() => {
       return;
     }
     if (!store.user?.telegramId && !store.user?.id) {
-      showNotification("Пользователь не авторизован. Подождите загрузки профиля.", "error");
+      showNotification(
+        "Пользователь не авторизован. Подождите загрузки профиля.",
+        "error"
+      );
       return;
     }
 
@@ -339,8 +343,8 @@ const Home = observer(() => {
     playSound("win.mp3");
 
     showNotification(
-        `Лутбокс открыт! Вы получили: ${res.pcoinReward} PCoin`,
-        "success"
+      `Лутбокс открыт! Вы получили: ${res.pcoinReward} PCoin`,
+      "success"
     );
 
     // очищаем результат, чтобы следующее открытие сработало корректно
@@ -920,11 +924,11 @@ const Home = observer(() => {
   // Показываем загрузку пока данные не получены -----------------------------------------------------------
   if (!store.areFloorsLoaded) {
     return (
-        <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B] flex items-center justify-center">
-          <div className="text-white text-xl shantell">Загрузка этажей...</div>
-          <Footer />
-          <WebSocketComponent />
-        </div>
+      <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B] flex items-center justify-center">
+        <div className="text-white text-xl shantell">Загрузка этажей...</div>
+        <Footer />
+        <WebSocketComponent />
+      </div>
     );
   }
 
