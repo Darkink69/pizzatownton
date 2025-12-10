@@ -27,7 +27,6 @@ class Store {
   pdollar = 0;
   pizza = 20000;
 
-
   isAuthed = false;
   setAuthState(state: boolean) {
     runInAction(() => {
@@ -332,7 +331,7 @@ class Store {
   // -------------------------------------------------------------------------
 
   setLastPizzaBoxResult(
-      result: { pizzaSpent: number; pcoinReward: number } | null
+    result: { pizzaSpent: number; pcoinReward: number } | null
   ) {
     runInAction(() => {
       this.lastPizzaBoxResult = result;

@@ -4,42 +4,36 @@ import store from "../store/store";
 import { toast } from "react-toastify";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
-// import { useAdsgram } from "../components/useAdsgram";
 
 function Tasks() {
   const [showDailyCombo, setShowDailyCombo] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isInviteTaskDone, setIsInviteTaskDone] = useState(false);
+  const [completedTaskIds, setCompletedTaskIds] = useState<number[]>([]);
 
-  // // Реклама
-  // const onReward = useCallback(() => {
-  //   console.log("Ad!");
-  // }, []);
+  // Инициализация выполненных заданий из localStorage
+  useEffect(() => {
+    const subscribedDone =
+      localStorage.getItem("subscribedTaskDone") === "true";
+    const inviteDone = localStorage.getItem("invite3TaskDone") === "true";
 
-  // const onError = useCallback(() => {
-  //   console.log("Ошибка при показе рекламы");
-  // }, []);
+    if (subscribedDone) {
+      setIsSubscribed(true);
+      setCompletedTaskIds((prev) => [...prev, 1]);
+    }
 
-  // const showAd = useAdsgram({
-  //   blockId: "task-18813",
-  //   onReward,
-  //   onError,
-  // });
-
-  // useEffect(() => {
-  //   showAd();
-  //   const done = localStorage.getItem("subscribedTaskDone");
-  //   if (done === "true") setIsSubscribed(true);
-  //
-  //   const inviteDone = localStorage.getItem("invite3TaskDone");
-  //   if (inviteDone === "true") setIsInviteTaskDone(true);
-  // }, []);
+    if (inviteDone) {
+      setIsInviteTaskDone(true);
+      setCompletedTaskIds((prev) => [...prev, 2]);
+    }
+  }, []);
 
   // следим за статусом INVITE_3_FRIENDS из стора:
   useEffect(() => {
     if (store.taskInvite3Status === "rewarded") {
       setIsInviteTaskDone(true);
       localStorage.setItem("invite3TaskDone", "true");
+      setCompletedTaskIds((prev) => [...prev.filter((id) => id !== 2), 2]);
     }
   }, [store.taskInvite3Status]);
 
@@ -66,6 +60,7 @@ function Tasks() {
         toast.success("✅ Подписка подтверждена! Получаем награду...");
         setIsSubscribed(true);
         localStorage.setItem("subscribedTaskDone", "true");
+        setCompletedTaskIds((prev) => [...prev.filter((id) => id !== 1), 1]);
       } else {
         toast.error("WebSocket не подключён");
       }
@@ -86,19 +81,6 @@ function Tasks() {
     store.verifyInvite3Task();
   };
 
-  // // Функции для фейковых заданий — оставляем, но не используем в taskBlocks
-  // const handleTask2 = () => {
-  //   console.log("Задание 2: Пригласить друга");
-  // };
-  //
-  // const handleTask3 = () => {
-  //   console.log("Задание 3: Забрать награду за уровень 2");
-  // };
-  //
-  // const handleTask4 = () => {
-  //   console.log("Задание 4: Забрать награду за уровень 3.");
-  // };
-
   // Обновляем блоки задач: оставляем реальное #1 (подписка) и новое #2 (3 друзей)
   const taskBlocks = [
     {
@@ -111,6 +93,7 @@ function Tasks() {
       buttonBg: isSubscribed ? "b_blue_small.png" : "b_red_small.png",
       onClick: !isSubscribed ? handleSubscribe : undefined,
       disabled: isSubscribed,
+      isCompleted: isSubscribed,
     },
     {
       id: 2,
@@ -122,34 +105,14 @@ function Tasks() {
       buttonBg: isInviteTaskDone ? "b_blue_small.png" : "b_red_small.png",
       onClick: !isInviteTaskDone ? handleInvite3Task : undefined,
       disabled: isInviteTaskDone,
+      isCompleted: isInviteTaskDone,
     },
-
-    // ----- СТАРЫЕ ФЕЙКОВЫЕ ЗАДАНИЯ — оставлены в комментариях -----
-    // {
-    //   id: 2,
-    //   title: "Пригласить 1 друга",
-    //   reward: "500",
-    //   buttonText: "ВЫПОЛНИТЬ",
-    //   buttonBg: "b_red_small.png",
-    //   onClick: handleTask2,
-    // },
-    // {
-    //   id: 3,
-    //   title: "Достигнуть уровень 2",
-    //   reward: "750",
-    //   buttonText: "ЗАБРАТЬ",
-    //   buttonBg: "b_blue_small.png",
-    //   onClick: handleTask3,
-    // },
-    // {
-    //   id: 4,
-    //   title: "Достигнуть уровень 3",
-    //   reward: "1000",
-    //   buttonText: "ЗАБРАТЬ",
-    //   buttonBg: "b_blue_small.png",
-    //   onClick: handleTask4,
-    // },
   ];
+
+  // Фильтруем задания, чтобы показывать только невыполненные
+  const visibleTaskBlocks = taskBlocks.filter(
+    (block) => !completedTaskIds.includes(block.id)
+  );
 
   const handleDailyComboClick = () => {
     setShowDailyCombo(!showDailyCombo);
@@ -173,6 +136,9 @@ function Tasks() {
     "BBQ",
     "Chiken",
   ];
+
+  // Если все задания выполнены, показываем сообщение
+  const allTasksCompleted = visibleTaskBlocks.length === 0;
 
   return (
     <>
@@ -205,68 +171,119 @@ function Tasks() {
           {/* Прокручиваемая область с блоками заданий */}
           <div className="flex-1 overflow-y-auto">
             <div className="flex flex-col items-center gap-3 sm:gap-4 md:gap-5 py-4">
-              {taskBlocks.map((block) => (
-                <div key={block.id} className="w-11/12 max-w-md">
+              {/* Сообщение, если все задания выполнены */}
+              {allTasksCompleted ? (
+                <div className="w-11/12 max-w-md mt-10 text-center">
                   <div className="relative">
                     <img
                       src={`${store.imgUrl}img_block.png`}
-                      alt="Task block"
-                      className={`w-full h-auto object-contain ${
-                        block.id === 1 ? "scale-y-110" : ""
-                      }`}
+                      alt="All tasks completed"
+                      className="w-full h-auto object-contain"
                     />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
+                      <img
+                        src={`${store.imgUrl}icon_star.png`}
+                        alt="Star"
+                        className="w-16 h-16 mb-4"
+                      />
+                      <div className="text-2xl font-bold text-amber-800 shantell mb-2">
+                        Все задания выполнены!
+                      </div>
+                      <div className="text-lg text-amber-700 shantell">
+                        Возвращайтесь позже за новыми заданиями
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                // Показываем только незавершенные задания
+                visibleTaskBlocks.map((block) => (
+                  <div key={block.id} className="w-11/12 max-w-md">
+                    <div className="relative">
+                      <img
+                        src={`${store.imgUrl}img_block.png`}
+                        alt="Task block"
+                        className={`w-full h-auto object-contain ${
+                          block.id === 1 ? "scale-y-110" : ""
+                        }`}
+                      />
 
-                    <div className="absolute inset-0 flex flex-col p-2 sm:p-6 md:p-8">
-                      <div className="space-y-0 sm:space-y-1 px-2">
-                        <div className="flex items-center justify-between">
-                          <div className="font-bold text-base sm:text-lg text-amber-800 shantell flex-1 leading-4">
-                            {block.title}
-                          </div>
+                      <div className="absolute inset-0 flex flex-col p-2 sm:p-6 md:p-8">
+                        <div className="space-y-0 sm:space-y-1 px-2">
+                          <div className="flex items-center justify-between">
+                            <div className="font-bold text-base sm:text-lg text-amber-800 shantell flex-1 leading-4">
+                              {block.title}
+                            </div>
 
-                          {/* Награда PCoin + Pizza для двух реальных задач */}
-                          <div className="flex flex-col items-end gap-1 mx-2 sm:mx-4">
-                            {"rewardPcoin" in block && (
-                              <div className="flex items-center gap-1">
-                                <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
-                                  {(block as any).rewardPcoin}
-                                </span>
-                                <img
-                                  src={`${store.imgUrl}icon_dollar_coin.png`}
-                                  alt="PCoin"
-                                  className="w-5 sm:w-6"
-                                />
-                              </div>
-                            )}
-                            {"rewardPizza" in block && (
-                              <div className="flex items-center gap-1">
-                                <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
-                                  {(block as any).rewardPizza}
-                                </span>
-                                <img
-                                  src={`${store.imgUrl}icon_pizza.png`}
-                                  alt="Pizza"
-                                  className="w-5 sm:w-6"
-                                />
-                              </div>
-                            )}
+                            {/* Награда PCoin + Pizza для двух реальных задач */}
+                            <div className="flex flex-col items-end gap-1 mx-2 sm:mx-4">
+                              {"rewardPcoin" in block && (
+                                <div className="flex items-center gap-1">
+                                  <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
+                                    {(block as any).rewardPcoin}
+                                  </span>
+                                  <img
+                                    src={`${store.imgUrl}icon_dollar_coin.png`}
+                                    alt="PCoin"
+                                    className="w-5 sm:w-6"
+                                  />
+                                </div>
+                              )}
+                              {"rewardPizza" in block && (
+                                <div className="flex items-center gap-1">
+                                  <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
+                                    {(block as any).rewardPizza}
+                                  </span>
+                                  <img
+                                    src={`${store.imgUrl}icon_pizza.png`}
+                                    alt="Pizza"
+                                    className="w-5 sm:w-6"
+                                  />
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Кнопки действий */}
-                      <div className="mt-auto px-2">
-                        {block.id === 1 ? (
-                          // Задание 1: Подписка
-                          block.link ? (
-                            <a
-                              href={block.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={block.onClick}
-                              className="block"
-                            >
+                        {/* Кнопки действий */}
+                        <div className="mt-auto px-2">
+                          {block.id === 1 ? (
+                            // Задание 1: Подписка
+                            block.link ? (
+                              <a
+                                href={block.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={block.onClick}
+                                className="block"
+                              >
+                                <button
+                                  disabled={block.disabled}
+                                  className={`relative w-full transition-opacity ${
+                                    block.disabled
+                                      ? "opacity-70 cursor-not-allowed"
+                                      : "hover:opacity-90 cursor-pointer"
+                                  }`}
+                                >
+                                  <img
+                                    src={`${store.imgUrl}${block.buttonBg}`}
+                                    alt="Выполнить задачу"
+                                    className="w-full h-auto"
+                                  />
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="text-white text-sm sm:text-base shantell font-bold">
+                                      {block.buttonText}
+                                    </div>
+                                  </div>
+                                </button>
+                              </a>
+                            ) : null
+                          ) : (
+                            // Задание 2: Пригласи 3 друзей (одна кнопка в стиле подписки)
+                            <Link to="/friends" className="block">
                               <button
                                 disabled={block.disabled}
+                                onClick={block.onClick}
                                 className={`relative w-full transition-opacity ${
                                   block.disabled
                                     ? "opacity-70 cursor-not-allowed"
@@ -284,38 +301,14 @@ function Tasks() {
                                   </div>
                                 </div>
                               </button>
-                            </a>
-                          ) : null
-                        ) : (
-                          // Задание 2: Пригласи 3 друзей (одна кнопка в стиле подписки)
-                          <Link to="/friends" className="block">
-                            <button
-                              disabled={block.disabled}
-                              onClick={block.onClick}
-                              className={`relative w-full transition-opacity ${
-                                block.disabled
-                                  ? "opacity-70 cursor-not-allowed"
-                                  : "hover:opacity-90 cursor-pointer"
-                              }`}
-                            >
-                              <img
-                                src={`${store.imgUrl}${block.buttonBg}`}
-                                alt="Выполнить задачу"
-                                className="w-full h-auto"
-                              />
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="text-white text-sm sm:text-base shantell font-bold">
-                                  {block.buttonText}
-                                </div>
-                              </div>
-                            </button>
-                          </Link>
-                        )}
+                            </Link>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
 
               {/* Кнопка и блок Daily Combo — оставлены, как были */}
               <button
