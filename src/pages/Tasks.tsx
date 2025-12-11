@@ -7,6 +7,18 @@ import WebSocketComponent from "../components/websocket";
 import styles from "../css/task.module.css";
 import type { JSX } from "react/jsx-runtime";
 
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      "adsgram-task": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+        "data-block-id": string;
+        ref?: React.RefObject<HTMLElement>;
+      };
+    }
+  }
+}
+
 function Tasks() {
   const [showDailyCombo, setShowDailyCombo] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
