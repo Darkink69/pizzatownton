@@ -44,6 +44,7 @@ const Home = observer(() => {
   const [prizeModalStage, setPrizeModalStage] = useState<"intro" | "result">(
     "intro"
   );
+  const [showChancesInfo, setShowChancesInfo] = useState(false);
   const audioNotificationRef = useRef<HTMLAudioElement | null>(null);
 
   // Запрос данных при монтировании
@@ -2025,7 +2026,11 @@ const Home = observer(() => {
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="text-amber-800 font-bold text-lg shantell">
-                    {prizeModalStage === "intro" ? "Лутбокс" : "Поздравляем!"}
+                    {showChancesInfo
+                      ? "О лутбоксе"
+                      : prizeModalStage === "intro"
+                      ? "Лутбокс"
+                      : "Поздравляем!"}
                   </span>
                 </div>
               </div>
@@ -2034,7 +2039,7 @@ const Home = observer(() => {
             {/* Кнопка закрытия */}
             <button
               onClick={handleClosePrizeModal}
-              className="absolute -top-4 -right-2 w-8 h-8 hover:scale-110 transition-transform z-10"
+              className="absolute -top-8 -right-2 w-8 h-8 hover:scale-110 transition-transform z-10"
             >
               <img
                 src={`${store.imgUrl}b_close.png`}
@@ -2043,9 +2048,103 @@ const Home = observer(() => {
               />
             </button>
 
+            {/* Кнопка информации о шансах */}
+            <button
+              onClick={() => setShowChancesInfo(!showChancesInfo)}
+              className="absolute top-2 left-4 w-8 h-8 hover:scale-110 transition-transform z-10"
+            >
+              <img
+                src={`${store.imgUrl}qwe.png`}
+                alt="Информация"
+                className="w-full h-full"
+              />
+            </button>
+
             {/* Контент */}
-            <div className="p-6 text-center pt-2">
-              {prizeModalStage === "intro" ? (
+            <div className="p-4 text-center">
+              {showChancesInfo ? (
+                /* Экран с информацией о шансах */
+                <>
+                  <div className="mb-1">
+                    <h3 className="text-xl font-bold text-amber-800 shantell mb-4">
+                      Выиграй pcoin для роста!
+                    </h3>
+
+                    <div className="text-left space-y-3 mb-6">
+                      <p className="text-sm text-amber-700 shantell">
+                        Игровая валюта pizza - ценная вещь, очень скоро она
+                        станет мемкоином. Но что делать, если срочно нужно
+                        купить еще этажей и нанять персонал?
+                      </p>
+                      <p className="text-sm text-amber-700 shantell">
+                        Купи лутбокс всего за 2000 pizza и получи шанс выиграть
+                        много pcoin для быстрого развития своей пиццерии!
+                      </p>
+                    </div>
+
+                    <div className="bg-white/50 rounded-xl p-2 border border-amber-300 mb-6">
+                      <div className="text-center mb-4">
+                        <div className="text-xl font-bold text-amber-800 shantell mb-2">
+                          Цена коробки 2000 pizza
+                        </div>
+                        <div className="text-sm font-bold text-amber-800 shantell">
+                          В ней будет pcoin с вероятностью:
+                        </div>
+                      </div>
+
+                      <div className="space-y-0">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-amber-700 shantell">
+                            1-9 pcoin
+                          </span>
+                          <span className="text-lg font-bold text-amber-800 shantell">
+                            50%
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-amber-700 shantell">
+                            10-19 pcoin
+                          </span>
+                          <span className="text-lg font-bold text-amber-800 shantell">
+                            25%
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-amber-700 shantell">
+                            20-29 pcoin
+                          </span>
+                          <span className="text-lg font-bold text-amber-800 shantell">
+                            15%
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-amber-700 shantell">
+                            30-39 pcoin
+                          </span>
+                          <span className="text-lg font-bold text-amber-800 shantell">
+                            10%
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-amber-700 shantell">
+                            40-50 pcoin
+                          </span>
+                          <span className="text-lg font-bold text-amber-800 shantell">
+                            5%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setShowChancesInfo(false)}
+                    className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-1 rounded-full font-bold shantell text-lg tracking-wide transition transform hover:scale-105"
+                  >
+                    Понятно
+                  </button>
+                </>
+              ) : prizeModalStage === "intro" ? (
                 /* Экран с предложением купить лутбокс */
                 <>
                   <div className="mb-2">
@@ -2054,10 +2153,10 @@ const Home = observer(() => {
                       alt="Lootbox"
                       className="w-2/3 mx-auto"
                     />
-                    <h3 className="text-2xl font-bold text-amber-800 shantell mb-4">
-                      Открой Лутбокс за 2000 pizza
+                    <h3 className="text-xl font-bold text-amber-800 shantell mb-4">
+                      Открой Лутбокс <br></br>за 2000 pizza
                     </h3>
-                    <p className="text-lg text-amber-700 shantell mb-2">
+                    <p className="text-md text-amber-700 shantell mb-2">
                       и получи гарантированно pcoin!
                     </p>
                   </div>
@@ -2069,7 +2168,7 @@ const Home = observer(() => {
                         alt="Pizza"
                         className="w-8 h-8"
                       />
-                      <span className="text-2xl font-bold text-amber-800 shantell">
+                      <span className="text-3xl font-bold text-amber-800 shantell">
                         2000
                       </span>
                     </div>
@@ -2081,7 +2180,7 @@ const Home = observer(() => {
                   <div className="flex gap-4 justify-center">
                     <button
                       onClick={handleClosePrizeModal}
-                      className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-full font-bold shantell text-lg transition transform hover:scale-105"
+                      className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-3 rounded-full font-bold shantell text-lg transition transform hover:scale-105"
                     >
                       Закрыть
                     </button>
@@ -2111,7 +2210,8 @@ const Home = observer(() => {
                       Вы выиграли!
                     </h3>
                     <p className="text-lg text-amber-700 shantell">
-                      <span className="font-bold">{wonPcoins} pcoin</span>
+                      <span className="font-bold">{wonPcoins} pcoin</span> и
+                      другие призы!
                     </p>
                   </div>
 
