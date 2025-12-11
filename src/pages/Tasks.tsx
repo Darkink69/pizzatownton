@@ -7,11 +7,13 @@ import WebSocketComponent from "../components/websocket";
 import styles from "../css/task.module.css";
 import type { JSX } from "react/jsx-runtime";
 
-
 declare global {
   namespace JSX {
     interface IntrinsicElements {
-      "adsgram-task": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+      "adsgram-task": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
         "data-block-id": string;
         ref?: React.RefObject<HTMLElement>;
       };
@@ -342,20 +344,29 @@ function Tasks() {
                 data-block-id="task-18892"
                 ref={taskRef}
               >
-                <span slot="reward" className="text-amber-800 shantell">
-                  1000 монет
+                <span slot="reward" className="text-amber-800 text-md shantell">
+                  300 pizza
                 </span>
                 {/* <span slot="reward" className={styles.reward}>
                   1000 монет
                 </span> */}
-                <div slot="button" className={styles.button}>
-                  вперед
+                <div
+                  slot="button"
+                  className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-800 rounded-lg"
+                >
+                  Вперед
                 </div>
-                <div slot="claim" className={styles.button_claim}>
-                  получить
+                <div
+                  slot="claim"
+                  className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-800 rounded-lg"
+                >
+                  Получить
                 </div>
-                <div slot="done" className={styles.button_done}>
-                  готово
+                <div
+                  slot="done"
+                  className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-800 rounded-lg"
+                >
+                  Готово
                 </div>
               </adsgram-task>
 
