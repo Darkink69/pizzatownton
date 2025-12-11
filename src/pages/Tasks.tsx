@@ -4,7 +4,7 @@ import store from "../store/store";
 import { toast } from "react-toastify";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
-// import styles from "../css/task.module.css";
+import styles from "../css/task.module.css";
 import type { JSX } from "react/jsx-runtime";
 
 function Tasks() {
@@ -323,6 +323,29 @@ function Tasks() {
                   className="w-1/2 h-auto"
                 />
               </button>
+
+              {/* Рекламный таск -----------------------------------------------*/}
+              <adsgram-task
+                className={styles.task}
+                data-block-id="task-18892"
+                ref={taskRef}
+              >
+                <span slot="reward" className="text-amber-800 shantell">
+                  1000 монет
+                </span>
+                {/* <span slot="reward" className={styles.reward}>
+                  1000 монет
+                </span> */}
+                <div slot="button" className={styles.button}>
+                  вперед
+                </div>
+                <div slot="claim" className={styles.button_claim}>
+                  получить
+                </div>
+                <div slot="done" className={styles.button_done}>
+                  готово
+                </div>
+              </adsgram-task>
 
               {showDailyCombo && (
                 <>
