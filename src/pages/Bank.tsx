@@ -249,7 +249,7 @@ const AdminModal = observer(
 const Bank = observer(() => {
   const [tonAmount, setTonAmount] = useState(0.5);
   const [pdollarAmount, setPdollarAmount] = useState("25000");
-  const [tonExchangeAmount, setTonExchangeAmount] = useState("1");
+  const [tonExchangeAmount, setTonExchangeAmount] = useState("0.25");
   const [pcoinAmount, setPcoinAmount] = useState("500");
   const [buying, setBuying] = useState(false);
 
