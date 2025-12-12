@@ -1522,7 +1522,7 @@ const Home = observer(() => {
           className="fixed bottom-4 left-1/2 w-30 lg:w-50 transform -translate-x-1/2 z-50 hover:opacity-90 transition-opacity active:scale-95"
         >
           <div className="absolute top-8 left-1/2 transform -translate-x-1/2 flex items-center justify-center text-2xl md:text-4xl text-blue-900 shantell">
-            {store.claimProgress.toFixed(0)}%
+            {store.claimProgress.toFixed(1)}%
           </div>
           <img src={`${store.imgUrl}b_zabrat2.png`} alt="Claim" />
         </button>
