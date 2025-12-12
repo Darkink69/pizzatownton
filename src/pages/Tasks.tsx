@@ -26,6 +26,7 @@ function Tasks() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isInviteTaskDone, setIsInviteTaskDone] = useState(false);
   const [completedTaskIds, setCompletedTaskIds] = useState<number[]>([]);
+  const [isAdsgramLoaded, setIsAdsgramLoaded] = useState(false);
   const taskRef = useRef<JSX.IntrinsicElements["adsgram-task"]>(null);
 
   // Эффект для adsgram-task
@@ -47,9 +48,24 @@ function Tasks() {
     };
   }, []);
 
-  if (!customElements.get("adsgram-task")) {
-    return null;
-  }
+  // Проверяем загрузку adsgram-task
+  useEffect(() => {
+    // Проверяем, загружен ли adsgram-task
+    if (customElements.get("adsgram-task")) {
+      setIsAdsgramLoaded(true);
+    } else {
+      // Если не загружен, можем попробовать загрузить или просто не показывать
+      // Можно добавить таймаут для повторной проверки
+      const checkInterval = setInterval(() => {
+        if (customElements.get("adsgram-task")) {
+          setIsAdsgramLoaded(true);
+          clearInterval(checkInterval);
+        }
+      }, 500);
+
+      return () => clearInterval(checkInterval);
+    }
+  }, []);
 
   // Инициализация выполненных заданий из localStorage
   useEffect(() => {
@@ -176,6 +192,9 @@ function Tasks() {
 
   // Если все задания выполнены, показываем сообщение
   const allTasksCompleted = visibleTaskBlocks.length === 0;
+
+  // Если adsgram-task не загружен, не рендерим его
+  const shouldRenderAdsgram = isAdsgramLoaded;
 
   return (
     <>
@@ -339,36 +358,41 @@ function Tasks() {
               </button>
 
               {/* Рекламный таск -----------------------------------------------*/}
-              <adsgram-task
-                className={styles.task}
-                data-block-id="task-18892"
-                ref={taskRef}
-              >
-                <span slot="reward" className="text-amber-800 text-md shantell">
-                  300 pizza
-                </span>
-                {/* <span slot="reward" className={styles.reward}>
-                  1000 монет
-                </span> */}
-                <div
-                  slot="button"
-                  className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-800 rounded-lg"
+              {shouldRenderAdsgram && (
+                <adsgram-task
+                  className={styles.task}
+                  data-block-id="task-18892"
+                  ref={taskRef}
                 >
-                  Вперед
-                </div>
-                <div
-                  slot="claim"
-                  className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-800 rounded-lg"
-                >
-                  Получить
-                </div>
-                <div
-                  slot="done"
-                  className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-800 rounded-lg"
-                >
-                  Готово
-                </div>
-              </adsgram-task>
+                  <span
+                    slot="reward"
+                    className="text-amber-800 text-md shantell"
+                  >
+                    300 pizza
+                  </span>
+                  {/* <span slot="reward" className={styles.reward}>
+                    1000 монет
+                  </span> */}
+                  <div
+                    slot="button"
+                    className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-800 rounded-lg"
+                  >
+                    Вперед
+                  </div>
+                  <div
+                    slot="claim"
+                    className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-800 rounded-lg"
+                  >
+                    Получить
+                  </div>
+                  <div
+                    slot="done"
+                    className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-700 rounded-lg"
+                  >
+                    Готово
+                  </div>
+                </adsgram-task>
+              )}
 
               {showDailyCombo && (
                 <>
