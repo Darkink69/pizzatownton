@@ -414,6 +414,7 @@ const WebSocketComponent = observer(() => {
                 toast.success(
                   "✅ Условие задания выполнено! Заберите награду."
                 );
+                store.completeInvite3Task();
               } else {
                 runInAction(() => {
                   store.taskInvite3Status = "error";
