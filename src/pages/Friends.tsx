@@ -7,6 +7,7 @@ import WebSocketComponent from "../components/websocket";
 const Friends = observer(() => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [copied, setCopied] = useState(false);
+  const [_copyError, setCopyError] = useState<string | null>(null);
   // -------------------- запросим статистику при загрузке --------------------
   useEffect(() => {
     if (store.sessionId && store.user?.telegramId) {
@@ -18,17 +19,27 @@ const Friends = observer(() => {
   // -------------------- копирование ссылки --------------------
   function tryExecCommandCopy(text: string): boolean {
     try {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.readOnly = true;
-      ta.style.position = "fixed";
-      ta.style.top = "-9999px";
-      document.body.appendChild(ta);
-      ta.select();
-      const ok = document.execCommand("copy");
-      document.body.removeChild(ta);
-      return ok;
-    } catch {
+      // Используем input element для копирования
+      const input = document.createElement("input");
+      input.value = text;
+      input.style.position = "fixed";
+      input.style.top = "-100px";
+      input.style.left = "-100px";
+      document.body.appendChild(input);
+      input.select();
+      input.setSelectionRange(0, 99999); // Для мобильных устройств
+
+      let success = false;
+      try {
+        success = document.execCommand("copy");
+      } catch (err) {
+        console.error("execCommand error:", err);
+      }
+
+      document.body.removeChild(input);
+      return success;
+    } catch (err) {
+      console.error("execCommand fallback error:", err);
       return false;
     }
   }
@@ -45,17 +56,101 @@ const Friends = observer(() => {
     return false;
   }
 
+  function tryTextAreaCopy(text: string): boolean {
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.top = "0";
+      textArea.style.left = "0";
+      textArea.style.width = "2em";
+      textArea.style.height = "2em";
+      textArea.style.padding = "0";
+      textArea.style.border = "none";
+      textArea.style.outline = "none";
+      textArea.style.boxShadow = "none";
+      textArea.style.background = "transparent";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      let success = false;
+      try {
+        success = document.execCommand("copy");
+      } catch (err) {
+        console.error("TextArea copy error:", err);
+      }
+
+      document.body.removeChild(textArea);
+      return success;
+    } catch (err) {
+      console.error("TextArea creation error:", err);
+      return false;
+    }
+  }
+
+  function trySelectAndCopy(_text: string): boolean {
+    try {
+      // Пробуем выделить и скопировать через существующий input
+      if (inputRef.current) {
+        inputRef.current.focus();
+        inputRef.current.select();
+        inputRef.current.setSelectionRange(0, 99999);
+        return document.execCommand("copy");
+      }
+      return false;
+    } catch (err) {
+      console.error("Select and copy error:", err);
+      return false;
+    }
+  }
+
   const handleCopy = async () => {
     const link = store.referral.link;
-    if (!link) return;
+    if (!link) {
+      setCopyError("Ссылка не загружена");
+      setTimeout(() => setCopyError(null), 3000);
+      return;
+    }
 
-    let ok = tryExecCommandCopy(link);
-    if (!ok) ok = await tryClipboardCopy(link);
+    setCopyError(null);
 
-    if (ok) {
+    // Пробуем несколько методов копирования по порядку
+    let success = false;
+
+    // 1. Современный Clipboard API
+    success = await tryClipboardCopy(link);
+
+    // 2. Через выделение существующего input
+    if (!success) {
+      success = trySelectAndCopy(link);
+    }
+
+    // 3. Через execCommand с созданием input
+    if (!success) {
+      success = tryExecCommandCopy(link);
+    }
+
+    // 4. Через textarea (лучше работает на некоторых устройствах)
+    if (!success) {
+      success = tryTextAreaCopy(link);
+    }
+
+    if (success) {
       setCopied(true);
-      // вернём в исходное состояние через 600мс
-      setTimeout(() => setCopied(false), 600);
+      setTimeout(() => setCopied(false), 2000);
+    } else {
+      // Если не удалось скопировать, предлагаем пользователю скопировать вручную
+      setCopyError(
+        "Не удалось скопировать. Выделите текст и скопируйте вручную"
+      );
+      setTimeout(() => setCopyError(null), 4000);
+
+      // Фокусируем и выделяем текст для ручного копирования
+      if (inputRef.current) {
+        inputRef.current.focus();
+        inputRef.current.select();
+      }
     }
   };
 
@@ -156,16 +251,16 @@ const Friends = observer(() => {
               {/* три блока статистики */}
               <div className="flex justify-between gap-3">
                 <StatBlock
-                    icon={`${store.imgUrl}icon_dollar.png`}
-                    value={`+${(earnedPdollar ?? 0).toLocaleString()}`}
+                  icon={`${store.imgUrl}icon_dollar.png`}
+                  value={`+${(earnedPdollar ?? 0).toLocaleString()}`}
                 />
                 <StatBlock
-                    icon={`${store.imgUrl}icon_dollar_coin.png`}
-                    value={`+${(earnedPcoin ?? 0).toLocaleString()}`}
+                  icon={`${store.imgUrl}icon_dollar_coin.png`}
+                  value={`+${(earnedPcoin ?? 0).toLocaleString()}`}
                 />
                 <StatBlock
-                    icon={`${store.imgUrl}icon_friends.png`}
-                    value={`+${totalReferrals ?? 0}`}
+                  icon={`${store.imgUrl}icon_friends.png`}
+                  value={`+${totalReferrals ?? 0}`}
                 />
               </div>
             </div>
