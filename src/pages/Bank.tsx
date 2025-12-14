@@ -620,12 +620,12 @@ function ArrowDown() {
 }
 
 function ActionButton({
-  label,
-  onClick,
-  disabled,
-  img,
-  textColor,
-}: {
+                        label,
+                        onClick,
+                        disabled,
+                        img,
+                        textColor,
+                      }: {
   label: string;
   onClick: () => void;
   disabled?: boolean;
@@ -633,29 +633,34 @@ function ActionButton({
   textColor?: string;
 }) {
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={`relative w-full flex flex-col items-center justify-center transition-opacity ${
-        disabled
-          ? "cursor-not-allowed opacity-70"
-          : "hover:opacity-90 cursor-pointer"
-      }`}
-    >
-      {/* фон‑текстура кнопки */}
-      <img src={img} alt={label} className="w-1/2 h-2/3 z-50" />
+      <button
+          onClick={onClick}
+          disabled={disabled}
+          className={`relative w-full flex flex-col items-center justify-center transition-opacity ${
+              disabled
+                  ? "cursor-not-allowed opacity-70"
+                  : "hover:opacity-90 cursor-pointer"
+          }`}
+      >
+        {/*
+         Создаем фиксированный контейнер для картинки.
+         Это гарантирует, что кнопка всегда будет занимать место по высоте (h-14).
+      */}
+        <div className="relative w-1/2 h-14">
+          <img src={img} alt={label} className="w-full h-full object-fill z-50" />
 
-      {/* надпись */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center z-50">
-        <span
-          className={`${
-            textColor || "text-amber-800"
-          } text-md sm:text-lg shantell font-bold`}
-        >
-          {label}
-        </span>
-      </div>
-    </button>
+          {/* надпись */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-50">
+            <span
+                className={`${
+                    textColor || "text-amber-800"
+                } text-md sm:text-lg shantell font-bold`}
+            >
+              {label}
+            </span>
+          </div>
+        </div>
+      </button>
   );
 }
 
