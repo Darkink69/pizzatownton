@@ -211,6 +211,17 @@ function Tasks() {
       disabled: isInviteTaskDone,
       isCompleted: isInviteTaskDone,
     },
+    {
+      id: 3,
+      title: "Подписаться на канал",
+      rewardPizza: "300",
+      link: "https://t.me/+GlIl1TY4Lsg4MzMx",
+      buttonText: isInviteTaskDone ? "ВЫПОЛНЕНО" : "ВЫПОЛНИТЬ",
+      buttonBg: isInviteTaskDone ? "b_blue_small.png" : "b_red_small.png",
+      onClick: !isInviteTaskDone ? handleInvite3Task : undefined,
+      disabled: isInviteTaskDone,
+      isCompleted: isInviteTaskDone,
+    },
   ];
 
   // Фильтруем задания, чтобы показывать только невыполненные
