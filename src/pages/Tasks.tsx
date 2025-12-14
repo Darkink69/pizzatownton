@@ -1,49 +1,27 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import store from "../store/store";
 import { toast } from "react-toastify";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
-// import styles from "../css/task.module.css";
-import type { JSX } from "react/jsx-runtime";
+
 
 function Tasks() {
   const [showDailyCombo, setShowDailyCombo] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [isSubscribedToTeamLove, setIsSubscribedToTeamLove] = useState(false); // ✅ новое состояние
+  const [isSubscribedToTeamLove, setIsSubscribedToTeamLove] = useState(false);
   const [isInviteTaskDone, setIsInviteTaskDone] = useState(false);
   const [completedTaskIds, setCompletedTaskIds] = useState<number[]>([]);
-  const taskRef = useRef<JSX.IntrinsicElements["adsgram-task"]>(null);
 
-  // Эффект для adsgram-task
-  useEffect(() => {
-    const handler = (event: CustomEvent) => {
-      // в event.detail будет id вашего блока
-      alert(`Награда detail = ${event.detail}`);
-    };
-    const task = taskRef.current;
 
-    if (task) {
-      task.addEventListener("reward", handler);
-    }
 
-    return () => {
-      if (task) {
-        task.removeEventListener("reward", handler);
-      }
-    };
-  }, []);
-
-  if (!customElements.get("adsgram-task")) {
-    return null;
-  }
 
   // Инициализация выполненных заданий из localStorage
   useEffect(() => {
     const subscribedDone =
       localStorage.getItem("subscribedTaskDone") === "true";
     const subscribedTeamLoveDone =
-      localStorage.getItem("subscribedTeamLoveTaskDone") === "true"; // ✅
+      localStorage.getItem("subscribedTeamLoveTaskDone") === "true";
     const inviteDone = localStorage.getItem("invite3TaskDone") === "true";
 
     if (subscribedDone) {
@@ -306,9 +284,8 @@ function Tasks() {
                                 href={block.link}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  if (block.onClick) block.onClick();
+                                onClick={() => {
+                                  if (block.onClick) block.onClick();  // запускаем таймер, но не блокируем переход
                                 }}
                                 className="block"
                               >
