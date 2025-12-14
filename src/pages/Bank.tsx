@@ -643,10 +643,10 @@ function ActionButton({
       }`}
     >
       {/* фон‑текстура кнопки */}
-      <img src={img} alt={label} className="w-1/2 h-2/3" />
+      <img src={img} alt={label} className="w-1/2 h-2/3 z-50" />
 
       {/* надпись */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
+      <div className="absolute inset-0 flex flex-col items-center justify-center z-50">
         <span
           className={`${
             textColor || "text-amber-800"
