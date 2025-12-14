@@ -384,18 +384,18 @@ function Tasks() {
 
                         {/* Кнопки действий */}
                         <div className="mt-auto px-2">
-                          {block.id === 1 || block.id === 3 ? ( // ← оба типа "ссылка + проверка подписки"
-                            block.link ? (
-                              <a
-                                href={block.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  if (block.onClick) block.onClick();
-                                }}
-                                className="block"
-                              >
+                          {block.id === 1 || block.id === 3 ? (
+                              block.link ? (
+                                  <a
+                                      href={block.link}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={() => {
+
+                                        if (block.onClick) block.onClick();
+                                      }}
+                                      className="block"
+                                  >
                                 <button
                                   disabled={block.disabled}
                                   className={`relative w-full transition-opacity ${
