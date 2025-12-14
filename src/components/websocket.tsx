@@ -226,7 +226,7 @@ const WebSocketComponent = observer(() => {
             break;
           }
 
-            /** ------------------ PIZZA_BOX_OPEN ------------------ */
+          /** ------------------ PIZZA_BOX_OPEN ------------------ */
           case "PIZZA_BOX_OPEN": {
             if (parsed.success && parsed.data) {
               const d = parsed.data as PizzaBoxOpenResp;
@@ -240,12 +240,10 @@ const WebSocketComponent = observer(() => {
                 });
               }
 
-
               store.setLastPizzaBoxResult({
                 pizzaSpent: d.pizzaSpent,
                 pcoinReward: d.pcoinReward,
               });
-
             } else {
               store.setLastPizzaBoxResult(null);
               if (parsed.message === "NOT_ENOUGH_PIZZA") {
@@ -479,6 +477,23 @@ const WebSocketComponent = observer(() => {
                   store.pizza = (store.pizza ?? 0) + Number(data.rewardPizza);
                 } else {
                   store.pizza = (store.pizza ?? 0) + 200;
+                }
+              });
+            }
+
+            // ✅ SUBSCRIBE_TEAM_LOVE_CHANNEL — новое задание
+            if (data.code === "SUBSCRIBE_TEAM_LOVE_CHANNEL") {
+              runInAction(() => {
+                if (data.rewardPcoin != null) {
+                  store.pcoin = (store.pcoin ?? 0) + Number(data.rewardPcoin);
+                } else {
+                  store.pcoin = (store.pcoin ?? 0) + 10;
+                }
+
+                if (data.rewardPizza != null) {
+                  store.pizza = (store.pizza ?? 0) + Number(data.rewardPizza);
+                } else {
+                  store.pizza = (store.pizza ?? 0) + 300;
                 }
               });
             }

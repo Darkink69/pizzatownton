@@ -10,6 +10,7 @@ import type { JSX } from "react/jsx-runtime";
 function Tasks() {
   const [showDailyCombo, setShowDailyCombo] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isSubscribedToTeamLove, setIsSubscribedToTeamLove] = useState(false); // ✅ новое состояние
   const [isInviteTaskDone, setIsInviteTaskDone] = useState(false);
   const [completedTaskIds, setCompletedTaskIds] = useState<number[]>([]);
   const taskRef = useRef<JSX.IntrinsicElements["adsgram-task"]>(null);
@@ -41,11 +42,19 @@ function Tasks() {
   useEffect(() => {
     const subscribedDone =
       localStorage.getItem("subscribedTaskDone") === "true";
+    const subscribedTeamLoveDone =
+      localStorage.getItem("subscribedTeamLoveTaskDone") === "true"; // ✅
     const inviteDone = localStorage.getItem("invite3TaskDone") === "true";
 
     if (subscribedDone) {
       setIsSubscribed(true);
       setCompletedTaskIds((prev) => [...prev, 1]);
+    }
+
+    if (subscribedTeamLoveDone) {
+      // ✅
+      setIsSubscribedToTeamLove(true);
+      setCompletedTaskIds((prev) => [...prev, 3]);
     }
 
     if (inviteDone) {
@@ -63,7 +72,7 @@ function Tasks() {
     }
   }, [store.taskInvite3Status]);
 
-  // выполнение таски подписки
+  // выполнение таски подписки на канал Pizza TowerTON
   const handleSubscribe = () => {
     if (isSubscribed) return;
 
@@ -94,6 +103,36 @@ function Tasks() {
     return () => clearTimeout(timer);
   };
 
+  const handleSubscribeToTeamLove = () => {
+    if (isSubscribedToTeamLove) return;
+
+    const tgId = store.user?.telegramId ?? 0;
+    toast.info("🔔 Проверяем подписку на TEAM LOVE...");
+
+    const timer = setTimeout(() => {
+      const rq = {
+        type: "TASKS_COMPLETE" as const,
+        requestId: Math.random().toString(36).substring(2, 10),
+        session: store.sessionId ?? "",
+        taskRq: {
+          telegramId: tgId,
+          code: "SUBSCRIBE_TEAM_LOVE_CHANNEL",
+        },
+      };
+
+      if (store.send(rq)) {
+        toast.dismiss();
+        toast.success("✅ Подписка на TEAM LOVE подтверждена!");
+        setIsSubscribedToTeamLove(true);
+        localStorage.setItem("subscribedTeamLoveTaskDone", "true");
+        setCompletedTaskIds((prev) => [...prev.filter((id) => id !== 3), 3]);
+      } else {
+        toast.error("WebSocket не подключён");
+      }
+    }, 8000);
+    return () => clearTimeout(timer);
+  };
+
   // выполнение таски INVITE_3_FRIENDS (инициируем проверку)
   const handleInvite3Task = () => {
     if (isInviteTaskDone) return;
@@ -106,7 +145,6 @@ function Tasks() {
     store.verifyInvite3Task();
   };
 
-  // Обновляем блоки задач: оставляем реальное #1 (подписка) и новое #2 (3 друзей)
   const taskBlocks = [
     {
       id: 1,
@@ -129,6 +167,17 @@ function Tasks() {
       onClick: !isInviteTaskDone ? handleInvite3Task : undefined,
       disabled: isInviteTaskDone,
       isCompleted: isInviteTaskDone,
+    },
+    {
+      id: 3,
+      title: "Подписаться на канал MELEGATEAM",
+      rewardPizza: "300",
+      link: "https://t.me/+GlIl1TY4Lsg4MzMx",
+      buttonText: isSubscribedToTeamLove ? "ВЫПОЛНЕНО" : "ПЕРЕЙТИ",
+      buttonBg: isSubscribedToTeamLove ? "b_blue_small.png" : "b_red_small.png",
+      onClick: !isSubscribedToTeamLove ? handleSubscribeToTeamLove : undefined,
+      disabled: isSubscribedToTeamLove,
+      isCompleted: isSubscribedToTeamLove,
     },
   ];
 
@@ -251,13 +300,16 @@ function Tasks() {
 
                         {/* Кнопки действий */}
                         <div className="mt-auto px-2">
-                          {block.id === 1 ? (
+                          {block.id === 1 || block.id === 3 ? ( // ← оба типа "ссылка + проверка подписки"
                             block.link ? (
                               <a
                                 href={block.link}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                onClick={block.onClick}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  if (block.onClick) block.onClick();
+                                }}
                                 className="block"
                               >
                                 <button
