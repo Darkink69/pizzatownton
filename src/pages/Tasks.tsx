@@ -37,6 +37,14 @@ function Tasks() {
 
   const taskRef = useRef<JSX.IntrinsicElements["adsgram-task"]>(null);
 
+  // 👇 ДОБАВЬ ЭТОТ ЭФФЕКТ ТОЛЬКО В ТЕСТОВОЙ ВЕТКЕ
+  useEffect(() => {
+    // сброс только нужных флагов задач
+    localStorage.removeItem("subscribedTaskDone");
+    localStorage.removeItem("subscribedTeamLoveTaskDone");
+    localStorage.removeItem("invite3TaskDone");
+  }, []);
+
   // Эффект для adsgram-task (reward → TASKS_COMPLETE ADS_TASK_1 + cooldown)
   useEffect(() => {
     const handler = () => {
