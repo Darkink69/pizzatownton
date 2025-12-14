@@ -314,227 +314,233 @@ const Bank = observer(() => {
   const { pizza, pdollar, pcoin } = store;
 
   return (
-    <>
-      <div className="relative min-h-screen w-full overflow-hidden">
-        {/* Фон */}
-        <div className="absolute inset-0 bg-[#FFBC6B]">
-          <div
-            className="w-full h-full bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: `url('${store.imgUrl}bg_pizza.png')` }}
-          />
-        </div>
+      <>
+        <div className="relative min-h-screen w-full overflow-hidden">
+          {/* Фон */}
+          <div className="absolute inset-0 bg-[#FFBC6B]">
+            <div
+                className="w-full h-full bg-cover bg-center bg-no-repeat"
+                style={{ backgroundImage: `url('${store.imgUrl}bg_pizza.png')` }}
+            />
+          </div>
 
-        {/* 💰 Панель валют */}
-        <div className="absolute top-22 md:top-24 left-1/2 -translate-x-1/2 z-40 w-10/12 max-w-md flex justify-between gap-2 sm:gap-3">
-          <CurrencyCard
-            icon={`${store.imgUrl}icon_pizza.png`}
-            value={Number(pizza) || 0}
-            label="Pizza"
-          />
-          <CurrencyCard
-            icon={`${store.imgUrl}icon_dollar_coin.png`}
-            value={Number(pcoin) || 0}
-            label="PCoin"
-          />
-          <CurrencyCard
-            icon={`${store.imgUrl}icon_dollar.png`}
-            value={Number(pdollar) || 0}
-            label="PDollar"
-          />
-        </div>
+          {/* 💰 Панель валют */}
+          <div className="absolute top-22 md:top-24 left-1/2 -translate-x-1/2 z-40 w-10/12 max-w-md flex justify-between gap-2 sm:gap-3">
+            <CurrencyCard
+                icon={`${store.imgUrl}icon_pizza.png`}
+                value={Number(pizza) || 0}
+                label="Pizza"
+            />
+            <CurrencyCard
+                icon={`${store.imgUrl}icon_dollar_coin.png`}
+                value={Number(pcoin) || 0}
+                label="PCoin"
+            />
+            <CurrencyCard
+                icon={`${store.imgUrl}icon_dollar.png`}
+                value={Number(pdollar) || 0}
+                label="PDollar"
+            />
+          </div>
 
-        {/* 🍞 Верхняя шапка */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 w-full max-w-[1550px]">
-          <img
-            src={`${store.imgUrl}testo.png`}
-            alt="Testo"
-            className="w-full h-auto"
-          />
-        </div>
+          {/* 🍞 Верхняя шапка */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 w-full max-w-[1550px]">
+            <img
+                src={`${store.imgUrl}testo.png`}
+                alt="Testo"
+                className="w-full h-auto"
+            />
+          </div>
 
-        {/* 🏦 Логотип банка */}
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20">
-          <img src={`${store.imgUrl}img_bank.png`} alt="bank" />
-        </div>
+          {/* 🏦 Логотип банка */}
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20">
+            <img src={`${store.imgUrl}img_bank.png`} alt="bank" />
+          </div>
 
-        {/* Кнопка подключения ton connect */}
-        <Link to="/ton-connect">
-          <div className="absolute top-6 right-4 flex items-center space-x-3 z-40">
-            {/* Блок с балансом TON */}
-            <div className="relative">
-              <img
-                src={`${store.imgUrl}b_white.png`}
-                alt="TON balance"
-                className="w-16 h-10"
-              />
-              <div className="absolute inset-0 flex items-center justify-center gap-1 px-2">
+          {/* Кнопка подключения ton connect */}
+          <Link to="/ton-connect">
+            <div className="absolute top-6 right-4 flex items-center space-x-3 z-40">
+              {/* Блок с балансом TON */}
+              <div className="relative">
                 <img
-                  src={`${store.imgUrl}icon_ton.png`}
-                  alt="TON"
-                  className="w-4"
+                    src={`${store.imgUrl}b_white.png`}
+                    alt="TON balance"
+                    className="w-16 h-10"
                 />
-                <span className="text-amber-800 text-sm shantell font-bold">
+                <div className="absolute inset-0 flex items-center justify-center gap-1 px-2">
+                  <img
+                      src={`${store.imgUrl}icon_ton.png`}
+                      alt="TON"
+                      className="w-4"
+                  />
+                  <span className="text-amber-800 text-sm shantell font-bold">
                   {Number(store.tonBalance).toLocaleString()}
                 </span>
-              </div>
-            </div>
-          </div>
-        </Link>
-
-        {/* Контейнер для содержимого */}
-        <div className="relative z-30 h-screen flex flex-col pt-36 sm:pt-44 pb-20">
-          <div className="flex-1 overflow-y-auto">
-            <div className="flex flex-col items-center gap-8 sm:gap-10 py-4">
-              {/* 🪙 Первый блок — Покупка PCoin */}
-              <div className="w-11/12 max-w-md">
-                <div className="relative">
-                  <img
-                    src={`${store.imgUrl}img_window2.png`}
-                    alt="Modal background"
-                    className="w-full h-auto scale-y-110 object-contain"
-                  />
-                  <div className="absolute inset-0 flex flex-col p-4 sm:p-5">
-                    <div className="text-base text-center sm:text-lg text-amber-800 shantell mb-2 font-bold">
-                      Сколько PCoin вы хотите купить
-                    </div>
-
-                    {/* Поле PCoin */}
-                    <CurrencyInput
-                      icon={`${store.imgUrl}icon_dollar_coin.png`}
-                      label="PCoin"
-                      balance={store.pcoin ?? 0}
-                      value={pcoinAmount}
-                      onChange={(v) => {
-                        setPcoinAmount(v);
-                        setTonAmount(Number(v) / 1000);
-                      }}
-                      placeholder="500"
-                      min={100}
-                    />
-
-                    {/* Стрелка */}
-                    <ArrowDown />
-
-                    {/* Поле TON */}
-                    <CurrencyInput
-                      icon={`${store.imgUrl}icon_ton.png`}
-                      label="TON"
-                      balance={0}
-                      value={String(tonAmount)}
-                      onChange={(v) => setTonAmount(Number(v))}
-                    />
-
-                    <div className="text-center mb-4 sm:mb-6 font-bold text-base sm:text-lg text-amber-800 shantell flex items-center justify-center">
-                      Курс: 1 TON = 1000 PCoin
-                      <img
-                        src={`${store.imgUrl}icon_dollar_coin.png`}
-                        alt="PCoin"
-                        className="w-6 h-6 sm:w-8 sm:h-8 ml-1"
-                      />
-                    </div>
-
-                    {/* Кнопка покупки */}
-                    <ActionButton
-                      label={buying ? "Создание заказа..." : "Купить"}
-                      disabled={buying}
-                      onClick={handleBuy}
-                      img={`${store.imgUrl}b_blue2.png`}
-                      textColor="text-blue-900"
-                    />
-                  </div>
                 </div>
               </div>
+            </div>
+          </Link>
 
-              {/* 💱 Второй блок — Обмен */}
-              <div className="w-11/12 max-w-md mt-4">
-                <div className="relative">
-                  <img
-                    src={`${store.imgUrl}img_window2.png`}
-                    alt="Exchange"
-                    className="w-full h-auto scale-y-110 object-contain"
-                  />
-                  <div className="absolute inset-0 flex flex-col p-4 sm:p-5">
-                    <div className="text-center text-lg sm:text-2xl mb-3 text-amber-800 shantell font-bold">
-                      ОБМЕННИК
+          {/* Контейнер для содержимого */}
+          <div className="relative z-30 h-screen flex flex-col pt-36 sm:pt-44 pb-20">
+            <div className="flex-1 overflow-y-auto">
+              <div className="flex flex-col items-center gap-8 sm:gap-10 py-4">
+
+                {/*
+                 ✅ ИСПРАВЛЕНИЕ 1: Блок "Покупка PCoin"
+                 Картинка теперь фон (absolute), а контент (relative) задает высоту.
+              */}
+                <div className="w-11/12 max-w-md">
+                  <div className="relative flex flex-col p-5"> {/* Убрали зависимость от img */}
+                    <img
+                        src={`${store.imgUrl}img_window2.png`}
+                        alt="Modal background"
+                        className="absolute inset-0 w-full h-full object-fill -z-10" /* Сделали фоном */
+                    />
+
+                    {/* Контент теперь имеет вес и высоту */}
+                    <div className="relative z-10 flex flex-col">
+                      <div className="text-base text-center sm:text-lg text-amber-800 shantell mb-2 font-bold">
+                        Сколько PCoin вы хотите купить
+                      </div>
+
+                      <CurrencyInput
+                          icon={`${store.imgUrl}icon_dollar_coin.png`}
+                          label="PCoin"
+                          balance={store.pcoin ?? 0}
+                          value={pcoinAmount}
+                          onChange={(v) => {
+                            setPcoinAmount(v);
+                            setTonAmount(Number(v) / 1000);
+                          }}
+                          placeholder="500"
+                          min={100}
+                      />
+
+                      <ArrowDown />
+
+                      <CurrencyInput
+                          icon={`${store.imgUrl}icon_ton.png`}
+                          label="TON"
+                          balance={0}
+                          value={String(tonAmount)}
+                          onChange={(v) => setTonAmount(Number(v))}
+                      />
+
+                      <div className="text-center mb-4 sm:mb-6 font-bold text-base sm:text-lg text-amber-800 shantell flex items-center justify-center">
+                        Курс: 1 TON = 1000 PCoin
+                        <img
+                            src={`${store.imgUrl}icon_dollar_coin.png`}
+                            alt="PCoin"
+                            className="w-6 h-6 sm:w-8 sm:h-8 ml-1"
+                        />
+                      </div>
+
+                      {/* Добавили отступ сверху для надежности */}
+                      <div className="mt-2">
+                        <ActionButton
+                            label={buying ? "Создание заказа..." : "Купить"}
+                            disabled={buying}
+                            onClick={handleBuy}
+                            img={`${store.imgUrl}b_blue2.png`}
+                            textColor="text-blue-900"
+                        />
+                      </div>
                     </div>
+                  </div>
+                </div>
 
-                    {/* Поле ввода PDollar (БЕЗ Math.max) */}
-                    <CurrencyInput
-                      icon={`${store.imgUrl}icon_dollar.png`}
-                      label="PDollar"
-                      balance={store.pdollar ?? 0}
-                      value={pdollarAmount}
-                      onChange={(v) => {
-                        const num = Number(v);
-                        setPdollarAmount(v);
-
-                        if (!isNaN(num)) {
-                          const tonValue = num * PDOLLAR_TO_TON_RATE;
-                          setTonExchangeAmount(tonValue.toFixed(5));
-                        }
-                      }}
-                      placeholder="25000"
+                {/*
+                 ✅ ИСПРАВЛЕНИЕ 2: Блок "Обмен"
+                 То же самое исправление
+              */}
+                <div className="w-11/12 max-w-md mt-4">
+                  <div className="relative flex flex-col p-5">
+                    <img
+                        src={`${store.imgUrl}img_window2.png`}
+                        alt="Exchange"
+                        className="absolute inset-0 w-full h-full object-fill -z-10"
                     />
+                    <div className="relative z-10 flex flex-col">
+                      <div className="text-center text-lg sm:text-2xl mb-3 text-amber-800 shantell font-bold">
+                        ОБМЕННИК
+                      </div>
 
-                    <ArrowDown />
-                    <CurrencyInput
-                      icon={`${store.imgUrl}icon_ton.png`}
-                      label="TON"
-                      balance={0}
-                      value={tonExchangeAmount}
-                      onChange={(v) => {
-                        const num = Number(v);
-                        if (!isNaN(num)) {
-                          setTonExchangeAmount(v);
-                          const pdollarValue = num / PDOLLAR_TO_TON_RATE;
-                          setPdollarAmount(String(Math.round(pdollarValue)));
-                        }
-                      }}
-                    />
+                      <CurrencyInput
+                          icon={`${store.imgUrl}icon_dollar.png`}
+                          label="PDollar"
+                          balance={store.pdollar ?? 0}
+                          value={pdollarAmount}
+                          onChange={(v) => {
+                            const num = Number(v);
+                            setPdollarAmount(v);
 
-                    <div className="text-center mb-4 sm:mb-6 font-bold text-base sm:text-lg text-amber-800 shantell">
-                      Курс: 1 PDollar = 0.00001 TON
+                            if (!isNaN(num)) {
+                              const tonValue = num * PDOLLAR_TO_TON_RATE;
+                              setTonExchangeAmount(tonValue.toFixed(5));
+                            }
+                          }}
+                          placeholder="25000"
+                      />
+
+                      <ArrowDown />
+                      <CurrencyInput
+                          icon={`${store.imgUrl}icon_ton.png`}
+                          label="TON"
+                          balance={0}
+                          value={tonExchangeAmount}
+                          onChange={(v) => {
+                            const num = Number(v);
+                            if (!isNaN(num)) {
+                              setTonExchangeAmount(v);
+                              const pdollarValue = num / PDOLLAR_TO_TON_RATE;
+                              setPdollarAmount(String(Math.round(pdollarValue)));
+                            }
+                          }}
+                      />
+
+                      <div className="text-center mb-4 sm:mb-6 font-bold text-base sm:text-lg text-amber-800 shantell">
+                        Курс: 1 PDollar = 0.00001 TON
+                      </div>
+
+                      <div className="mt-2">
+                        <ActionButton
+                            label="ОБМЕНЯТЬ"
+                            onClick={handleExchange}
+                            img={`${store.imgUrl}b_blue2.png`}
+                            textColor="text-blue-900"
+                        />
+                      </div>
                     </div>
-
-                    <ActionButton
-                      label="ОБМЕНЯТЬ"
-                      onClick={handleExchange}
-                      img={`${store.imgUrl}b_blue2.png`}
-                      textColor="text-blue-900"
-                    />
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* модалка заказа */}
-      {isOrderModalOpen && (
-        <BankOrderModal onClose={() => setIsOrderModalOpen(false)} />
-      )}
+        {isOrderModalOpen && (
+            <BankOrderModal onClose={() => setIsOrderModalOpen(false)} />
+        )}
 
-      {/* модалка обмена (ручной вывод) */}
-      {/* Используем условный рендеринг &&, чтобы компонент создался заново с нужным initialAmount */}
-      {isExchangeModalOpen && (
-        <ExchangeModal
-          isOpen={isExchangeModalOpen}
-          onClose={() => setIsExchangeModalOpen(false)}
-          initialAmount={pdollarAmount}
+        {isExchangeModalOpen && (
+            <ExchangeModal
+                isOpen={isExchangeModalOpen}
+                onClose={() => setIsExchangeModalOpen(false)}
+                initialAmount={pdollarAmount}
+            />
+        )}
+
+        <AdminModal
+            isOpen={isAdminModalOpen}
+            onClose={() => setIsAdminModalOpen(false)}
         />
-      )}
 
-      {/* Административная модалка */}
-      <AdminModal
-        isOpen={isAdminModalOpen}
-        onClose={() => setIsAdminModalOpen(false)}
-      />
-
-      <Footer />
-      <WebSocketComponent />
-    </>
+        <Footer />
+        <WebSocketComponent />
+      </>
   );
+
 });
 
 /* ====== Подкомпоненты ====== */
