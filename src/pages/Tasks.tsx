@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import store from "../store/store";
 import { toast } from "react-toastify";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
 import styles from "../css/task.module.css";
-import type { JSX } from "react/jsx-runtime";
+
 
 /* eslint-disable @typescript-eslint/no-namespace */
 declare global {
@@ -29,13 +29,14 @@ const ADS_COOLDOWN_MS = 10000;
 function Tasks() {
   const [showDailyCombo, setShowDailyCombo] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [isSubscribedToTeamLove, setIsSubscribedToTeamLove] = useState(false); // ✅ новое состояние
+  const [isSubscribedToTeamLove, setIsSubscribedToTeamLove] = useState(false);
   const [isInviteTaskDone, setIsInviteTaskDone] = useState(false);
   const [completedTaskIds, setCompletedTaskIds] = useState<number[]>([]);
   const [isAdsgramLoaded, setIsAdsgramLoaded] = useState(false);
   const [isAdsTaskDone, setIsAdsTaskDone] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  const taskRef = useRef<JSX.IntrinsicElements["adsgram-task"]>(null);
+  const [adsTaskEl, setAdsTaskEl] = useState<HTMLElement | null>(null);
 
   // 👇 ДОБАВЬ ЭТОТ ЭФФЕКТ ТОЛЬКО В ТЕСТОВОЙ ВЕТКЕ
   useEffect(() => {
@@ -47,9 +48,17 @@ function Tasks() {
 
   // Эффект для adsgram-task (reward → TASKS_COMPLETE ADS_TASK_1 + cooldown)
   useEffect(() => {
-    const handler = (event: CustomEvent) => {
-      console.log("📢 Adsgram-task reward event received!", event);
-      console.log("Event detail:", event.detail);
+    if (!adsTaskEl) {
+      console.log("🔧 adsgram-task element is not ready yet");
+      return;
+    }
+
+    console.log("🔧 Setting up adsgram-task listener, element:", adsTaskEl);
+
+    const rewardHandler = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      console.log("📢 Adsgram-task reward event received!", customEvent);
+      console.log("Event detail:", customEvent.detail);
 
       if (!store.sessionId || !store.user?.telegramId) {
         toast.error("Авторизуйтесь, чтобы получить награду за рекламу");
@@ -80,43 +89,34 @@ function Tasks() {
       localStorage.setItem("adsTaskLastDoneAt", String(now));
       setIsAdsTaskDone(true);
 
-      // через cooldown снова показываем блок
       setTimeout(() => {
         setIsAdsTaskDone(false);
       }, ADS_COOLDOWN_MS);
     };
 
-    const task = taskRef.current;
+    const stateHandler = (e: Event) => {
+      console.log("Adsgram-task statechange:", e);
+      const el = e.target as HTMLElement;
+      console.log("Current state:", el.getAttribute("state"));
+    };
 
-    console.log("🔧 Setting up adsgram-task listener, task ref:", task);
+    adsTaskEl.addEventListener("reward", rewardHandler);
+    adsTaskEl.addEventListener("statechange", stateHandler);
 
-    if (task) {
-      // Добавляем несколько типов событий для отладки
-      task.addEventListener("reward", handler as EventListener);
-      task.addEventListener("statechange", (e: Event) => {
-        console.log("Adsgram-task statechange:", e);
-        const customElement = e.target as HTMLElement;
-        console.log("Current state:", customElement.getAttribute("state"));
-      });
-
-      // Проверяем состояние элемента
-      setTimeout(() => {
-        if (task) {
-          console.log(
-            "Adsgram-task initial state:",
-            task.getAttribute?.("state")
-          );
-          console.log("Adsgram-task attributes:", task.attributes);
-        }
-      }, 1000);
-    }
+    // Проверяем состояние через секунду
+    setTimeout(() => {
+      console.log(
+          "Adsgram-task initial state:",
+          adsTaskEl.getAttribute?.("state")
+      );
+      console.log("Adsgram-task attributes:", adsTaskEl.attributes);
+    }, 1000);
 
     return () => {
-      if (task) {
-        task.removeEventListener("reward", handler as EventListener);
-      }
+      adsTaskEl.removeEventListener("reward", rewardHandler);
+      adsTaskEl.removeEventListener("statechange", stateHandler);
     };
-  }, []);
+  }, [adsTaskEl, store.sessionId, store.user?.telegramId]);
 
   // Ручная обработка нажатия кнопки "Получить" - если adsgram-task не работает
   const handleManualAdClaim = () => {
@@ -178,25 +178,31 @@ function Tasks() {
   // Инициализация выполненных заданий из localStorage (включая cooldown ads)
   useEffect(() => {
     const subscribedDone =
-      localStorage.getItem("subscribedTaskDone") === "true";
+        localStorage.getItem("subscribedTaskDone") === "true";
     const subscribedTeamLoveDone =
-      localStorage.getItem("subscribedTeamLoveTaskDone") === "true";
+        localStorage.getItem("subscribedTeamLoveTaskDone") === "true";
     const inviteDone = localStorage.getItem("invite3TaskDone") === "true";
 
+    const completed: number[] = [];
+
+    // В ТЕСТОВОЙ ВЕТКЕ: не считаем подписки выполненными
     if (subscribedDone) {
       setIsSubscribed(true);
-      setCompletedTaskIds((prev) => [...prev, 1]);
-    }
-
-    if (subscribedTeamLoveDone) {
-      setIsSubscribedToTeamLove(true);
-      setCompletedTaskIds((prev) => [...prev, 3]);
+      // completed.push(1);
     }
 
     if (inviteDone) {
       setIsInviteTaskDone(true);
-      setCompletedTaskIds((prev) => [...prev, 2]);
+      completed.push(2);
     }
+
+    if (subscribedTeamLoveDone) {
+      setIsSubscribedToTeamLove(true);
+      // completed.push(3);
+    }
+
+    setCompletedTaskIds(completed);
+    setIsInitialized(true);
 
     const lastAdsTsRaw = localStorage.getItem("adsTaskLastDoneAt");
     if (lastAdsTsRaw) {
@@ -225,7 +231,7 @@ function Tasks() {
     }
   }, [store.taskInvite3Status]);
 
-  // выполнение таски подписки на канал Pizza TowerTON
+  // выполнение таски подписки на канал Pizza TowerTON и другие
   const handleSubscribe = () => {
     if (isSubscribed) return;
 
@@ -248,7 +254,7 @@ function Tasks() {
         toast.success("✅ Подписка подтверждена! Получаем награду...");
         setIsSubscribed(true);
         localStorage.setItem("subscribedTaskDone", "true");
-        setCompletedTaskIds((prev) => [...prev.filter((id) => id !== 1), 1]);
+       // setCompletedTaskIds((prev) => [...prev.filter((id) => id !== 1), 1]);
       } else {
         toast.error("WebSocket не подключён");
       }
@@ -278,7 +284,7 @@ function Tasks() {
         toast.success("✅ Подписка на TEAM LOVE подтверждена!");
         setIsSubscribedToTeamLove(true);
         localStorage.setItem("subscribedTeamLoveTaskDone", "true");
-        setCompletedTaskIds((prev) => [...prev.filter((id) => id !== 3), 3]);
+       // setCompletedTaskIds((prev) => [...prev.filter((id) => id !== 3), 3]);
       } else {
         toast.error("WebSocket не подключён");
       }
@@ -335,9 +341,9 @@ function Tasks() {
   ];
 
   // Фильтруем задания, чтобы показывать только невыполненные
-  const visibleTaskBlocks = taskBlocks.filter(
-    (block) => !completedTaskIds.includes(block.id)
-  );
+  const visibleTaskBlocks = isInitialized
+      ? taskBlocks.filter((block) => !completedTaskIds.includes(block.id))
+      : taskBlocks;
 
   const handleDailyComboClick = () => {
     setShowDailyCombo(!showDailyCombo);
@@ -533,60 +539,60 @@ function Tasks() {
 
               {/* Рекламный таск -----------------------------------------------*/}
               {shouldRenderAdsgram ? (
-                <adsgram-task
-                  className={styles.task}
-                  data-block-id="task-19032"
-                  ref={taskRef}
-                >
+                  <adsgram-task
+                      className={styles.task}
+                      data-block-id="task-19032"
+                      ref={setAdsTaskEl}
+                  >
                   <span
-                    slot="reward"
-                    className="text-amber-800 text-md shantell"
+                      slot="reward"
+                      className="text-amber-800 text-md shantell"
                   >
                     300 pizza
                   </span>
-                  <div
-                    slot="button"
-                    className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-800 rounded-lg"
-                  >
-                    Вперед
-                  </div>
-                  <div
-                    slot="claim"
-                    className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-800 rounded-lg"
-                  >
-                    Получить
-                  </div>
-                  <div
-                    slot="done"
-                    className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-700 rounded-lg"
-                  >
-                    Готово
-                  </div>
-                </adsgram-task>
+                    <div
+                        slot="button"
+                        className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-800 rounded-lg"
+                    >
+                      Вперед
+                    </div>
+                    <div
+                        slot="claim"
+                        className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-800 rounded-lg"
+                    >
+                      Получить
+                    </div>
+                    <div
+                        slot="done"
+                        className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-700 rounded-lg"
+                    >
+                      Готово
+                    </div>
+                  </adsgram-task>
               ) : isAdsTaskDone ? (
-                // Показываем cooldown таймер
-                <div className="w-11/12 max-w-md text-center p-4 bg-amber-100 rounded-lg border-2 border-amber-800">
-                  <div className="text-lg font-bold text-amber-800 shantell mb-2">
-                    ⏳ Рекламное задание
+                  // Показываем cooldown таймер
+                  <div className="w-11/12 max-w-md text-center p-4 bg-amber-100 rounded-lg border-2 border-amber-800">
+                    <div className="text-lg font-bold text-amber-800 shantell mb-2">
+                      ⏳ Рекламное задание
+                    </div>
+                    <div className="text-amber-700 shantell">
+                      Следующее задание будет доступно через{" "}
+                      {Math.floor(ADS_COOLDOWN_MS / 60000)} минут
+                    </div>
                   </div>
-                  <div className="text-amber-700 shantell">
-                    Следующее задание будет доступно через{" "}
-                    {Math.floor(ADS_COOLDOWN_MS / 60000)} минут
-                  </div>
-                </div>
               ) : (
-                // Кнопка для ручного завершения (если adsgram-task не работает)
-                <div className="w-11/12 max-w-md text-center">
-                  <button
-                    onClick={handleManualAdClaim}
-                    className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold shantell text-lg rounded-lg transition transform hover:scale-105"
-                  >
-                    Выполнить задание и получить 300 pizza
-                  </button>
-                  <div className="mt-2 text-sm text-amber-600 shantell">
-                    (Ручное подтверждение - для тестирования)
+                  // Кнопка для ручного завершения (если adsgram-task не работает)
+                  <div className="w-11/12 max-w-md text-center">
+                    <button
+                        onClick={handleManualAdClaim}
+                        className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold shantell text-lg rounded-lg transition transform hover:scale-105"
+                    >
+                      Выполнить задание и получить 300 pizza
+                    </button>
+                    <div className="mt-2 text-sm text-amber-600 shantell">
+                      (Ручное подтверждение - для тестирования)
+                    </div>
                   </div>
-                </div>
               )}
 
               {showDailyCombo && (
