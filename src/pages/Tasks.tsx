@@ -1,22 +1,181 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import store from "../store/store";
 import { toast } from "react-toastify";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
+// import styles from "../css/task.module.css";
+import type { JSX } from "react/jsx-runtime";
 
+/* eslint-disable @typescript-eslint/no-namespace */
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      "adsgram-task": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        "data-block-id": string;
+        ref?: React.RefObject<HTMLElement>;
+      };
+    }
+  }
+}
+/* eslint-enable @typescript-eslint/no-namespace */
+
+// const ADS_COOLDOWN_MS = 10000;
+const ADS_COOLDOWN_MS = 5 * 60 * 1000; // 5 минут
 
 function Tasks() {
   const [showDailyCombo, setShowDailyCombo] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [isSubscribedToTeamLove, setIsSubscribedToTeamLove] = useState(false);
+  const [isSubscribedToTeamLove, setIsSubscribedToTeamLove] = useState(false); // ✅ новое состояние
   const [isInviteTaskDone, setIsInviteTaskDone] = useState(false);
   const [completedTaskIds, setCompletedTaskIds] = useState<number[]>([]);
+  const [_isAdsgramLoaded, setIsAdsgramLoaded] = useState(false);
+  const [_isAdsTaskDone, setIsAdsTaskDone] = useState(false);
 
+  const taskRef = useRef<JSX.IntrinsicElements["adsgram-task"]>(null);
 
+  // 👇 ДОБАВЬ ЭТОТ ЭФФЕКТ ТОЛЬКО В ТЕСТОВОЙ ВЕТКЕ
+  useEffect(() => {
+    // сброс только нужных флагов задач
+    localStorage.removeItem("subscribedTaskDone");
+    localStorage.removeItem("subscribedTeamLoveTaskDone");
+    localStorage.removeItem("invite3TaskDone");
+  }, []);
 
+  // Эффект для adsgram-task (reward → TASKS_COMPLETE ADS_TASK_1 + cooldown)
+  useEffect(() => {
+    const handler = (event: CustomEvent) => {
+      console.log("📢 Adsgram-task reward event received!", event);
+      console.log("Event detail:", event.detail);
 
-  // Инициализация выполненных заданий из localStorage
+      if (!store.sessionId || !store.user?.telegramId) {
+        toast.error("Авторизуйтесь, чтобы получить награду за рекламу");
+        return;
+      }
+
+      const rq = {
+        type: "TASKS_COMPLETE" as const,
+        requestId: Math.random().toString(36).substring(2, 10),
+        session: store.sessionId,
+        taskRq: {
+          telegramId: store.user.telegramId,
+          code: "ADS_TASK_1",
+        },
+      };
+
+      console.log("🚀 Sending ADS_TASK_1 request:", rq);
+
+      const ok = store.send(rq);
+      if (!ok) {
+        toast.error("WebSocket не подключён");
+        return;
+      }
+
+      toast.success("🎉 Рекламное задание выполнено! Начисляем награду...");
+
+      const now = Date.now();
+      localStorage.setItem("adsTaskLastDoneAt", String(now));
+      setIsAdsTaskDone(true);
+
+      // через cooldown снова показываем блок
+      setTimeout(() => {
+        setIsAdsTaskDone(false);
+      }, ADS_COOLDOWN_MS);
+    };
+
+    const task = taskRef.current;
+
+    console.log("🔧 Setting up adsgram-task listener, task ref:", task);
+
+    if (task) {
+      // Добавляем несколько типов событий для отладки
+      task.addEventListener("reward", handler as EventListener);
+      task.addEventListener("statechange", (e: Event) => {
+        console.log("Adsgram-task statechange:", e);
+        const customElement = e.target as HTMLElement;
+        console.log("Current state:", customElement.getAttribute("state"));
+      });
+
+      // Проверяем состояние элемента
+      setTimeout(() => {
+        if (task) {
+          console.log(
+            "Adsgram-task initial state:",
+            task.getAttribute?.("state")
+          );
+          console.log("Adsgram-task attributes:", task.attributes);
+        }
+      }, 1000);
+    }
+
+    return () => {
+      if (task) {
+        task.removeEventListener("reward", handler as EventListener);
+      }
+    };
+  }, []);
+
+  // Ручная обработка нажатия кнопки "Получить" - если adsgram-task не работает
+  // const handleManualAdClaim = () => {
+  //   console.log("🔄 Manual ad claim triggered");
+
+  //   if (!store.sessionId || !store.user?.telegramId) {
+  //     toast.error("Авторизуйтесь, чтобы получить награду за рекламу");
+  //     return;
+  //   }
+
+  //   const rq = {
+  //     type: "TASKS_COMPLETE" as const,
+  //     requestId: Math.random().toString(36).substring(2, 10),
+  //     session: store.sessionId,
+  //     taskRq: {
+  //       telegramId: store.user.telegramId,
+  //       code: "ADS_TASK_1",
+  //     },
+  //   };
+
+  //   console.log("🚀 Manual sending ADS_TASK_1 request:", rq);
+
+  //   const ok = store.send(rq);
+  //   if (!ok) {
+  //     toast.error("WebSocket не подключён");
+  //     return;
+  //   }
+
+  //   toast.success("🎉 Рекламное задание выполнено! Начисляем награду...");
+
+  //   const now = Date.now();
+  //   localStorage.setItem("adsTaskLastDoneAt", String(now));
+  //   setIsAdsTaskDone(true);
+
+  //   setTimeout(() => {
+  //     setIsAdsTaskDone(false);
+  //   }, ADS_COOLDOWN_MS);
+  // };
+
+  // Проверяем загрузку adsgram-task
+  useEffect(() => {
+    const checkAdsgram = () => {
+      if (customElements.get("adsgram-task")) {
+        console.log("✅ Adsgram-task custom element loaded");
+        setIsAdsgramLoaded(true);
+      } else {
+        console.log("❌ Adsgram-task custom element not found");
+      }
+    };
+
+    checkAdsgram();
+
+    // Проверяем каждую секунду
+    const checkInterval = setInterval(checkAdsgram, 1000);
+
+    return () => clearInterval(checkInterval);
+  }, []);
+
+  // Инициализация выполненных заданий из localStorage (включая cooldown ads)
   useEffect(() => {
     const subscribedDone =
       localStorage.getItem("subscribedTaskDone") === "true";
@@ -30,7 +189,6 @@ function Tasks() {
     }
 
     if (subscribedTeamLoveDone) {
-      // ✅
       setIsSubscribedToTeamLove(true);
       setCompletedTaskIds((prev) => [...prev, 3]);
     }
@@ -38,6 +196,23 @@ function Tasks() {
     if (inviteDone) {
       setIsInviteTaskDone(true);
       setCompletedTaskIds((prev) => [...prev, 2]);
+    }
+
+    const lastAdsTsRaw = localStorage.getItem("adsTaskLastDoneAt");
+    if (lastAdsTsRaw) {
+      const lastTs = Number(lastAdsTsRaw);
+      const now = Date.now();
+      if (!Number.isNaN(lastTs) && now - lastTs < ADS_COOLDOWN_MS) {
+        setIsAdsTaskDone(true);
+        const remaining = ADS_COOLDOWN_MS - (now - lastTs);
+        const timeout = setTimeout(() => {
+          setIsAdsTaskDone(false);
+        }, remaining);
+
+        return () => clearTimeout(timeout);
+      } else {
+        setIsAdsTaskDone(false);
+      }
     }
   }, []);
 
@@ -59,7 +234,7 @@ function Tasks() {
 
     const timer = setTimeout(() => {
       const rq = {
-        type: "TASKS_COMPLETE",
+        type: "TASKS_COMPLETE" as const,
         requestId: Math.random().toString(36).substring(2, 10),
         session: store.sessionId ?? "",
         taskRq: {
@@ -190,6 +365,9 @@ function Tasks() {
   // Если все задания выполнены, показываем сообщение
   const allTasksCompleted = visibleTaskBlocks.length === 0;
 
+  // Рендерим adsgram-task только если он загружен и не в cooldown-е
+  // const shouldRenderAdsgram = isAdsgramLoaded && !isAdsTaskDone;
+
   return (
     <>
       <div className="relative min-h-screen w-full overflow-hidden">
@@ -278,14 +456,14 @@ function Tasks() {
 
                         {/* Кнопки действий */}
                         <div className="mt-auto px-2">
-                          {block.id === 1 || block.id === 3 ? ( // ← оба типа "ссылка + проверка подписки"
+                          {block.id === 1 || block.id === 3 ? (
                             block.link ? (
                               <a
                                 href={block.link}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={() => {
-                                  if (block.onClick) block.onClick();  // запускаем таймер, но не блокируем переход
+                                  if (block.onClick) block.onClick();
                                 }}
                                 className="block"
                               >
