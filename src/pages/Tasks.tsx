@@ -6,7 +6,6 @@ import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
 import styles from "../css/task.module.css";
 
-
 /* eslint-disable @typescript-eslint/no-namespace */
 declare global {
   namespace JSX {
@@ -23,8 +22,8 @@ declare global {
 }
 /* eslint-enable @typescript-eslint/no-namespace */
 
-const ADS_COOLDOWN_MS = 10000;
-// const ADS_COOLDOWN_MS = 5 * 60 * 1000; // 5 минут
+// const ADS_COOLDOWN_MS = 10000;
+const ADS_COOLDOWN_MS = 5 * 60 * 1000; // 5 минут
 
 function Tasks() {
   const [showDailyCombo, setShowDailyCombo] = useState(false);
@@ -37,14 +36,6 @@ function Tasks() {
   const [isInitialized, setIsInitialized] = useState(false);
 
   const [adsTaskEl, setAdsTaskEl] = useState<HTMLElement | null>(null);
-
-  // 👇 ДОБАВЬ ЭТОТ ЭФФЕКТ ТОЛЬКО В ТЕСТОВОЙ ВЕТКЕ
-  useEffect(() => {
-    // сброс только нужных флагов задач
-    localStorage.removeItem("subscribedTaskDone");
-    localStorage.removeItem("subscribedTeamLoveTaskDone");
-    localStorage.removeItem("invite3TaskDone");
-  }, []);
 
   // Эффект для adsgram-task (reward → TASKS_COMPLETE ADS_TASK_1 + cooldown)
   useEffect(() => {
@@ -103,14 +94,14 @@ function Tasks() {
     adsTaskEl.addEventListener("reward", rewardHandler);
     adsTaskEl.addEventListener("statechange", stateHandler);
 
-    // Проверяем состояние через секунду
+    // Проверяем состояние через
     setTimeout(() => {
       console.log(
-          "Adsgram-task initial state:",
-          adsTaskEl.getAttribute?.("state")
+        "Adsgram-task initial state:",
+        adsTaskEl.getAttribute?.("state")
       );
       console.log("Adsgram-task attributes:", adsTaskEl.attributes);
-    }, 1000);
+    }, 10000);
 
     return () => {
       adsTaskEl.removeEventListener("reward", rewardHandler);
@@ -163,14 +154,15 @@ function Tasks() {
         console.log("✅ Adsgram-task custom element loaded");
         setIsAdsgramLoaded(true);
       } else {
+        setIsAdsgramLoaded(false);
         console.log("❌ Adsgram-task custom element not found");
       }
     };
 
     checkAdsgram();
 
-    // Проверяем каждую секунду
-    const checkInterval = setInterval(checkAdsgram, 1000);
+    // Проверяем каждую
+    const checkInterval = setInterval(checkAdsgram, 10000);
 
     return () => clearInterval(checkInterval);
   }, []);
@@ -178,9 +170,9 @@ function Tasks() {
   // Инициализация выполненных заданий из localStorage (включая cooldown ads)
   useEffect(() => {
     const subscribedDone =
-        localStorage.getItem("subscribedTaskDone") === "true";
+      localStorage.getItem("subscribedTaskDone") === "true";
     const subscribedTeamLoveDone =
-        localStorage.getItem("subscribedTeamLoveTaskDone") === "true";
+      localStorage.getItem("subscribedTeamLoveTaskDone") === "true";
     const inviteDone = localStorage.getItem("invite3TaskDone") === "true";
 
     const completed: number[] = [];
@@ -254,7 +246,7 @@ function Tasks() {
         toast.success("✅ Подписка подтверждена! Получаем награду...");
         setIsSubscribed(true);
         localStorage.setItem("subscribedTaskDone", "true");
-       // setCompletedTaskIds((prev) => [...prev.filter((id) => id !== 1), 1]);
+        // setCompletedTaskIds((prev) => [...prev.filter((id) => id !== 1), 1]);
       } else {
         toast.error("WebSocket не подключён");
       }
@@ -284,7 +276,7 @@ function Tasks() {
         toast.success("✅ Подписка на TEAM LOVE подтверждена!");
         setIsSubscribedToTeamLove(true);
         localStorage.setItem("subscribedTeamLoveTaskDone", "true");
-       // setCompletedTaskIds((prev) => [...prev.filter((id) => id !== 3), 3]);
+        // setCompletedTaskIds((prev) => [...prev.filter((id) => id !== 3), 3]);
       } else {
         toast.error("WebSocket не подключён");
       }
@@ -342,8 +334,8 @@ function Tasks() {
 
   // Фильтруем задания, чтобы показывать только невыполненные
   const visibleTaskBlocks = isInitialized
-      ? taskBlocks.filter((block) => !completedTaskIds.includes(block.id))
-      : taskBlocks;
+    ? taskBlocks.filter((block) => !completedTaskIds.includes(block.id))
+    : taskBlocks;
 
   const handleDailyComboClick = () => {
     setShowDailyCombo(!showDailyCombo);
@@ -525,6 +517,64 @@ function Tasks() {
                 ))
               )}
 
+              {/* Рекламный таск -----------------------------------------------*/}
+              {shouldRenderAdsgram ? (
+                <adsgram-task
+                  className={styles.task}
+                  data-block-id="task-19032"
+                  ref={setAdsTaskEl}
+                >
+                  <span
+                    slot="reward"
+                    className="text-amber-800 text-md shantell"
+                  >
+                    300 pizza
+                  </span>
+                  <div
+                    slot="button"
+                    className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-800 rounded-lg"
+                  >
+                    Вперед
+                  </div>
+                  <div
+                    slot="claim"
+                    className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-800 rounded-lg"
+                  >
+                    Получить
+                  </div>
+                  <div
+                    slot="done"
+                    className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-700 rounded-lg"
+                  >
+                    Готово
+                  </div>
+                </adsgram-task>
+              ) : isAdsTaskDone ? (
+                // Показываем cooldown таймер
+                <div className="w-11/12 max-w-md text-center p-4 bg-amber-100 rounded-lg border-2 border-amber-800">
+                  <div className="text-lg font-bold text-amber-800 shantell mb-2">
+                    ⏳ Рекламное задание
+                  </div>
+                  <div className="text-amber-700 shantell">
+                    Следующее задание будет доступно через{" "}
+                    {Math.floor(ADS_COOLDOWN_MS / 60000)} минут
+                  </div>
+                </div>
+              ) : (
+                // Кнопка для ручного завершения (если adsgram-task не работает)
+                <div className="w-11/12 max-w-md text-center">
+                  <button
+                    onClick={handleManualAdClaim}
+                    className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold shantell text-lg rounded-lg transition transform hover:scale-105"
+                  >
+                    Выполнить задание и получить 300 pizza
+                  </button>
+                  <div className="mt-2 text-sm text-amber-600 shantell">
+                    (Ручное подтверждение - для тестирования)
+                  </div>
+                </div>
+              )}
+
               {/* Кнопка и блок Daily Combo — оставлены, как были */}
               <button
                 onClick={handleDailyComboClick}
@@ -536,64 +586,6 @@ function Tasks() {
                   className="w-1/2 h-auto"
                 />
               </button>
-
-              {/* Рекламный таск -----------------------------------------------*/}
-              {shouldRenderAdsgram ? (
-                  <adsgram-task
-                      className={styles.task}
-                      data-block-id="task-19032"
-                      ref={setAdsTaskEl}
-                  >
-                  <span
-                      slot="reward"
-                      className="text-amber-800 text-md shantell"
-                  >
-                    300 pizza
-                  </span>
-                    <div
-                        slot="button"
-                        className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-800 rounded-lg"
-                    >
-                      Вперед
-                    </div>
-                    <div
-                        slot="claim"
-                        className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-800 rounded-lg"
-                    >
-                      Получить
-                    </div>
-                    <div
-                        slot="done"
-                        className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-700 rounded-lg"
-                    >
-                      Готово
-                    </div>
-                  </adsgram-task>
-              ) : isAdsTaskDone ? (
-                  // Показываем cooldown таймер
-                  <div className="w-11/12 max-w-md text-center p-4 bg-amber-100 rounded-lg border-2 border-amber-800">
-                    <div className="text-lg font-bold text-amber-800 shantell mb-2">
-                      ⏳ Рекламное задание
-                    </div>
-                    <div className="text-amber-700 shantell">
-                      Следующее задание будет доступно через{" "}
-                      {Math.floor(ADS_COOLDOWN_MS / 60000)} минут
-                    </div>
-                  </div>
-              ) : (
-                  // Кнопка для ручного завершения (если adsgram-task не работает)
-                  <div className="w-11/12 max-w-md text-center">
-                    <button
-                        onClick={handleManualAdClaim}
-                        className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold shantell text-lg rounded-lg transition transform hover:scale-105"
-                    >
-                      Выполнить задание и получить 300 pizza
-                    </button>
-                    <div className="mt-2 text-sm text-amber-600 shantell">
-                      (Ручное подтверждение - для тестирования)
-                    </div>
-                  </div>
-              )}
 
               {showDailyCombo && (
                 <>
