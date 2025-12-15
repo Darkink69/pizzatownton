@@ -434,83 +434,145 @@ const WebSocketComponent = observer(() => {
             break;
           }
 
-          /** ---------------- TASKS_COMPLETE ---------------- */
+
+            /** ---------------- TASKS_COMPLETE ---------------- */
           case "TASKS_COMPLETE": {
             const data = parsed.data as TaskCompleteResponse | undefined;
+            console.log("TASKS_COMPLETE raw:", parsed);
 
-            if (!parsed.success || !data?.code) {
+            if (!data) {
               toast.error(parsed.message || "Ошибка при получении награды");
               break;
             }
 
-            toast.success(
-              data.message || parsed.message || "🎉 Награда получена!"
-            );
+            const { code, rewardPcoin, rewardPizza, rewardPdollar, message } = data;
 
-            // INVITE_3_FRIENDS
-            if (data.code === "INVITE_3_FRIENDS") {
-              runInAction(() => {
-                store.taskInvite3Status = "rewarded";
-                store.taskInvite3Error = null;
+            // ---------------- INVITE_3_FRIENDS ----------------
+            if (code === "INVITE_3_FRIENDS") {
+              if (parsed.success) {
+                // нормальное успешное завершение
+                runInAction(() => {
+                  store.taskInvite3Status = "rewarded";
+                  store.taskInvite3Error = null;
 
-                if (data.rewardPcoin != null) {
-                  store.pcoin = (store.pcoin ?? 0) + Number(data.rewardPcoin);
+                  if (rewardPcoin != null) {
+                    store.pcoin = (store.pcoin ?? 0) + Number(rewardPcoin);
+                  }
+                  if (rewardPizza != null) {
+                    store.pizza = (store.pizza ?? 0) + Number(rewardPizza);
+                  }
+                  if (rewardPdollar != null) {
+                    store.pdollar = (store.pdollar ?? 0) + Number(rewardPdollar);
+                  }
+                });
+                toast.success(
+                    message || parsed.message || "🎉 Награда за друзей получена!"
+                );
+              } else {
+                // задача уже была выполнена ранее
+                if (
+                    parsed.message === "TASK_ALREADY_COMPLETED" ||
+                    message === "ALREADY_COMPLETED"
+                ) {
+                  runInAction(() => {
+                    store.taskInvite3Status = "rewarded";
+                    store.taskInvite3Error = null;
+                  });
+                  toast.info(
+                      "Награда за приглашение друзей уже была получена ранее."
+                  );
+                } else {
+                  toast.error(
+                      message || parsed.message || "Ошибка при получении награды"
+                  );
                 }
-                if (data.rewardPizza != null) {
-                  store.pizza = (store.pizza ?? 0) + Number(data.rewardPizza);
-                }
-              });
+              }
               break;
             }
 
-            // SUBSCRIBE_MAIN_CHANNEL — старое задание
-            if (data.code === "SUBSCRIBE_MAIN_CHANNEL") {
+            // ---------------- ADS_TASK_1 (реклама) ----------------
+            if (code === "ADS_TASK_1") {
+              if (parsed.success) {
+                // награда реально выдана
+                runInAction(() => {
+                  if (rewardPcoin != null) {
+                    store.pcoin = (store.pcoin ?? 0) + Number(rewardPcoin);
+                  }
+                  if (rewardPizza != null) {
+                    store.pizza = (store.pizza ?? 0) + Number(rewardPizza);
+                  }
+                  if (rewardPdollar != null) {
+                    store.pdollar = (store.pdollar ?? 0) + Number(rewardPdollar);
+                  }
+                });
+
+                toast.success(
+                    message || parsed.message || "🎉 Награда за рекламу получена!"
+                );
+
+                // фиксируем время последнего успешного рекламного задания
+                const now = Date.now();
+                localStorage.setItem("adsTaskLastDoneAt", String(now));
+              } else {
+                // серверный cooldown или другая ошибка
+                if (
+                    parsed.message === "COOLDOWN_NOT_PASSED" ||
+                    message === "COOLDOWN_NOT_PASSED"
+                ) {
+                  toast.info(
+                      "Рекламное задание уже было выполнено недавно. Попробуйте позже."
+                  );
+                } else {
+                  toast.error(
+                      message || parsed.message || "Ошибка при выполнении рекламного задания"
+                  );
+                }
+              }
+              break;
+            }
+
+            // ---------------- Остальные таски ----------------
+            if (!parsed.success) {
+              // общий случай для остальных задач
+              toast.error(message || parsed.message || "Ошибка при получении награды");
+              break;
+            }
+
+            // Успешный общий случай
+            toast.success(message || parsed.message || "🎉 Награда получена!");
+
+            // SUBSCRIBE_MAIN_CHANNEL
+            if (code === "SUBSCRIBE_MAIN_CHANNEL") {
               runInAction(() => {
-                if (data.rewardPcoin != null) {
-                  store.pcoin = (store.pcoin ?? 0) + Number(data.rewardPcoin);
+                if (rewardPcoin != null) {
+                  store.pcoin = (store.pcoin ?? 0) + Number(rewardPcoin);
                 } else {
                   store.pcoin = (store.pcoin ?? 0) + 40;
                 }
 
-                if (data.rewardPizza != null) {
-                  store.pizza = (store.pizza ?? 0) + Number(data.rewardPizza);
+                if (rewardPizza != null) {
+                  store.pizza = (store.pizza ?? 0) + Number(rewardPizza);
                 } else {
                   store.pizza = (store.pizza ?? 0) + 200;
                 }
               });
             }
 
-            // ✅ SUBSCRIBE_TEAM_LOVE_CHANNEL — новое задание
-            if (data.code === "SUBSCRIBE_TEAM_LOVE_CHANNEL") {
+            // SUBSCRIBE_TEAM_LOVE_CHANNEL
+            if (code === "SUBSCRIBE_TEAM_LOVE_CHANNEL") {
               runInAction(() => {
-                if (data.rewardPcoin != null) {
-                  store.pcoin = (store.pcoin ?? 0) + Number(data.rewardPcoin);
+                if (rewardPcoin != null) {
+                  store.pcoin = (store.pcoin ?? 0) + Number(rewardPcoin);
                 } else {
                   store.pcoin = (store.pcoin ?? 0) + 10;
                 }
 
-                if (data.rewardPizza != null) {
-                  store.pizza = (store.pizza ?? 0) + Number(data.rewardPizza);
+                if (rewardPizza != null) {
+                  store.pizza = (store.pizza ?? 0) + Number(rewardPizza);
                 } else {
                   store.pizza = (store.pizza ?? 0) + 300;
                 }
               });
-            }
-
-            // ADS_TASK_1 - рекламное задание
-            if (data.code === "ADS_TASK_1") {
-              runInAction(() => {
-                if (data.rewardPizza != null) {
-                  store.pizza = (store.pizza ?? 0) + Number(data.rewardPizza);
-                  toast.success(
-                    `+${data.rewardPizza} pizza за рекламное задание!`
-                  );
-                } else {
-                  store.pizza = (store.pizza ?? 0) + 300; // стандартная награда
-                  toast.success("+300 pizza за рекламное задание!");
-                }
-              });
-              break;
             }
 
             break;
