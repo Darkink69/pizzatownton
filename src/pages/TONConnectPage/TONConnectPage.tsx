@@ -1,26 +1,17 @@
-import { useEffect, type FC } from "react";
+import { useEffect, useState, useRef, type FC } from "react";
 import { useTonConnectUI } from "@tonconnect/ui-react";
 import {
   TonConnectButton,
   useTonWallet,
   useTonAddress,
 } from "@tonconnect/ui-react";
-import {
-  // Avatar,
-  // Cell,
-  // List,
-  Placeholder,
-  // Section,
-  Text,
-  // Title,
-} from "@telegram-apps/telegram-ui";
+import { Placeholder, Text } from "@telegram-apps/telegram-ui";
 import { observer } from "mobx-react-lite";
 
 import "./TONConnectPage.css";
 import store from "../../store/store";
 import { Page } from "../../components/Page";
 import { bem } from "../../css/bem";
-// import { DisplayData } from "../../components/DisplayData/DisplayData";
 import Footer from "../../components/Footer";
 import WebSocketComponent from "../../components/websocket";
 
@@ -36,6 +27,172 @@ export const TONConnectPage: FC = observer(() => {
   const wallet = useTonWallet();
   const adrss = useTonAddress();
   const [tonConnectUI] = useTonConnectUI();
+  const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
+  const addressRef = useRef<HTMLDivElement>(null);
+
+  // -------------------- улучшенное копирование адреса --------------------
+  async function tryClipboardCopy(text: string): Promise<boolean> {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (err) {
+      console.error("Clipboard API error:", err);
+      return false;
+    }
+    return false;
+  }
+
+  function tryExecCommandCopy(text: string): boolean {
+    try {
+      const input = document.createElement("input");
+      input.value = text;
+      input.style.position = "fixed";
+      input.style.top = "-100px";
+      input.style.left = "-100px";
+      document.body.appendChild(input);
+      input.select();
+      input.setSelectionRange(0, 99999);
+
+      let success = false;
+      try {
+        success = document.execCommand("copy");
+      } catch (err) {
+        console.error("execCommand error:", err);
+      }
+
+      document.body.removeChild(input);
+      return success;
+    } catch (err) {
+      console.error("execCommand fallback error:", err);
+      return false;
+    }
+  }
+
+  function tryTextAreaCopy(text: string): boolean {
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.top = "0";
+      textArea.style.left = "0";
+      textArea.style.width = "2em";
+      textArea.style.height = "2em";
+      textArea.style.padding = "0";
+      textArea.style.border = "none";
+      textArea.style.outline = "none";
+      textArea.style.boxShadow = "none";
+      textArea.style.background = "transparent";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      let success = false;
+      try {
+        success = document.execCommand("copy");
+      } catch (err) {
+        console.error("TextArea copy error:", err);
+      }
+
+      document.body.removeChild(textArea);
+      return success;
+    } catch (err) {
+      console.error("TextArea creation error:", err);
+      return false;
+    }
+  }
+
+  function trySelectAndCopy(text: string): boolean {
+    try {
+      // Создаем временный div для выделения текста
+      const tempDiv = document.createElement("div");
+      tempDiv.textContent = text;
+      tempDiv.style.position = "fixed";
+      tempDiv.style.top = "-100px";
+      tempDiv.style.left = "-100px";
+      document.body.appendChild(tempDiv);
+
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(tempDiv);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+
+      let success = false;
+      try {
+        success = document.execCommand("copy");
+      } catch (err) {
+        console.error("Select and copy error:", err);
+      }
+
+      selection?.removeAllRanges();
+      document.body.removeChild(tempDiv);
+      return success;
+    } catch (err) {
+      console.error("Select and copy error:", err);
+      return false;
+    }
+  }
+
+  const handleCopyAddress = async () => {
+    if (!adrss) {
+      setCopyError("Адрес не доступен");
+      setTimeout(() => setCopyError(null), 3000);
+      return;
+    }
+
+    setCopyError(null);
+
+    // Пробуем несколько методов копирования по порядку
+    let success = false;
+
+    // 1. Современный Clipboard API
+    success = await tryClipboardCopy(adrss);
+
+    // 2. Через execCommand с созданием input
+    if (!success) {
+      success = tryExecCommandCopy(adrss);
+    }
+
+    // 3. Через textarea
+    if (!success) {
+      success = tryTextAreaCopy(adrss);
+    }
+
+    // 4. Через выделение и копирование
+    if (!success) {
+      success = trySelectAndCopy(adrss);
+    }
+
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } else {
+      setCopyError(
+        "Не удалось скопировать. Выделите текст и скопируйте вручную"
+      );
+      setTimeout(() => setCopyError(null), 4000);
+
+      // Предлагаем ручное копирование
+      if (addressRef.current) {
+        const range = document.createRange();
+        range.selectNodeContents(addressRef.current);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+      }
+    }
+  };
+
+  // Обработчик клика по адресу для легкого копирования
+  const handleAddressClick = () => {
+    if (!adrss) return;
+
+    // Предлагаем скопировать при клике на адрес
+    handleCopyAddress();
+  };
 
   // ---------------- Логика получения баланса ----------------
   const getTonBalance = async (address: string, signal?: AbortSignal) => {
@@ -147,15 +304,44 @@ export const TONConnectPage: FC = observer(() => {
               <div className="flex-1"></div>
             </div>
 
+            {/* Уведомления о копировании */}
+            {copyError && (
+              <div className="mb-2 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm text-center">
+                {copyError}
+              </div>
+            )}
+
+            {copied && (
+              <div className="mb-2 p-2 bg-green-100 border border-green-400 text-green-700 rounded text-sm text-center">
+                Адрес скопирован в буфер обмена!
+              </div>
+            )}
+
             {/* Адрес кошелька */}
-            <div className="mb-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+            <div
+              className="mb-4 p-3 bg-amber-50 rounded-lg border border-amber-200 cursor-pointer hover:bg-amber-100 transition-colors"
+              onClick={handleAddressClick}
+              title="Нажмите чтобы скопировать"
+            >
               <div className="text-xs text-amber-600 shantell mb-1">
                 Адрес кошелька:
               </div>
-              <div className="text-sm text-amber-800 shantell font-mono break-all">
+              <div
+                ref={addressRef}
+                className="text-sm text-amber-800 shantell font-mono break-all select-all"
+                style={{
+                  userSelect: "all",
+                  WebkitUserSelect: "all",
+                  MozUserSelect: "all",
+                  // msUserSelect: 'all'
+                }}
+              >
                 {adrss
                   ? `${adrss.slice(0, 8)}...${adrss.slice(-8)}`
                   : "Не подключен"}
+              </div>
+              <div className="text-xs text-amber-500 mt-1 text-center">
+                Нажмите для копирования
               </div>
             </div>
 
@@ -163,36 +349,27 @@ export const TONConnectPage: FC = observer(() => {
             <div className="flex flex-col gap-2">
               {/* Кнопка "Скопировать адрес" */}
               <button
-                onClick={() => {
-                  if (adrss) {
-                    navigator.clipboard.writeText(adrss);
-                  }
-                }}
-                className="w-full relative py-3 rounded-lg flex items-center justify-center hover:opacity-90 transition-opacity"
+                onClick={handleCopyAddress}
+                className={`w-full relative py-3 rounded-lg flex items-center justify-center transition-all duration-200 active:scale-95 ${
+                  copied ? "bg-green-500" : "bg-blue-500 hover:bg-blue-600"
+                }`}
+                disabled={!adrss}
               >
-                <img
-                  src={`${store.imgUrl}b_blue_small.png`}
-                  alt="Button background"
-                  className="absolute inset-0 w-full h-full"
-                />
-                <span className="text-blue-900 font-bold shantell text-lg relative z-10">
-                  Скопировать адрес
+                <span
+                  className={`text-white font-bold shantell text-lg relative z-10 ${
+                    copied ? "animate-pulse" : ""
+                  }`}
+                >
+                  {copied ? "СКОПИРОВАНО!" : "Скопировать адрес"}
                 </span>
               </button>
 
               {/* Кнопка "Выйти" */}
               <button
                 onClick={() => tonConnectUI.disconnect()}
-                className="w-full relative py-3 rounded-lg flex items-center justify-center hover:opacity-90 transition-opacity"
+                className="w-full relative py-3 rounded-lg flex items-center justify-center bg-red-500 hover:bg-red-600 text-white font-bold shantell text-lg transition-all duration-200 active:scale-95"
               >
-                <img
-                  src={`${store.imgUrl}b_red_round.png`}
-                  alt="Button background"
-                  className="absolute inset-0 w-full h-full"
-                />
-                <span className="text-white font-bold shantell text-lg relative z-10">
-                  Выйти
-                </span>
+                Выйти
               </button>
             </div>
           </div>

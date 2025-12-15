@@ -497,6 +497,22 @@ const WebSocketComponent = observer(() => {
               });
             }
 
+            // ADS_TASK_1 - рекламное задание
+            if (data.code === "ADS_TASK_1") {
+              runInAction(() => {
+                if (data.rewardPizza != null) {
+                  store.pizza = (store.pizza ?? 0) + Number(data.rewardPizza);
+                  toast.success(
+                    `+${data.rewardPizza} pizza за рекламное задание!`
+                  );
+                } else {
+                  store.pizza = (store.pizza ?? 0) + 300; // стандартная награда
+                  toast.success("+300 pizza за рекламное задание!");
+                }
+              });
+              break;
+            }
+
             break;
           }
 

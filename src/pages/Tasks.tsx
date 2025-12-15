@@ -47,7 +47,10 @@ function Tasks() {
 
   // Эффект для adsgram-task (reward → TASKS_COMPLETE ADS_TASK_1 + cooldown)
   useEffect(() => {
-    const handler = () => {
+    const handler = (event: CustomEvent) => {
+      console.log("📢 Adsgram-task reward event received!", event);
+      console.log("Event detail:", event.detail);
+
       if (!store.sessionId || !store.user?.telegramId) {
         toast.error("Авторизуйтесь, чтобы получить награду за рекламу");
         return;
@@ -63,6 +66,8 @@ function Tasks() {
         },
       };
 
+      console.log("🚀 Sending ADS_TASK_1 request:", rq);
+
       const ok = store.send(rq);
       if (!ok) {
         toast.error("WebSocket не подключён");
@@ -75,7 +80,7 @@ function Tasks() {
       localStorage.setItem("adsTaskLastDoneAt", String(now));
       setIsAdsTaskDone(true);
 
-      // через 5 минут снова показываем блок
+      // через cooldown снова показываем блок
       setTimeout(() => {
         setIsAdsTaskDone(false);
       }, ADS_COOLDOWN_MS);
@@ -83,8 +88,27 @@ function Tasks() {
 
     const task = taskRef.current;
 
+    console.log("🔧 Setting up adsgram-task listener, task ref:", task);
+
     if (task) {
+      // Добавляем несколько типов событий для отладки
       task.addEventListener("reward", handler as EventListener);
+      task.addEventListener("statechange", (e: Event) => {
+        console.log("Adsgram-task statechange:", e);
+        const customElement = e.target as HTMLElement;
+        console.log("Current state:", customElement.getAttribute("state"));
+      });
+
+      // Проверяем состояние элемента
+      setTimeout(() => {
+        if (task) {
+          console.log(
+            "Adsgram-task initial state:",
+            task.getAttribute?.("state")
+          );
+          console.log("Adsgram-task attributes:", task.attributes);
+        }
+      }, 1000);
     }
 
     return () => {
@@ -94,20 +118,61 @@ function Tasks() {
     };
   }, []);
 
+  // Ручная обработка нажатия кнопки "Получить" - если adsgram-task не работает
+  const handleManualAdClaim = () => {
+    console.log("🔄 Manual ad claim triggered");
+
+    if (!store.sessionId || !store.user?.telegramId) {
+      toast.error("Авторизуйтесь, чтобы получить награду за рекламу");
+      return;
+    }
+
+    const rq = {
+      type: "TASKS_COMPLETE" as const,
+      requestId: Math.random().toString(36).substring(2, 10),
+      session: store.sessionId,
+      taskRq: {
+        telegramId: store.user.telegramId,
+        code: "ADS_TASK_1",
+      },
+    };
+
+    console.log("🚀 Manual sending ADS_TASK_1 request:", rq);
+
+    const ok = store.send(rq);
+    if (!ok) {
+      toast.error("WebSocket не подключён");
+      return;
+    }
+
+    toast.success("🎉 Рекламное задание выполнено! Начисляем награду...");
+
+    const now = Date.now();
+    localStorage.setItem("adsTaskLastDoneAt", String(now));
+    setIsAdsTaskDone(true);
+
+    setTimeout(() => {
+      setIsAdsTaskDone(false);
+    }, ADS_COOLDOWN_MS);
+  };
+
   // Проверяем загрузку adsgram-task
   useEffect(() => {
-    if (customElements.get("adsgram-task")) {
-      setIsAdsgramLoaded(true);
-    } else {
-      const checkInterval = setInterval(() => {
-        if (customElements.get("adsgram-task")) {
-          setIsAdsgramLoaded(true);
-          clearInterval(checkInterval);
-        }
-      }, 500);
+    const checkAdsgram = () => {
+      if (customElements.get("adsgram-task")) {
+        console.log("✅ Adsgram-task custom element loaded");
+        setIsAdsgramLoaded(true);
+      } else {
+        console.log("❌ Adsgram-task custom element not found");
+      }
+    };
 
-      return () => clearInterval(checkInterval);
-    }
+    checkAdsgram();
+
+    // Проверяем каждую секунду
+    const checkInterval = setInterval(checkAdsgram, 1000);
+
+    return () => clearInterval(checkInterval);
   }, []);
 
   // Инициализация выполненных заданий из localStorage (включая cooldown ads)
@@ -115,7 +180,7 @@ function Tasks() {
     const subscribedDone =
       localStorage.getItem("subscribedTaskDone") === "true";
     const subscribedTeamLoveDone =
-      localStorage.getItem("subscribedTeamLoveTaskDone") === "true"; // ✅
+      localStorage.getItem("subscribedTeamLoveTaskDone") === "true";
     const inviteDone = localStorage.getItem("invite3TaskDone") === "true";
 
     if (subscribedDone) {
@@ -124,7 +189,6 @@ function Tasks() {
     }
 
     if (subscribedTeamLoveDone) {
-      // ✅
       setIsSubscribedToTeamLove(true);
       setCompletedTaskIds((prev) => [...prev, 3]);
     }
@@ -393,17 +457,16 @@ function Tasks() {
                         {/* Кнопки действий */}
                         <div className="mt-auto px-2">
                           {block.id === 1 || block.id === 3 ? (
-                              block.link ? (
-                                  <a
-                                      href={block.link}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      onClick={() => {
-
-                                        if (block.onClick) block.onClick();
-                                      }}
-                                      className="block"
-                                  >
+                            block.link ? (
+                              <a
+                                href={block.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() => {
+                                  if (block.onClick) block.onClick();
+                                }}
+                                className="block"
+                              >
                                 <button
                                   disabled={block.disabled}
                                   className={`relative w-full transition-opacity ${
@@ -469,7 +532,7 @@ function Tasks() {
               </button>
 
               {/* Рекламный таск -----------------------------------------------*/}
-              {shouldRenderAdsgram && (
+              {shouldRenderAdsgram ? (
                 <adsgram-task
                   className={styles.task}
                   data-block-id="task-19032"
@@ -500,6 +563,30 @@ function Tasks() {
                     Готово
                   </div>
                 </adsgram-task>
+              ) : isAdsTaskDone ? (
+                // Показываем cooldown таймер
+                <div className="w-11/12 max-w-md text-center p-4 bg-amber-100 rounded-lg border-2 border-amber-800">
+                  <div className="text-lg font-bold text-amber-800 shantell mb-2">
+                    ⏳ Рекламное задание
+                  </div>
+                  <div className="text-amber-700 shantell">
+                    Следующее задание будет доступно через{" "}
+                    {Math.floor(ADS_COOLDOWN_MS / 60000)} минут
+                  </div>
+                </div>
+              ) : (
+                // Кнопка для ручного завершения (если adsgram-task не работает)
+                <div className="w-11/12 max-w-md text-center">
+                  <button
+                    onClick={handleManualAdClaim}
+                    className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold shantell text-lg rounded-lg transition transform hover:scale-105"
+                  >
+                    Выполнить задание и получить 300 pizza
+                  </button>
+                  <div className="mt-2 text-sm text-amber-600 shantell">
+                    (Ручное подтверждение - для тестирования)
+                  </div>
+                </div>
               )}
 
               {showDailyCombo && (
