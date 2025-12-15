@@ -144,7 +144,8 @@ function Tasks() {
     {
       id: 3,
       title: "Подписаться на канал MELEGATEAM",
-      rewardPizza: "300",
+      rewardPizza: "1000",           // было "300"
+      rewardPcoin: "30",             // новое поле
       link: "https://t.me/+GlIl1TY4Lsg4MzMx",
       buttonText: isSubscribedToTeamLove ? "ВЫПОЛНЕНО" : "ПЕРЕЙТИ",
       buttonBg: isSubscribedToTeamLove ? "b_blue_small.png" : "b_red_small.png",
@@ -261,15 +262,29 @@ function Tasks() {
                             <div className="font-bold text-base sm:text-lg text-amber-800 shantell flex-1 leading-4">
                               {block.title}
                             </div>
-                            <div className="flex items-center gap-1">
-                              <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
-                                {block.rewardPizza}
-                              </span>
-                              <img
-                                src={`${store.imgUrl}icon_pizza.png`}
-                                alt="Pizza"
-                                className="w-5 sm:w-6"
-                              />
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
+                                  {block.rewardPizza}
+                                </span>
+                                <img
+                                    src={`${store.imgUrl}icon_pizza.png`}
+                                    alt="Pizza"
+                                    className="w-5 sm:w-6"
+                                />
+                              </div>
+                              {block.rewardPcoin && (
+                                <div className="flex items-center gap-1">
+                                  <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
+                                  + {block.rewardPcoin}
+                                  </span>
+                                  <img
+                                      src={`${store.imgUrl}icon_dollar_coin.png`}
+                                      alt="Coin"
+                                      className="w-5 sm:w-6"
+                                  />
+                              </div>
+                              )}
                             </div>
                           </div>
                         </div>
