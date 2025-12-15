@@ -22,9 +22,6 @@ declare global {
 }
 /* eslint-enable @typescript-eslint/no-namespace */
 
-// const ADS_COOLDOWN_MS = 10000;
-const ADS_COOLDOWN_MS = 5 * 60 * 1000; // 5 минут
-
 function Tasks() {
   const [showDailyCombo, setShowDailyCombo] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -32,12 +29,11 @@ function Tasks() {
   const [isInviteTaskDone, setIsInviteTaskDone] = useState(false);
   const [completedTaskIds, setCompletedTaskIds] = useState<number[]>([]);
   const [isAdsgramLoaded, setIsAdsgramLoaded] = useState(false);
-  const [isAdsTaskDone, setIsAdsTaskDone] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
   const [adsTaskEl, setAdsTaskEl] = useState<HTMLElement | null>(null);
 
-  // Эффект для adsgram-task (reward → TASKS_COMPLETE ADS_TASK_1 + cooldown)
+  // Эффект для adsgram-task (reward → TASKS_COMPLETE ADS_TASK_1)
   useEffect(() => {
     if (!adsTaskEl) {
       console.log("🔧 adsgram-task element is not ready yet");
@@ -75,14 +71,6 @@ function Tasks() {
       }
 
       toast.success("🎉 Рекламное задание выполнено! Начисляем награду...");
-
-      const now = Date.now();
-      localStorage.setItem("adsTaskLastDoneAt", String(now));
-      setIsAdsTaskDone(true);
-
-      setTimeout(() => {
-        setIsAdsTaskDone(false);
-      }, ADS_COOLDOWN_MS);
     };
 
     const stateHandler = (e: Event) => {
@@ -109,44 +97,6 @@ function Tasks() {
     };
   }, [adsTaskEl, store.sessionId, store.user?.telegramId]);
 
-  // Ручная обработка нажатия кнопки "Получить" - если adsgram-task не работает
-  const handleManualAdClaim = () => {
-    console.log("🔄 Manual ad claim triggered");
-
-    if (!store.sessionId || !store.user?.telegramId) {
-      toast.error("Авторизуйтесь, чтобы получить награду за рекламу");
-      return;
-    }
-
-    const rq = {
-      type: "TASKS_COMPLETE" as const,
-      requestId: Math.random().toString(36).substring(2, 10),
-      session: store.sessionId,
-      taskRq: {
-        telegramId: store.user.telegramId,
-        code: "ADS_TASK_1",
-      },
-    };
-
-    console.log("🚀 Manual sending ADS_TASK_1 request:", rq);
-
-    const ok = store.send(rq);
-    if (!ok) {
-      toast.error("WebSocket не подключён");
-      return;
-    }
-
-    toast.success("🎉 Рекламное задание выполнено! Начисляем награду...");
-
-    const now = Date.now();
-    localStorage.setItem("adsTaskLastDoneAt", String(now));
-    setIsAdsTaskDone(true);
-
-    setTimeout(() => {
-      setIsAdsTaskDone(false);
-    }, ADS_COOLDOWN_MS);
-  };
-
   // Проверяем загрузку adsgram-task
   useEffect(() => {
     const checkAdsgram = () => {
@@ -167,7 +117,7 @@ function Tasks() {
     return () => clearInterval(checkInterval);
   }, []);
 
-  // Инициализация выполненных заданий из localStorage (включая cooldown ads)
+  // Инициализация выполненных заданий из localStorage
   useEffect(() => {
     const subscribedDone =
       localStorage.getItem("subscribedTaskDone") === "true";
@@ -195,23 +145,6 @@ function Tasks() {
 
     setCompletedTaskIds(completed);
     setIsInitialized(true);
-
-    const lastAdsTsRaw = localStorage.getItem("adsTaskLastDoneAt");
-    if (lastAdsTsRaw) {
-      const lastTs = Number(lastAdsTsRaw);
-      const now = Date.now();
-      if (!Number.isNaN(lastTs) && now - lastTs < ADS_COOLDOWN_MS) {
-        setIsAdsTaskDone(true);
-        const remaining = ADS_COOLDOWN_MS - (now - lastTs);
-        const timeout = setTimeout(() => {
-          setIsAdsTaskDone(false);
-        }, remaining);
-
-        return () => clearTimeout(timeout);
-      } else {
-        setIsAdsTaskDone(false);
-      }
-    }
   }, []);
 
   // следим за статусом INVITE_3_FRIENDS из стора:
@@ -246,7 +179,6 @@ function Tasks() {
         toast.success("✅ Подписка подтверждена! Получаем награду...");
         setIsSubscribed(true);
         localStorage.setItem("subscribedTaskDone", "true");
-        // setCompletedTaskIds((prev) => [...prev.filter((id) => id !== 1), 1]);
       } else {
         toast.error("WebSocket не подключён");
       }
@@ -276,7 +208,6 @@ function Tasks() {
         toast.success("✅ Подписка на TEAM LOVE подтверждена!");
         setIsSubscribedToTeamLove(true);
         localStorage.setItem("subscribedTeamLoveTaskDone", "true");
-        // setCompletedTaskIds((prev) => [...prev.filter((id) => id !== 3), 3]);
       } else {
         toast.error("WebSocket не подключён");
       }
@@ -363,8 +294,8 @@ function Tasks() {
   // Если все задания выполнены, показываем сообщение
   const allTasksCompleted = visibleTaskBlocks.length === 0;
 
-  // Рендерим adsgram-task только если он загружен и не в cooldown-е
-  const shouldRenderAdsgram = isAdsgramLoaded && !isAdsTaskDone;
+  // Рендерим adsgram-task только если он загружен, иначе показываем заглушку
+  const shouldRenderAdsgram = isAdsgramLoaded;
 
   return (
     <>
@@ -549,28 +480,14 @@ function Tasks() {
                     Готово
                   </div>
                 </adsgram-task>
-              ) : isAdsTaskDone ? (
-                // Показываем cooldown таймер
+              ) : (
+                // Заглушка, если adsgram-task не загружен
                 <div className="w-11/12 max-w-md text-center p-4 bg-amber-100 rounded-lg border-2 border-amber-800">
                   <div className="text-lg font-bold text-amber-800 shantell mb-2">
                     ⏳ Рекламное задание
                   </div>
                   <div className="text-amber-700 shantell">
-                    Следующее задание будет доступно через{" "}
-                    {Math.floor(ADS_COOLDOWN_MS / 60000)} минут
-                  </div>
-                </div>
-              ) : (
-                // Кнопка для ручного завершения (если adsgram-task не работает)
-                <div className="w-11/12 max-w-md text-center">
-                  <button
-                    onClick={handleManualAdClaim}
-                    className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold shantell text-lg rounded-lg transition transform hover:scale-105"
-                  >
-                    Выполнить задание и получить 300 pizza
-                  </button>
-                  <div className="mt-2 text-sm text-amber-600 shantell">
-                    (Ручное подтверждение - для тестирования)
+                    Сейчас нет заданий от наших партнеров, зайдите позже
                   </div>
                 </div>
               )}

@@ -255,30 +255,6 @@ const WebSocketComponent = observer(() => {
             break;
           }
 
-          // /** ------------------ STAFF ------------------ */
-          // case "STAFF_GET": {
-          //     console.log("📦 STAFF_GET payload:", parsed.data);
-          //     if (parsed.success && parsed.data && parsed.data.length) {
-          //         runInAction(() => {
-          //             const staffList = parsed.data as StaffMember[];
-          //             store.staffData = staffList;
-          //             localStorage.setItem("staffData", JSON.stringify(staffList));
-          //             staffList.forEach(staffDto => {
-          //                 const floor = store.safeUserFloorList.find(f => f.floorId === staffDto.floorId);
-          //                 if (!floor) return;
-          //                 if (!Array.isArray(floor.staff)) floor.staff = [];
-          //                 const existing = floor.staff.find(s => s.staffName === staffDto.staffName);
-          //                 if (existing) Object.assign(existing, staffDto);
-          //                 else floor.staff.push(staffDto);
-          //             });
-          //         });
-          //         console.log("🧍 Персонал объединён с этажами:", parsed.data);
-          //     } else {
-          //         console.warn("⚠️ STAFF_GET вернул пустой массив или ошибку");
-          //     }
-          //     break;
-          // }
-
           case "PERSON_BUY": {
             if (parsed.success && parsed.data) {
               runInAction(() => {
@@ -434,8 +410,7 @@ const WebSocketComponent = observer(() => {
             break;
           }
 
-
-            /** ---------------- TASKS_COMPLETE ---------------- */
+          /** ---------------- TASKS_COMPLETE ---------------- */
           case "TASKS_COMPLETE": {
             const data = parsed.data as TaskCompleteResponse | undefined;
             console.log("TASKS_COMPLETE raw:", parsed);
@@ -445,7 +420,8 @@ const WebSocketComponent = observer(() => {
               break;
             }
 
-            const { code, rewardPcoin, rewardPizza, rewardPdollar, message } = data;
+            const { code, rewardPcoin, rewardPizza, rewardPdollar, message } =
+              data;
 
             // ---------------- INVITE_3_FRIENDS ----------------
             if (code === "INVITE_3_FRIENDS") {
@@ -462,28 +438,29 @@ const WebSocketComponent = observer(() => {
                     store.pizza = (store.pizza ?? 0) + Number(rewardPizza);
                   }
                   if (rewardPdollar != null) {
-                    store.pdollar = (store.pdollar ?? 0) + Number(rewardPdollar);
+                    store.pdollar =
+                      (store.pdollar ?? 0) + Number(rewardPdollar);
                   }
                 });
                 toast.success(
-                    message || parsed.message || "🎉 Награда за друзей получена!"
+                  message || parsed.message || "🎉 Награда за друзей получена!"
                 );
               } else {
                 // задача уже была выполнена ранее
                 if (
-                    parsed.message === "TASK_ALREADY_COMPLETED" ||
-                    message === "ALREADY_COMPLETED"
+                  parsed.message === "TASK_ALREADY_COMPLETED" ||
+                  message === "ALREADY_COMPLETED"
                 ) {
                   runInAction(() => {
                     store.taskInvite3Status = "rewarded";
                     store.taskInvite3Error = null;
                   });
                   toast.info(
-                      "Награда за приглашение друзей уже была получена ранее."
+                    "Награда за приглашение друзей уже была получена ранее."
                   );
                 } else {
                   toast.error(
-                      message || parsed.message || "Ошибка при получении награды"
+                    message || parsed.message || "Ошибка при получении награды"
                   );
                 }
               }
@@ -502,12 +479,13 @@ const WebSocketComponent = observer(() => {
                     store.pizza = (store.pizza ?? 0) + Number(rewardPizza);
                   }
                   if (rewardPdollar != null) {
-                    store.pdollar = (store.pdollar ?? 0) + Number(rewardPdollar);
+                    store.pdollar =
+                      (store.pdollar ?? 0) + Number(rewardPdollar);
                   }
                 });
 
                 toast.success(
-                    message || parsed.message || "🎉 Награда за рекламу получена!"
+                  message || parsed.message || "🎉 Награда за рекламу получена!"
                 );
 
                 // фиксируем время последнего успешного рекламного задания
@@ -516,15 +494,17 @@ const WebSocketComponent = observer(() => {
               } else {
                 // серверный cooldown или другая ошибка
                 if (
-                    parsed.message === "COOLDOWN_NOT_PASSED" ||
-                    message === "COOLDOWN_NOT_PASSED"
+                  parsed.message === "COOLDOWN_NOT_PASSED" ||
+                  message === "COOLDOWN_NOT_PASSED"
                 ) {
                   toast.info(
-                      "Рекламное задание уже было выполнено недавно. Попробуйте позже."
+                    "Рекламное задание уже было выполнено недавно. Попробуйте позже."
                   );
                 } else {
                   toast.error(
-                      message || parsed.message || "Ошибка при выполнении рекламного задания"
+                    message ||
+                      parsed.message ||
+                      "Ошибка при выполнении рекламного задания"
                   );
                 }
               }
@@ -534,7 +514,9 @@ const WebSocketComponent = observer(() => {
             // ---------------- Остальные таски ----------------
             if (!parsed.success) {
               // общий случай для остальных задач
-              toast.error(message || parsed.message || "Ошибка при получении награды");
+              toast.error(
+                message || parsed.message || "Ошибка при получении награды"
+              );
               break;
             }
 
