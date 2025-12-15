@@ -438,29 +438,52 @@ const WebSocketComponent = observer(() => {
           /** ---------------- TASKS_COMPLETE ---------------- */
           case "TASKS_COMPLETE": {
             const data = parsed.data as TaskCompleteResponse | undefined;
+            console.log("TASKS_COMPLETE raw:", parsed);
 
-            if (!parsed.success || !data?.code) {
+            if (!data) {
               toast.error(parsed.message || "Ошибка при получении награды");
               break;
             }
 
-            toast.success(
-              data.message || parsed.message || "🎉 Награда получена!"
-            );
+            const { code, rewardPcoin, rewardPizza, rewardPdollar, message } = data;
 
-            // INVITE_3_FRIENDS
-            if (data.code === "INVITE_3_FRIENDS") {
-              runInAction(() => {
-                store.taskInvite3Status = "rewarded";
-                store.taskInvite3Error = null;
+            // ---------- INVITE_3_FRIENDS ----------
+            if (code === "INVITE_3_FRIENDS") {
+              if (parsed.success) {
+                // нормальное успешное завершение
+                runInAction(() => {
+                  store.taskInvite3Status = "rewarded";
+                  store.taskInvite3Error = null;
 
-                if (data.rewardPcoin != null) {
-                  store.pcoin = (store.pcoin ?? 0) + Number(data.rewardPcoin);
+                  if (rewardPcoin != null) {
+                    store.pcoin = (store.pcoin ?? 0) + Number(rewardPcoin);
+                  }
+                  if (rewardPizza != null) {
+                    store.pizza = (store.pizza ?? 0) + Number(rewardPizza);
+                  }
+                  if (rewardPdollar != null) {
+                    store.pdollar = (store.pdollar ?? 0) + Number(rewardPdollar);
+                  }
+                });
+                toast.success(message || parsed.message || "🎉 Награда за друзей получена!");
+              } else {
+                // задача уже помечена выполненной на бэке
+                if (
+                    parsed.message === "TASK_ALREADY_COMPLETED" ||
+                    message === "ALREADY_COMPLETED"
+                ) {
+                  runInAction(() => {
+                    // считаем её завершённой и на клиенте, чтобы блок пропал
+                    store.taskInvite3Status = "rewarded";
+                    store.taskInvite3Error = null;
+                  });
+                  toast.info("Награда за приглашение друзей уже была получена ранее.");
+                } else {
+                  toast.error(
+                      message || parsed.message || "Ошибка при получении награды"
+                  );
                 }
-                if (data.rewardPizza != null) {
-                  store.pizza = (store.pizza ?? 0) + Number(data.rewardPizza);
-                }
-              });
+              }
               break;
             }
 

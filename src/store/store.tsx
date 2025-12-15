@@ -614,30 +614,19 @@ class Store {
   }
 
   completeInvite3Task() {
-    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) {
-      console.warn(
-        "⚠️ Не удалось отправить TASKS_COMPLETE — нет сессии или ws"
-      );
-      return;
-    }
+    if (!this.sessionId || !this.user?.telegramId) return;
 
-    if (this.taskInvite3Status !== "verified") {
-      console.warn("⚠️ TASKS_COMPLETE возможен только после verified");
-      return;
-    }
-
-    const rq: WsRequest = {
-      type: "TASKS_COMPLETE",
-      requestId: genId(),
-      session: this.sessionId!,
+    const rq = {
+      type: "TASKS_COMPLETE" as const,
+      requestId: Math.random().toString(36).substring(2, 10),
+      session: this.sessionId,
       taskRq: {
-        telegramId: this.user.telegramId!,
+        telegramId: this.user.telegramId,
         code: "INVITE_3_FRIENDS",
       },
     };
 
-    console.log("📨 TASKS_COMPLETE INVITE_3_FRIENDS:", rq);
-    this.wsSend(rq);
+    this.send(rq);
   }
 
   resetInvite3TaskState() {
