@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import store from "../store/store";
-import Footer from "../components/Footer";
+// import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
 import { Link } from "react-router-dom";
 import FooterHome from "../components/FooterHome";
@@ -923,15 +923,15 @@ const Home = observer(() => {
   };
 
   // Показываем загрузку пока данные не получены -----------------------------------------------------------
-  if (!store.areFloorsLoaded) {
-    return (
-      <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B] flex items-center justify-center">
-        <div className="text-white text-xl shantell">Загрузка этажей...</div>
-        <Footer />
-        <WebSocketComponent />
-      </div>
-    );
-  }
+  // if (!store.areFloorsLoaded) {
+  //   return (
+  //     <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B] flex items-center justify-center">
+  //       <div className="text-white text-xl shantell">Загрузка этажей...</div>
+  //       <Footer />
+  //       <WebSocketComponent />
+  //     </div>
+  //   );
+  // }
 
   return (
     <>
