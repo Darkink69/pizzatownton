@@ -262,15 +262,10 @@ function Tasks() {
                       className="w-full h-auto object-contain"
                     />
                     <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
-                      <img
-                        src={`${store.imgUrl}icon_star.png`}
-                        alt="Star"
-                        className="w-16 h-16 mb-4"
-                      />
-                      <div className="text-2xl font-bold text-amber-800 shantell mb-2">
+                      <div className="text-xl font-bold text-amber-800 shantell mb-2">
                         Все задания выполнены!
                       </div>
-                      <div className="text-lg text-amber-700 shantell">
+                      <div className="text-md text-amber-700 shantell">
                         Возвращайтесь позже за новыми заданиями
                       </div>
                     </div>
