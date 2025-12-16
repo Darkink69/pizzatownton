@@ -397,7 +397,7 @@ const WebSocketComponent = observer(() => {
           /** ---------------- TASKS_VERIFY ---------------- */
           case "TASKS_VERIFY": {
             const data = parsed.data as TaskVerifyResponse | undefined;
-
+            console.log("✅ TASKS_VERIFY получен:", parsed);
             if (!data?.code) {
               console.warn("TASKS_VERIFY без code", parsed);
               break;
@@ -543,11 +543,11 @@ const WebSocketComponent = observer(() => {
 
     ws.onclose = () => {
       console.warn("⚠️ WS closed, reconnecting...");
-      // ❌  store.resetSession();  <-- убрать это
+
       setStatus("disconnected");
 
       // просто попробуем переподключиться без сброса данных
-      reconnectTimeout.current = setTimeout(connectWebSocket, 10000);
+      reconnectTimeout.current = setTimeout(connectWebSocket, 30000);
     };
   };
 
