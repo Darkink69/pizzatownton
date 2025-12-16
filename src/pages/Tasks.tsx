@@ -138,8 +138,13 @@ function Tasks() {
       return;
     }
 
-    toast.info("🧾 Проверяем выполнение задания с друзьями...");
-    store.verifyInvite3Task();
+    // если друзей 3+ и все условия выполнены → просто получаем награду
+    if (totalReferrals >= 3) {
+      toast.success("🎁 Проверяем выполнение и выдаём награду...");
+      store.verifyInvite3Task();
+    }
+
+
   };
 
   const taskBlocks = [
@@ -159,21 +164,22 @@ function Tasks() {
       title: "Пригласи 3 друзей, которые купят 1 этаж",
       rewardPizza: "2000",
       link: "/friends",
-
-      // динамика подписи
       buttonText:
           store.taskInvite3Status === "rewarded"
               ? "ВЫПОЛНЕНО"
-              : store.referral.totalReferrals >= 3
+              : store.taskInvite3Status === "verified"
                   ? "ЗАБРАТЬ НАГРАДУ"
-                  : "ПРИГЛАСИТЬ",
+                  : store.referral.totalReferrals >= 3
+                      ? "ЗАБРАТЬ НАГРАДУ"
+                      : "ПРИГЛАСИТЬ",
       buttonBg:
           store.taskInvite3Status === "rewarded"
               ? "b_blue_small.png"
               : "b_red_small.png",
-
       onClick:
-          store.taskInvite3Status === "rewarded" ? undefined : handleInvite3Task,
+          store.taskInvite3Status === "rewarded"
+              ? undefined
+              : handleInvite3Task,
       disabled: store.taskInvite3Status === "rewarded",
       isCompleted: store.taskInvite3Status === "rewarded",
     },
