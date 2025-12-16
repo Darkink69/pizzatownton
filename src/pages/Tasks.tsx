@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+// import { Link } from "react-router-dom";
 import store from "../store/store";
 import { toast } from "react-toastify";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
-
 
 function Tasks() {
   const [showDailyCombo, setShowDailyCombo] = useState(false);
@@ -48,8 +47,8 @@ function Tasks() {
 
   useEffect(() => {
     if (
-        store.referral.totalReferrals >= 3 &&
-        store.taskInvite3Status === "idle"
+      store.referral.totalReferrals >= 3 &&
+      store.taskInvite3Status === "idle"
     ) {
       toast.success("🎉 Вы можете забрать награду за приглашение 3 друзей!");
     }
@@ -132,19 +131,17 @@ function Tasks() {
 
     // если друзей меньше трёх — направляем на страницу друзей
     const totalReferrals = Number(store.referral?.totalReferrals ?? 0);
-    if (totalReferrals < 3) {
-      toast.info("👇 Пригласите 3 друзей, чтобы забрать награду!");
-      window.location.href = "/friends";
-      return;
-    }
+    // if (totalReferrals < 3) {
+    //   toast.info("👇 Пригласите 3 друзей, чтобы забрать награду!");
+    //   window.location.href = "/friends";
+    //   return;
+    // }
 
     // если друзей 3+ и все условия выполнены → просто получаем награду
     if (totalReferrals >= 3) {
       toast.success("🎁 Проверяем выполнение и выдаём награду...");
       store.verifyInvite3Task();
     }
-
-
   };
 
   const taskBlocks = [
@@ -163,23 +160,21 @@ function Tasks() {
       id: 2,
       title: "Пригласи 3 друзей, которые купят 1 этаж",
       rewardPizza: "2000",
-      link: "/friends",
+      // link: "/friends",
       buttonText:
-          store.taskInvite3Status === "rewarded"
-              ? "ВЫПОЛНЕНО"
-              : store.taskInvite3Status === "verified"
-                  ? "ЗАБРАТЬ НАГРАДУ"
-                  : store.referral.totalReferrals >= 3
-                      ? "ЗАБРАТЬ НАГРАДУ"
-                      : "ПРИГЛАСИТЬ",
+        store.taskInvite3Status === "rewarded"
+          ? "ВЫПОЛНЕНО"
+          : store.taskInvite3Status === "verified"
+          ? "ЗАБРАТЬ НАГРАДУ"
+          : store.referral.totalReferrals >= 3
+          ? "ЗАБРАТЬ НАГРАДУ"
+          : "ПРИГЛАСИТЬ",
       buttonBg:
-          store.taskInvite3Status === "rewarded"
-              ? "b_blue_small.png"
-              : "b_red_small.png",
+        store.taskInvite3Status === "rewarded"
+          ? "b_blue_small.png"
+          : "b_red_small.png",
       onClick:
-          store.taskInvite3Status === "rewarded"
-              ? undefined
-              : handleInvite3Task,
+        store.taskInvite3Status === "rewarded" ? undefined : handleInvite3Task,
       disabled: store.taskInvite3Status === "rewarded",
       isCompleted: store.taskInvite3Status === "rewarded",
     },
@@ -187,8 +182,8 @@ function Tasks() {
     {
       id: 3,
       title: "Подписаться на канал MELEGATEAM",
-      rewardPizza: "1000",           // было "300"
-      rewardPcoin: "30",             // новое поле
+      rewardPizza: "1000", // было "300"
+      rewardPcoin: "30", // новое поле
       link: "https://t.me/+GlIl1TY4Lsg4MzMx",
       buttonText: isSubscribedToTeamLove ? "ВЫПОЛНЕНО" : "ПЕРЕЙТИ",
       buttonBg: isSubscribedToTeamLove ? "b_blue_small.png" : "b_red_small.png",
@@ -311,22 +306,22 @@ function Tasks() {
                                   {block.rewardPizza}
                                 </span>
                                 <img
-                                    src={`${store.imgUrl}icon_pizza.png`}
-                                    alt="Pizza"
-                                    className="w-5 sm:w-6"
+                                  src={`${store.imgUrl}icon_pizza.png`}
+                                  alt="Pizza"
+                                  className="w-5 sm:w-6"
                                 />
                               </div>
                               {block.rewardPcoin && (
                                 <div className="flex items-center gap-1">
                                   <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
-                                  + {block.rewardPcoin}
+                                    + {block.rewardPcoin}
                                   </span>
                                   <img
-                                      src={`${store.imgUrl}icon_dollar_coin.png`}
-                                      alt="Coin"
-                                      className="w-5 sm:w-6"
+                                    src={`${store.imgUrl}icon_dollar_coin.png`}
+                                    alt="Coin"
+                                    className="w-5 sm:w-6"
                                   />
-                              </div>
+                                </div>
                               )}
                             </div>
                           </div>
@@ -366,30 +361,30 @@ function Tasks() {
                                 </button>
                               </a>
                             ) : null
-                          ) : (
-                            <Link to="/friends" className="block">
-                              <button
-                                disabled={block.disabled}
-                                onClick={block.onClick}
-                                className={`relative w-full transition-opacity ${
-                                  block.disabled
-                                    ? "opacity-70 cursor-not-allowed"
-                                    : "hover:opacity-90 cursor-pointer"
-                                }`}
-                              >
-                                <img
-                                  src={`${store.imgUrl}${block.buttonBg}`}
-                                  alt="Выполнить задачу"
-                                  className="w-full h-auto"
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <div className="text-white text-sm sm:text-base shantell font-bold">
-                                    {block.buttonText}
-                                  </div>
-                                </div>
-                              </button>
-                            </Link>
-                          )}
+                          ) : null
+                          // <Link to="/friends" className="block">
+                          //   <button
+                          //     disabled={block.disabled}
+                          //     onClick={block.onClick}
+                          //     className={`relative w-full transition-opacity ${
+                          //       block.disabled
+                          //         ? "opacity-70 cursor-not-allowed"
+                          //         : "hover:opacity-90 cursor-pointer"
+                          //     }`}
+                          //   >
+                          //     <img
+                          //       src={`${store.imgUrl}${block.buttonBg}`}
+                          //       alt="Выполнить задачу"
+                          //       className="w-full h-auto"
+                          //     />
+                          //     <div className="absolute inset-0 flex items-center justify-center">
+                          //       <div className="text-white text-sm sm:text-base shantell font-bold">
+                          //         {block.buttonText}
+                          //       </div>
+                          //     </div>
+                          //   </button>
+                          // </Link>
+                          }
                         </div>
                       </div>
                     </div>
