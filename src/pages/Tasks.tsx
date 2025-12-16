@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import store from "../store/store";
 import { toast } from "react-toastify";
 import Footer from "../components/Footer";
@@ -29,11 +28,34 @@ function Tasks() {
   const [isInviteTaskDone, setIsInviteTaskDone] = useState(false);
   const [completedTaskIds, setCompletedTaskIds] = useState<number[]>([]);
   const [isAdsgramLoaded, setIsAdsgramLoaded] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
-
+  const [showAdsgramBlock, setShowAdsgramBlock] = useState(true);
   const [adsTaskEl, setAdsTaskEl] = useState<HTMLElement | null>(null);
 
-  // Эффект для adsgram-task (reward → TASKS_COMPLETE ADS_TASK_1)
+  // Инициализация выполненных заданий из localStorage
+  useEffect(() => {
+    const subscribedDone =
+      localStorage.getItem("subscribedTaskDone") === "true";
+    const subscribedTeamLoveDone =
+      localStorage.getItem("subscribedTeamLoveTaskDone") === "true";
+    const inviteDone = localStorage.getItem("invite3TaskDone") === "true";
+
+    if (subscribedDone) {
+      setIsSubscribed(true);
+      setCompletedTaskIds((prev) => [...prev, 1]);
+    }
+
+    if (subscribedTeamLoveDone) {
+      setIsSubscribedToTeamLove(true);
+      setCompletedTaskIds((prev) => [...prev, 3]);
+    }
+
+    if (inviteDone) {
+      setIsInviteTaskDone(true);
+      setCompletedTaskIds((prev) => [...prev, 2]);
+    }
+  }, []);
+
+  // Эффект для adsgram-task
   useEffect(() => {
     if (!adsTaskEl) {
       console.log("🔧 adsgram-task element is not ready yet");
@@ -79,21 +101,30 @@ function Tasks() {
       console.log("Current state:", el.getAttribute("state"));
     };
 
+    const bannerNotFoundHandler = (e: Event) => {
+      console.log("❌ Adsgram-task banner not found event:", e);
+      // Полностью скрываем блок с рекламным заданием
+      setShowAdsgramBlock(false);
+      toast.info("Рекламное задание временно недоступно");
+    };
+
     adsTaskEl.addEventListener("reward", rewardHandler);
     adsTaskEl.addEventListener("statechange", stateHandler);
+    adsTaskEl.addEventListener("onBannerNotFound", bannerNotFoundHandler);
 
-    // Проверяем состояние через
+    // Проверяем состояние
     setTimeout(() => {
       console.log(
         "Adsgram-task initial state:",
         adsTaskEl.getAttribute?.("state")
       );
       console.log("Adsgram-task attributes:", adsTaskEl.attributes);
-    }, 10000);
+    }, 1000);
 
     return () => {
       adsTaskEl.removeEventListener("reward", rewardHandler);
       adsTaskEl.removeEventListener("statechange", stateHandler);
+      adsTaskEl.removeEventListener("onBannerNotFound", bannerNotFoundHandler);
     };
   }, [adsTaskEl, store.sessionId, store.user?.telegramId]);
 
@@ -111,40 +142,10 @@ function Tasks() {
 
     checkAdsgram();
 
-    // Проверяем каждую
-    const checkInterval = setInterval(checkAdsgram, 10000);
+    // Проверяем периодически
+    const checkInterval = setInterval(checkAdsgram, 5000);
 
     return () => clearInterval(checkInterval);
-  }, []);
-
-  // Инициализация выполненных заданий из localStorage
-  useEffect(() => {
-    const subscribedDone =
-      localStorage.getItem("subscribedTaskDone") === "true";
-    const subscribedTeamLoveDone =
-      localStorage.getItem("subscribedTeamLoveTaskDone") === "true";
-    const inviteDone = localStorage.getItem("invite3TaskDone") === "true";
-
-    const completed: number[] = [];
-
-    // В ТЕСТОВОЙ ВЕТКЕ: не считаем подписки выполненными
-    if (subscribedDone) {
-      setIsSubscribed(true);
-      // completed.push(1);
-    }
-
-    if (inviteDone) {
-      setIsInviteTaskDone(true);
-      completed.push(2);
-    }
-
-    if (subscribedTeamLoveDone) {
-      setIsSubscribedToTeamLove(true);
-      // completed.push(3);
-    }
-
-    setCompletedTaskIds(completed);
-    setIsInitialized(true);
   }, []);
 
   // следим за статусом INVITE_3_FRIENDS из стора:
@@ -156,7 +157,18 @@ function Tasks() {
     }
   }, [store.taskInvite3Status]);
 
-  // выполнение таски подписки на канал Pizza TowerTON и другие
+  useEffect(() => {
+    if (
+      store.referral.totalReferrals >= 3 &&
+      store.taskInvite3Status === "idle"
+    ) {
+      toast.info(
+        "У вас уже 3+ приглашённых. Если они открыли этаж, вы сможете забрать награду."
+      );
+    }
+  }, [store.referral.totalReferrals, store.taskInvite3Status]);
+
+  // выполнение таски подписки на канал Pizza TowerTON
   const handleSubscribe = () => {
     if (isSubscribed) return;
 
@@ -179,6 +191,7 @@ function Tasks() {
         toast.success("✅ Подписка подтверждена! Получаем награду...");
         setIsSubscribed(true);
         localStorage.setItem("subscribedTaskDone", "true");
+        setCompletedTaskIds((prev) => [...prev.filter((id) => id !== 1), 1]);
       } else {
         toast.error("WebSocket не подключён");
       }
@@ -208,6 +221,7 @@ function Tasks() {
         toast.success("✅ Подписка на TEAM LOVE подтверждена!");
         setIsSubscribedToTeamLove(true);
         localStorage.setItem("subscribedTeamLoveTaskDone", "true");
+        setCompletedTaskIds((prev) => [...prev.filter((id) => id !== 3), 3]);
       } else {
         toast.error("WebSocket не подключён");
       }
@@ -217,13 +231,27 @@ function Tasks() {
 
   // выполнение таски INVITE_3_FRIENDS (инициируем проверку)
   const handleInvite3Task = () => {
+    if (store.taskInvite3Status === "rewarded") {
+      toast.info("✅ Награда уже получена!");
+      return;
+    }
+
     if (isInviteTaskDone) return;
+
     if (!store.sessionId || !store.user?.telegramId) {
       toast.error("Авторизуйтесь, чтобы выполнить задание");
       return;
     }
 
-    toast.info("🧾 Проверяем выполнение задания с друзьями...");
+    const totalReferrals = Number(store.referral?.totalReferrals ?? 0);
+
+    if (totalReferrals === 0) {
+      toast.info("Сначала пригласите друзей, чтобы выполнить задание.");
+      return;
+    }
+
+    // есть хотя бы один друг — сервер сам проверит, есть ли 3 с этажами
+    toast.info("🔍 Проверяем, есть ли 3 друга, которые купили этаж...");
     store.verifyInvite3Task();
   };
 
@@ -243,18 +271,26 @@ function Tasks() {
       id: 2,
       title: "Пригласи 3 друзей, которые купят 1 этаж",
       rewardPizza: "2000",
-      link: "/friends",
-      buttonText: isInviteTaskDone ? "ВЫПОЛНЕНО" : "ВЫПОЛНИТЬ",
-      buttonBg: isInviteTaskDone ? "b_blue_small.png" : "b_red_small.png",
-      onClick: !isInviteTaskDone ? handleInvite3Task : undefined,
-      disabled: isInviteTaskDone,
-      isCompleted: isInviteTaskDone,
+      buttonText:
+        store.taskInvite3Status === "rewarded"
+          ? "ВЫПОЛНЕНО"
+          : store.referral.totalReferrals >= 3
+          ? "ПРОВЕРИТЬ УСЛОВИЕ"
+          : "ПРИГЛАСИТЬ ДРУЗЕЙ",
+      buttonBg:
+        store.taskInvite3Status === "rewarded"
+          ? "b_blue_small.png"
+          : "b_red_small.png",
+      onClick:
+        store.taskInvite3Status === "rewarded" ? undefined : handleInvite3Task,
+      disabled: store.taskInvite3Status === "rewarded",
+      isCompleted: store.taskInvite3Status === "rewarded",
     },
     {
       id: 3,
       title: "Подписаться на канал MELEGATEAM",
-      rewardPizza: "1000",           // было "300"
-      rewardPcoin: "30",             // новое поле
+      rewardPizza: "1000",
+      rewardPcoin: "30",
       link: "https://t.me/+GlIl1TY4Lsg4MzMx",
       buttonText: isSubscribedToTeamLove ? "ВЫПОЛНЕНО" : "ПЕРЕЙТИ",
       buttonBg: isSubscribedToTeamLove ? "b_blue_small.png" : "b_red_small.png",
@@ -265,9 +301,9 @@ function Tasks() {
   ];
 
   // Фильтруем задания, чтобы показывать только невыполненные
-  const visibleTaskBlocks = isInitialized
-    ? taskBlocks.filter((block) => !completedTaskIds.includes(block.id))
-    : taskBlocks;
+  const visibleTaskBlocks = taskBlocks.filter(
+    (block) => !completedTaskIds.includes(block.id)
+  );
 
   const handleDailyComboClick = () => {
     setShowDailyCombo(!showDailyCombo);
@@ -295,8 +331,8 @@ function Tasks() {
   // Если все задания выполнены, показываем сообщение
   const allTasksCompleted = visibleTaskBlocks.length === 0;
 
-  // Рендерим adsgram-task только если он загружен, иначе показываем заглушку
-  const shouldRenderAdsgram = isAdsgramLoaded;
+  // Рендерим adsgram-task только если он загружен и не скрыт
+  const shouldRenderAdsgram = isAdsgramLoaded && showAdsgramBlock;
 
   return (
     <>
@@ -339,15 +375,10 @@ function Tasks() {
                       className="w-full h-auto object-contain"
                     />
                     <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
-                      <img
-                        src={`${store.imgUrl}icon_star.png`}
-                        alt="Star"
-                        className="w-16 h-16 mb-4"
-                      />
-                      <div className="text-2xl font-bold text-amber-800 shantell mb-2">
+                      <div className="text-xl font-bold text-amber-800 shantell mb-2">
                         Все задания выполнены!
                       </div>
-                      <div className="text-lg text-amber-700 shantell">
+                      <div className="text-md text-amber-700 shantell">
                         Возвращайтесь позже за новыми заданиями
                       </div>
                     </div>
@@ -374,18 +405,25 @@ function Tasks() {
                             <div className="flex items-center gap-2">
                               <div className="flex items-center gap-1">
                                 <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
-                                {block.rewardPizza}
-                              </span>
+                                  {block.rewardPizza}
+                                </span>
                                 <img
-                                    src={`${store.imgUrl}icon_pizza.png`}
-                                    alt="Pizza"
-                                    className="w-5 sm:w-6"
+                                  src={`${store.imgUrl}icon_pizza.png`}
+                                  alt="Pizza"
+                                  className="w-5 sm:w-6"
                                 />
-                            </div>
+                              </div>
                               {block.rewardPcoin && (
+                                <div className="flex items-center gap-1">
                                   <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
-                                     + {block.rewardPcoin} pcoin
-                                        </span>
+                                    + {block.rewardPcoin}
+                                  </span>
+                                  <img
+                                    src={`${store.imgUrl}icon_dollar_coin.png`}
+                                    alt="Coin"
+                                    className="w-5 sm:w-6"
+                                  />
+                                </div>
                               )}
                             </div>
                           </div>
@@ -426,28 +464,26 @@ function Tasks() {
                               </a>
                             ) : null
                           ) : (
-                            <Link to="/friends" className="block">
-                              <button
-                                disabled={block.disabled}
-                                onClick={block.onClick}
-                                className={`relative w-full transition-opacity ${
-                                  block.disabled
-                                    ? "opacity-70 cursor-not-allowed"
-                                    : "hover:opacity-90 cursor-pointer"
-                                }`}
-                              >
-                                <img
-                                  src={`${store.imgUrl}${block.buttonBg}`}
-                                  alt="Выполнить задачу"
-                                  className="w-full h-auto"
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <div className="text-white text-sm sm:text-base shantell font-bold">
-                                    {block.buttonText}
-                                  </div>
+                            <button
+                              disabled={block.disabled}
+                              onClick={block.onClick}
+                              className={`relative w-full transition-opacity ${
+                                block.disabled
+                                  ? "opacity-70 cursor-not-allowed"
+                                  : "hover:opacity-90 cursor-pointer"
+                              }`}
+                            >
+                              <img
+                                src={`${store.imgUrl}${block.buttonBg}`}
+                                alt="Выполнить задачу"
+                                className="w-full h-auto"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="text-white text-sm sm:text-base shantell font-bold">
+                                  {block.buttonText}
                                 </div>
-                              </button>
-                            </Link>
+                              </div>
+                            </button>
                           )}
                         </div>
                       </div>
@@ -488,7 +524,7 @@ function Tasks() {
                     Готово
                   </div>
                 </adsgram-task>
-              ) : (
+              ) : showAdsgramBlock ? (
                 // Заглушка, если adsgram-task не загружен
                 <div className="w-11/12 max-w-md text-center p-4 bg-amber-100 rounded-lg border-2 border-amber-800">
                   <div className="text-lg font-bold text-amber-800 shantell mb-2">
@@ -498,7 +534,7 @@ function Tasks() {
                     Сейчас нет заданий от наших партнеров, зайдите позже
                   </div>
                 </div>
-              )}
+              ) : null}
 
               {/* Кнопка и блок Daily Combo — оставлены, как были */}
               <button
