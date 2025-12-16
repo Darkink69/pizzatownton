@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
 
+
 function Tasks() {
   const [showDailyCombo, setShowDailyCombo] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -44,6 +45,15 @@ function Tasks() {
       setCompletedTaskIds((prev) => [...prev.filter((id) => id !== 2), 2]);
     }
   }, [store.taskInvite3Status]);
+
+  useEffect(() => {
+    if (
+        store.referral.totalReferrals >= 3 &&
+        store.taskInvite3Status === "idle"
+    ) {
+      toast.success("🎉 Вы можете забрать награду за приглашение 3 друзей!");
+    }
+  }, [store.referral.totalReferrals, store.taskInvite3Status]);
 
   // выполнение таски подписки на канал Pizza TowerTON
   const handleSubscribe = () => {
@@ -108,9 +118,23 @@ function Tasks() {
 
   // выполнение таски INVITE_3_FRIENDS (инициируем проверку)
   const handleInvite3Task = () => {
+    // если уже получена награда — просто сообщаем
+    if (store.taskInvite3Status === "rewarded") {
+      toast.info("✅ Награда уже получена!");
+      return;
+    }
+
     if (isInviteTaskDone) return;
     if (!store.sessionId || !store.user?.telegramId) {
       toast.error("Авторизуйтесь, чтобы выполнить задание");
+      return;
+    }
+
+    // если друзей меньше трёх — направляем на страницу друзей
+    const totalReferrals = Number(store.referral?.totalReferrals ?? 0);
+    if (totalReferrals < 3) {
+      toast.info("👇 Пригласите 3 друзей, чтобы забрать награду!");
+      window.location.href = "/friends";
       return;
     }
 
@@ -135,12 +159,25 @@ function Tasks() {
       title: "Пригласи 3 друзей, которые купят 1 этаж",
       rewardPizza: "2000",
       link: "/friends",
-      buttonText: isInviteTaskDone ? "ВЫПОЛНЕНО" : "ВЫПОЛНИТЬ",
-      buttonBg: isInviteTaskDone ? "b_blue_small.png" : "b_red_small.png",
-      onClick: !isInviteTaskDone ? handleInvite3Task : undefined,
-      disabled: isInviteTaskDone,
-      isCompleted: isInviteTaskDone,
+
+      // динамика подписи
+      buttonText:
+          store.taskInvite3Status === "rewarded"
+              ? "ВЫПОЛНЕНО"
+              : store.referral.totalReferrals >= 3
+                  ? "ЗАБРАТЬ НАГРАДУ"
+                  : "ПРИГЛАСИТЬ",
+      buttonBg:
+          store.taskInvite3Status === "rewarded"
+              ? "b_blue_small.png"
+              : "b_red_small.png",
+
+      onClick:
+          store.taskInvite3Status === "rewarded" ? undefined : handleInvite3Task,
+      disabled: store.taskInvite3Status === "rewarded",
+      isCompleted: store.taskInvite3Status === "rewarded",
     },
+
     {
       id: 3,
       title: "Подписаться на канал MELEGATEAM",
