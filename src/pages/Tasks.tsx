@@ -31,6 +31,50 @@ function Tasks() {
   const [showAdsgramBlock, setShowAdsgramBlock] = useState(true);
   const [adsTaskEl, setAdsTaskEl] = useState<HTMLElement | null>(null);
 
+  // Состояния для игры Daily Combo
+  const [dailyComboRound, setDailyComboRound] = useState<{
+    isActive: boolean;
+    selectedPizzas: string[];
+    guessedPizzas: { pizza: string; index: number; visible: boolean }[];
+    attempts: number;
+    gameWon: number;
+    wrongAttemptAnimation: boolean;
+    wonPositions: number[];
+    showWinLabels: boolean[];
+  }>({
+    isActive: false,
+    selectedPizzas: [],
+    guessedPizzas: Array.from({ length: 4 }, (_, i) => ({
+      pizza: "",
+      index: i,
+      visible: false,
+    })),
+    attempts: 0,
+    gameWon: 0,
+    wrongAttemptAnimation: false,
+    wonPositions: [],
+    showWinLabels: Array(4).fill(false),
+  });
+
+  const pizzaList = [
+    "NewYork",
+    "California",
+    "Neapolitan",
+    "Sicilian",
+    "Margarita",
+    "4 cheeses",
+    "Mozzarella",
+    "Bacon",
+    "Vegetarian",
+    "Shrimp",
+    "Pepperoni",
+    "Chili",
+    "Hawaii",
+    "Mushroom",
+    "BBQ",
+    "Chiken",
+  ];
+
   // Инициализация выполненных заданий из localStorage
   useEffect(() => {
     const subscribedDone =
@@ -305,31 +349,175 @@ function Tasks() {
     (block) => !completedTaskIds.includes(block.id)
   );
 
-  const handleDailyComboClick = () => {
-    setShowDailyCombo(!showDailyCombo);
-  };
-
-  const pizzaList = [
-    "NewYork",
-    "California",
-    "Neapolitan",
-    "Sicilian",
-    "Margarita",
-    "4 cheeses",
-    "Mozzarella",
-    "Bacon",
-    "Vegetarian",
-    "Shrimp",
-    "Pepperoni",
-    "Chili",
-    "Hawaii",
-    "Mushroom",
-    "BBQ",
-    "Chiken",
-  ];
-
   // Если все задания выполнены, показываем сообщение
   const allTasksCompleted = visibleTaskBlocks.length === 0;
+
+  // Функции для игры Daily Combo
+  const startDailyComboGame = () => {
+    if (dailyComboRound.isActive && dailyComboRound.attempts >= 4) {
+      // Завершаем текущий раунд и начинаем новый
+      setDailyComboRound({
+        isActive: true,
+        selectedPizzas: [],
+        guessedPizzas: Array.from({ length: 4 }, (_, i) => ({
+          pizza: "",
+          index: i,
+          visible: false,
+        })),
+        attempts: 0,
+        gameWon: 0,
+        wrongAttemptAnimation: false,
+        wonPositions: [],
+        showWinLabels: Array(4).fill(false),
+      });
+      setShowDailyCombo(true);
+
+      // Выбираем 4 случайные пиццы через 100мс после отрисовки
+      setTimeout(() => {
+        selectRandomPizzas();
+      }, 100);
+      return;
+    }
+
+    setShowDailyCombo(!showDailyCombo);
+
+    if (!showDailyCombo && !dailyComboRound.isActive) {
+      // Начинаем новый раунд
+      setDailyComboRound({
+        isActive: true,
+        selectedPizzas: [],
+        guessedPizzas: Array.from({ length: 4 }, (_, i) => ({
+          pizza: "",
+          index: i,
+          visible: false,
+        })),
+        attempts: 0,
+        gameWon: 0,
+        wrongAttemptAnimation: false,
+        wonPositions: [],
+        showWinLabels: Array(4).fill(false),
+      });
+
+      // Выбираем 4 случайные пиццы через 100мс после отрисовки
+      setTimeout(() => {
+        selectRandomPizzas();
+      }, 100);
+    }
+  };
+
+  const selectRandomPizzas = () => {
+    // Создаем копию списка пицц
+    const shuffled = [...pizzaList].sort(() => Math.random() - 0.5);
+    // Выбираем 4 уникальные пиццы
+    const selected = shuffled.slice(0, 4);
+
+    // Заполняем угаданные пиццы (скрытые)
+    const guessedPizzas = Array.from({ length: 4 }, (_, i) => ({
+      pizza: selected[i],
+      index: i,
+      visible: false,
+    }));
+
+    setDailyComboRound((prev) => ({
+      ...prev,
+      selectedPizzas: selected,
+      guessedPizzas,
+    }));
+
+    console.log("🎯 Selected pizzas for game:", selected);
+  };
+
+  const handlePizzaClick = (pizzaName: string) => {
+    if (!dailyComboRound.isActive || dailyComboRound.attempts >= 4) return;
+
+    const { selectedPizzas, guessedPizzas, attempts, gameWon } =
+      dailyComboRound;
+
+    // Проверяем, есть ли такая пицца в загаданных
+    const pizzaIndex = selectedPizzas.indexOf(pizzaName);
+    const isCorrect = pizzaIndex !== -1;
+
+    if (isCorrect) {
+      // Находим позицию для отображения (первая пустая позиция)
+      const emptySlotIndex = guessedPizzas.findIndex((p) => !p.visible);
+
+      if (emptySlotIndex !== -1) {
+        // Показываем пиццу на правильной позиции
+        const updatedGuessedPizzas = [...guessedPizzas];
+        updatedGuessedPizzas[emptySlotIndex] = {
+          ...updatedGuessedPizzas[emptySlotIndex],
+          pizza: pizzaName,
+          visible: true,
+        };
+
+        // Добавляем анимацию выигрыша
+        const newWonPositions = [
+          ...dailyComboRound.wonPositions,
+          emptySlotIndex,
+        ];
+        const newShowWinLabels = [...dailyComboRound.showWinLabels];
+        newShowWinLabels[emptySlotIndex] = true;
+
+        // Воспроизводим звук win.mp3
+        playSound("win.mp3");
+
+        // Увеличиваем выигрыш
+        const newGameWon = gameWon + 250;
+
+        setDailyComboRound((prev) => ({
+          ...prev,
+          guessedPizzas: updatedGuessedPizzas,
+          attempts: attempts + 1,
+          gameWon: newGameWon,
+          wonPositions: newWonPositions,
+          showWinLabels: newShowWinLabels,
+        }));
+
+        // Показываем тост
+        toast.success(`✅ Угадана пицца: ${pizzaName}! +250 pizza`);
+      }
+    } else {
+      // Неправильная попытка
+      setDailyComboRound((prev) => ({
+        ...prev,
+        attempts: attempts + 1,
+        wrongAttemptAnimation: true,
+      }));
+
+      // Воспроизводим звук lost.mp3
+      playSound("lost.mp3");
+
+      // Скрываем анимацию через секунду
+      setTimeout(() => {
+        setDailyComboRound((prev) => ({
+          ...prev,
+          wrongAttemptAnimation: false,
+        }));
+      }, 1000);
+
+      toast.error(`❌ Пицца ${pizzaName} не входит в сегодняшний список`);
+    }
+  };
+
+  const playSound = (soundName: string) => {
+    try {
+      const audio = new Audio(`${store.imgUrl}${soundName}`);
+      audio.volume = 0.3;
+      audio.play().catch((e) => console.log("Sound play prevented:", e));
+    } catch (error) {
+      console.error("Error playing sound:", error);
+    }
+  };
+
+  // Функция для получения оставшихся пицц (уже не угаданных)
+  const getRemainingPizzas = () => {
+    const { guessedPizzas } = dailyComboRound;
+    const guessedPizzaNames = guessedPizzas
+      .filter((p) => p.visible)
+      .map((p) => p.pizza);
+
+    return pizzaList.filter((pizza) => !guessedPizzaNames.includes(pizza));
+  };
 
   // Рендерим adsgram-task только если он загружен и не скрыт
   const shouldRenderAdsgram = isAdsgramLoaded && showAdsgramBlock;
@@ -536,9 +724,9 @@ function Tasks() {
                 </div>
               ) : null}
 
-              {/* Кнопка и блок Daily Combo — оставлены, как были */}
+              {/* Кнопка и блок Daily Combo */}
               <button
-                onClick={handleDailyComboClick}
+                onClick={startDailyComboGame}
                 className="flex justify-center w-11/12 max-w-md hover:opacity-90 transition-opacity"
               >
                 <img
@@ -548,77 +736,172 @@ function Tasks() {
                 />
               </button>
 
+              {/* Игра Daily Combo */}
               {showDailyCombo && (
-                <>
-                  <div className="w-11/12 max-w-md">
-                    <div className="relative">
-                      <div className="absolute inset-0 flex flex-col p-4 sm:p-6 md:p-8">
-                        <div className="grid grid-cols-4 gap-2 sm:gap-3 mb-4">
-                          {pizzaList.map((pizzaName, index) => (
-                            <div
-                              key={index}
-                              className="flex flex-col items-center"
-                              onClick={() => alert(pizzaName)}
-                            >
-                              <div className="relative aspect-square w-full">
-                                <img
-                                  src={`${store.imgUrl}img_block_pizza.png`}
-                                  alt="Pizza background"
-                                  className="w-full h-full object-contain"
-                                />
+                <div className="w-11/12 max-w-md">
+                  <div className="relative p-4">
+                    {/* Заголовок */}
+                    <div className="text-center mb-4">
+                      {dailyComboRound.attempts >= 4 ? (
+                        <div className="text-xl font-bold text-amber-300 shantell mb-2">
+                          Ваш выигрыш {dailyComboRound.gameWon}
+                          <img
+                            src={`${store.imgUrl}icon_pizza.png`}
+                            alt="pizza"
+                            className="w-6 h-6 ml-2 inline-block"
+                          />
+                        </div>
+                      ) : (
+                        <div className="text-xl font-bold text-amber-300 shantell mb-2">
+                          Угадай 4 сегодняшние пиццы!
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 4 верхних квадрата с загаданными пиццами */}
+                    <div className="grid grid-cols-4 gap-2 mb-4">
+                      {dailyComboRound.guessedPizzas.map((slot, index) => (
+                        <div
+                          key={`slot-${index}`}
+                          className="relative aspect-square"
+                        >
+                          {/* Красная анимация при неправильном выборе */}
+                          {dailyComboRound.wrongAttemptAnimation &&
+                            !slot.visible && (
+                              <div className="absolute -inset-1 border-2 border-red-500 rounded-lg animate-pulse" />
+                            )}
+
+                          {/* Зеленый квадрат при угадывании */}
+                          {dailyComboRound.wonPositions.includes(index) && (
+                            <div className="absolute -inset-1 border-2 border-green-500 rounded-lg" />
+                          )}
+
+                          <div className="relative w-full h-full">
+                            <img
+                              src={`${store.imgUrl}img_block_pizza.png`}
+                              alt="Pizza slot"
+                              className="w-full h-full object-contain"
+                            />
+
+                            {/* Показываем пиццу если угадана */}
+                            {slot.visible && (
+                              <>
                                 <div className="absolute inset-0 flex items-center justify-center p-2">
                                   <img
-                                    src={`${store.imgUrl}pizza_${pizzaName}.png`}
-                                    alt={pizzaName}
+                                    src={`${store.imgUrl}pizza_${slot.pizza}.png`}
+                                    alt={slot.pizza}
                                     className="w-full h-full object-contain"
                                   />
                                 </div>
-                              </div>
-                              <div className="text-center mt-1">
-                                <span className="text-white text-xs font-bold shantell leading-tight">
-                                  {pizzaName}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
 
-                        <div className="relative mt-auto">
-                          <img
-                            src={`${store.imgUrl}img_block.png`}
-                            alt="Additional block"
-                            className="w-full h-auto object-contain"
-                          />
-                          <div className="absolute inset-0 flex flex-col p-4 sm:p-6 md:p-8">
-                            <div className="space-y-0 sm:space-y-1 px-2">
-                              <div className="flex items-center justify-between">
-                                <img
-                                  src={`${store.imgUrl}img_daily_combo.png`}
-                                  alt="combo"
-                                  className="w-1/3 h-auto"
-                                />
-                                <div className="flex flex-col gap-1 sm:gap-2 mx-2 sm:mx-4">
-                                  <div className="text-right leading-4 text-md sm:text-lg text-amber-800 shantell">
-                                    MAX награда
+                                {/* Надпись "+250" */}
+                                {dailyComboRound.showWinLabels[index] && (
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="bg-green-500 text-white font-bold text-lg shantell px-2 py-1 rounded-md animate-bounce">
+                                      +250
+                                    </div>
                                   </div>
-                                  <span className="font-bold text-2xl sm:text-3xl text-amber-800 shantell">
-                                    1000
-                                    <img
-                                      src={`${store.imgUrl}icon_pizza.png`}
-                                      alt="dollar"
-                                      className="ml-2 inline-block w-12 h-auto sm:w-18"
-                                    />
-                                  </span>
-                                </div>
-                              </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+
+                          {/* Название пиццы под квадратом */}
+                          {slot.visible && (
+                            <div className="text-center mt-1">
+                              <span className="text-white text-xs font-bold shantell leading-tight">
+                                {slot.pizza}
+                              </span>
                             </div>
-                            <div className="mt-auto px-2"></div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Все пиццы 4x4 */}
+                    <div className="grid grid-cols-4 gap-2">
+                      {(dailyComboRound.attempts >= 4
+                        ? pizzaList
+                        : getRemainingPizzas()
+                      ).map((pizzaName, index) => (
+                        <div
+                          key={`pizza-${index}`}
+                          className={`flex flex-col items-center ${
+                            dailyComboRound.attempts >= 4
+                              ? "opacity-50 cursor-not-allowed"
+                              : "cursor-pointer hover:scale-105 transition-transform"
+                          }`}
+                          onClick={() =>
+                            dailyComboRound.attempts < 4 &&
+                            handlePizzaClick(pizzaName)
+                          }
+                        >
+                          <div className="relative aspect-square w-full">
+                            <img
+                              src={`${store.imgUrl}img_block_pizza.png`}
+                              alt="Pizza background"
+                              className="w-full h-full object-contain"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center p-2">
+                              <img
+                                src={`${store.imgUrl}pizza_${pizzaName}.png`}
+                                alt={pizzaName}
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+                          </div>
+                          <div className="text-center mt-1">
+                            <span className="text-white text-xs font-bold shantell leading-tight">
+                              {pizzaName}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Счетчик попыток */}
+                    <div className="text-center mt-4 text-amber-300 shantell">
+                      Попыток: {dailyComboRound.attempts}/4
+                      {dailyComboRound.attempts >= 4 && (
+                        <div className="text-green-600 font-bold mt-2">
+                          Раунд завершен! Следующая попытка завтра.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="relative mt-auto">
+                    <img
+                      src={`${store.imgUrl}img_block.png`}
+                      alt="Additional block"
+                      className="w-full h-auto object-contain"
+                    />
+                    <div className="absolute inset-0 flex flex-col p-4 sm:p-6 md:p-8">
+                      <div className="space-y-0 sm:space-y-1 px-2">
+                        <div className="flex items-center justify-between">
+                          <img
+                            src={`${store.imgUrl}img_daily_combo.png`}
+                            alt="combo"
+                            className="w-1/3 h-auto"
+                          />
+                          <div className="flex flex-col gap-1 sm:gap-2 mx-2 sm:mx-4">
+                            <div className="text-right leading-4 text-md sm:text-lg text-amber-800 shantell">
+                              MAX награда
+                            </div>
+                            <span className="font-bold text-2xl sm:text-3xl text-amber-800 shantell">
+                              1000
+                              <img
+                                src={`${store.imgUrl}icon_pizza.png`}
+                                alt="dollar"
+                                className="ml-2 inline-block w-12 h-auto sm:w-18"
+                              />
+                            </span>
                           </div>
                         </div>
                       </div>
+                      <div className="mt-auto px-2"></div>
                     </div>
                   </div>
-                </>
+                </div>
               )}
             </div>
           </div>
