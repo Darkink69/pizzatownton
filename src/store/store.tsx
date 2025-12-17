@@ -648,6 +648,50 @@ class Store {
   }
 
   // -------------------------------------------------------------------------
+  // TASKS: DAILY COMBO
+  // -------------------------------------------------------------------------
+  sendComboToday(): boolean {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) {
+      console.warn("⚠️ Не удалось отправить COMBO_TODAY — нет сессии или ws");
+      return false;
+    }
+
+    const rq = {
+      type: "COMBO_TODAY" as const,
+      requestId: genId(),
+      session: this.sessionId!,
+      comboRq: {
+        telegramId: this.user.telegramId,
+      },
+    };
+
+    console.log("📨 COMBO_TODAY отправлен:", rq);
+    this.wsSend(rq);
+    return true;
+  }
+
+  sendComboPick(index: number): boolean {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) {
+      console.warn("⚠️ Не удалось отправить COMBO_PICK — нет сессии или ws");
+      return false;
+    }
+
+    const rq = {
+      type: "COMBO_PICK" as const,
+      requestId: genId(),
+      session: this.sessionId!,
+      pickComboRq: {
+        telegramId: this.user.telegramId,
+        index: index, // Индекс с 1
+      },
+    };
+
+    console.log("📨 COMBO_PICK отправлен:", rq);
+    this.wsSend(rq);
+    return true;
+  }
+
+  // -------------------------------------------------------------------------
   // FLOORS OPERATIONS
   // -------------------------------------------------------------------------
   buyNewFloor(floorId: number): boolean {
