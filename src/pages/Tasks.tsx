@@ -1003,7 +1003,7 @@ function Tasks() {
                               <>
                                 <div className="absolute inset-0 flex items-center justify-center p-2">
                                   <img
-                                    src={`${store.imgUrl}pizza_${slot.pizza}.png`}
+                                    src={`${store.imgUrl}pizza_${pizzaList[index]}.png`}
                                     alt={slot.pizza}
                                     className="w-full h-full object-contain"
                                   />
@@ -1025,7 +1025,7 @@ function Tasks() {
                           {slot.visible && (
                             <div className="text-center mt-1">
                               <span className="text-white text-xs font-bold shantell leading-tight">
-                                {slot.pizza}
+                                {pizzaList[index]}
                               </span>
                             </div>
                           )}
