@@ -122,6 +122,15 @@ const ExchangeModal = observer(
             {Number(exchangeAmount) < 25000 ? "Минимум 25,000" : "Подтвердить"}
           </button>
 
+          <div className="text-left text-sm font-medium text-amber-800 mt-4">
+            Последний вывод:
+          </div>
+          <div className="text-left text-xs text-gray-600">
+            ё 12/18/2025 17:59
+          </div>
+          <div className="text-left text-xs text-gray-600">1000 TON</div>
+          <div className="text-left text-xs text-green-600">Успешно</div>
+
           <button
             onClick={onClose}
             className="absolute -top-10 right-2 w-8 h-8 bg-transparent hover:scale-110 transition-transform z-10"
