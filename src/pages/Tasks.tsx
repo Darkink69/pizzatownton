@@ -907,7 +907,15 @@ function Tasks() {
                     slot="reward"
                     className="text-amber-800 text-md shantell"
                   >
-                    300 pizza
+                    300{" "}
+                    <span>
+                      {" "}
+                      <img
+                        src={`${store.imgUrl}icon_pizza.png`}
+                        alt="dollar"
+                        className="inline-block w-6 h-auto sm:w-9"
+                      />
+                    </span>{" "}
                   </span>
                   <div
                     slot="button"
