@@ -523,11 +523,17 @@ function Tasks() {
       console.log("🎯 Combo game data loaded from WebSocket:", comboData);
 
       // Обновляем состояние игры на основе данных сервера
-      const updatedGuessedPizzas = Array.from({ length: 4 }, (_, i) => ({
-        pizza: "",
-        index: i,
-        visible: false,
-      }));
+      const updatedGuessedPizzas = Array.from({ length: 4 }, (_, slotIndex) => {
+        // Берем индекс пиццы из comboData.selected для этого слота
+        const pizzaIndex = comboData.selected?.[slotIndex] || 0;
+        const pizzaName = pizzaIndex > 0 ? pizzaList[pizzaIndex - 1] : "";
+
+        return {
+          pizza: pizzaName,
+          index: slotIndex,
+          visible: !!pizzaName, // Видимо, если есть название
+        };
+      });
 
       // Определяем угаданные пиццы на основе hits и selectedIndices
       // Note: Мы не знаем конкретные пиццы, только количество угаданных
@@ -1003,7 +1009,7 @@ function Tasks() {
                               <>
                                 <div className="absolute inset-0 flex items-center justify-center p-2">
                                   <img
-                                    src={`${store.imgUrl}pizza_${pizzaList[index]}.png`}
+                                    src={`${store.imgUrl}pizza_${slot.pizza}.png`}
                                     alt={slot.pizza}
                                     className="w-full h-full object-contain"
                                   />
@@ -1025,7 +1031,7 @@ function Tasks() {
                           {slot.visible && (
                             <div className="text-center mt-1">
                               <span className="text-white text-xs font-bold shantell leading-tight">
-                                {pizzaList[index]}
+                                {slot.pizza}
                               </span>
                             </div>
                           )}
