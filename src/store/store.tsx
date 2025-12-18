@@ -614,19 +614,30 @@ class Store {
   }
 
   completeInvite3Task() {
-    if (!this.sessionId || !this.user?.telegramId) return;
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) {
+      console.warn(
+        "⚠️ Не удалось отправить TASKS_COMPLETE — нет сессии или ws"
+      );
+      return;
+    }
 
-    const rq = {
-      type: "TASKS_COMPLETE" as const,
-      requestId: Math.random().toString(36).substring(2, 10),
-      session: this.sessionId,
+    if (this.taskInvite3Status !== "verified") {
+      console.warn("⚠️ TASKS_COMPLETE возможен только после verified");
+      return;
+    }
+
+    const rq: WsRequest = {
+      type: "TASKS_COMPLETE",
+      requestId: genId(),
+      session: this.sessionId!,
       taskRq: {
-        telegramId: this.user.telegramId,
+        telegramId: this.user.telegramId!,
         code: "INVITE_3_FRIENDS",
       },
     };
 
-    this.send(rq);
+    console.log("📨 TASKS_COMPLETE INVITE_3_FRIENDS:", rq);
+    this.wsSend(rq);
   }
 
   resetInvite3TaskState() {
@@ -634,6 +645,50 @@ class Store {
       this.taskInvite3Status = "idle";
       this.taskInvite3Error = null;
     });
+  }
+
+  // -------------------------------------------------------------------------
+  // TASKS: DAILY COMBO
+  // -------------------------------------------------------------------------
+  sendComboToday(): boolean {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) {
+      console.warn("⚠️ Не удалось отправить COMBO_TODAY — нет сессии или ws");
+      return false;
+    }
+
+    const rq = {
+      type: "COMBO_TODAY" as const,
+      requestId: genId(),
+      session: this.sessionId!,
+      comboRq: {
+        telegramId: this.user.telegramId,
+      },
+    };
+
+    console.log("📨 COMBO_TODAY отправлен:", rq);
+    this.wsSend(rq);
+    return true;
+  }
+
+  sendComboPick(index: number): boolean {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) {
+      console.warn("⚠️ Не удалось отправить COMBO_PICK — нет сессии или ws");
+      return false;
+    }
+
+    const rq = {
+      type: "COMBO_PICK" as const,
+      requestId: genId(),
+      session: this.sessionId!,
+      pickComboRq: {
+        telegramId: this.user.telegramId,
+        index: index, // Индекс с 1
+      },
+    };
+
+    console.log("📨 COMBO_PICK отправлен:", rq);
+    this.wsSend(rq);
+    return true;
   }
 
   // -------------------------------------------------------------------------

@@ -24,6 +24,8 @@ function generateRequestId() {
 const WebSocketComponent = observer(() => {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const claimRefreshIntervalRef = useRef<number | null>(null);
+
   const [_lastMessage, setLastMessage] = useState<string>("");
   const [_status, setStatus] = useState<
     "connected" | "disconnected" | "error" | "connecting"
@@ -63,6 +65,13 @@ const WebSocketComponent = observer(() => {
 
   /** Основной коннектор WebSocket */
   const connectWebSocket = () => {
+    // на всякий случай сносим отложенный реконнект
+    if (reconnectTimeout.current) {
+      clearTimeout(reconnectTimeout.current);
+      reconnectTimeout.current = null;
+    }
+
+    // закрываем прежний сокет (если был)
     if (wsRef.current) wsRef.current.close();
     setStatus("connecting");
 
@@ -70,6 +79,14 @@ const WebSocketComponent = observer(() => {
     wsRef.current = ws;
 
     ws.onopen = () => {
+      setStatus("connected");
+
+      // чистим отложенный реконнект (если вдруг был)
+      if (reconnectTimeout.current) {
+        clearTimeout(reconnectTimeout.current);
+        reconnectTimeout.current = null;
+      }
+
       const rq: WsRequest = {
         type: "AUTH_INIT",
         requestId: generateRequestId(),
@@ -106,9 +123,10 @@ const WebSocketComponent = observer(() => {
               store.setSessionId?.(sessionId);
               store.isAuthed = true;
 
-              // сначала только этажи
+              // загружаем этажи
               sendFloorsGetRequest();
 
+              // мгновенный refresh
               ws.send(
                 JSON.stringify({
                   type: "CLAIM_REFRESH",
@@ -118,7 +136,14 @@ const WebSocketComponent = observer(() => {
                 })
               );
 
-              setInterval(() => {
+              // предотвращаем мульти-интервалы
+              if (claimRefreshIntervalRef.current) {
+                clearInterval(claimRefreshIntervalRef.current);
+                claimRefreshIntervalRef.current = null;
+              }
+
+              // периодический refresh
+              claimRefreshIntervalRef.current = window.setInterval(() => {
                 if (ws.readyState === WebSocket.OPEN) {
                   ws.send(
                     JSON.stringify({
@@ -204,7 +229,6 @@ const WebSocketComponent = observer(() => {
             if (parsed.success && parsed.data) {
               const referralInfoData = parsed.data as ReferralInfoData;
 
-              // сохраняем реферальные данные в store
               runInAction(() => {
                 store.referral = {
                   totalReferrals: referralInfoData.totalReferrals ?? 0,
@@ -231,7 +255,6 @@ const WebSocketComponent = observer(() => {
             if (parsed.success && parsed.data) {
               const d = parsed.data as PizzaBoxOpenResp;
 
-              // обновляем балансы
               if (d.user) {
                 store.updateUserData({
                   pizza: d.user.pizza,
@@ -254,30 +277,6 @@ const WebSocketComponent = observer(() => {
             }
             break;
           }
-
-          // /** ------------------ STAFF ------------------ */
-          // case "STAFF_GET": {
-          //     console.log("📦 STAFF_GET payload:", parsed.data);
-          //     if (parsed.success && parsed.data && parsed.data.length) {
-          //         runInAction(() => {
-          //             const staffList = parsed.data as StaffMember[];
-          //             store.staffData = staffList;
-          //             localStorage.setItem("staffData", JSON.stringify(staffList));
-          //             staffList.forEach(staffDto => {
-          //                 const floor = store.safeUserFloorList.find(f => f.floorId === staffDto.floorId);
-          //                 if (!floor) return;
-          //                 if (!Array.isArray(floor.staff)) floor.staff = [];
-          //                 const existing = floor.staff.find(s => s.staffName === staffDto.staffName);
-          //                 if (existing) Object.assign(existing, staffDto);
-          //                 else floor.staff.push(staffDto);
-          //             });
-          //         });
-          //         console.log("🧍 Персонал объединён с этажами:", parsed.data);
-          //     } else {
-          //         console.warn("⚠️ STAFF_GET вернул пустой массив или ошибку");
-          //     }
-          //     break;
-          // }
 
           case "PERSON_BUY": {
             if (parsed.success && parsed.data) {
@@ -337,10 +336,8 @@ const WebSocketComponent = observer(() => {
               const percent = parsed.data.percent ?? "0";
               const userResponse = parsed.data.userResponse;
 
-              // обновляем прогресс фарма
               store.updateClaimProgress(percent);
 
-              // обновляем балансы пользователя
               if (userResponse) {
                 store.updateUserData({
                   pcoin: userResponse.pcoin,
@@ -397,7 +394,7 @@ const WebSocketComponent = observer(() => {
           /** ---------------- TASKS_VERIFY ---------------- */
           case "TASKS_VERIFY": {
             const data = parsed.data as TaskVerifyResponse | undefined;
-            console.log("✅ TASKS_VERIFY получен:", parsed);
+
             if (!data?.code) {
               console.warn("TASKS_VERIFY без code", parsed);
               break;
@@ -412,7 +409,6 @@ const WebSocketComponent = observer(() => {
                 toast.success(
                   "✅ Условие задания выполнено! Заберите награду."
                 );
-                store.completeInvite3Task();
               } else {
                 runInAction(() => {
                   store.taskInvite3Status = "error";
@@ -445,12 +441,12 @@ const WebSocketComponent = observer(() => {
               break;
             }
 
-            const { code, rewardPcoin, rewardPizza, rewardPdollar, message } = data;
+            const { code, rewardPcoin, rewardPizza, rewardPdollar, message } =
+              data;
 
-            // ---------- INVITE_3_FRIENDS ----------
+            // ---------------- INVITE_3_FRIENDS ----------------
             if (code === "INVITE_3_FRIENDS") {
               if (parsed.success) {
-                // нормальное успешное завершение
                 runInAction(() => {
                   store.taskInvite3Status = "rewarded";
                   store.taskInvite3Error = null;
@@ -462,99 +458,215 @@ const WebSocketComponent = observer(() => {
                     store.pizza = (store.pizza ?? 0) + Number(rewardPizza);
                   }
                   if (rewardPdollar != null) {
-                    store.pdollar = (store.pdollar ?? 0) + Number(rewardPdollar);
+                    store.pdollar =
+                      (store.pdollar ?? 0) + Number(rewardPdollar);
                   }
                 });
-                toast.success(message || parsed.message || "🎉 Награда за друзей получена!");
+                toast.success(
+                  message || parsed.message || "🎉 Награда за друзей получена!"
+                );
               } else {
-                // задача уже помечена выполненной на бэке
                 if (
-                    parsed.message === "TASK_ALREADY_COMPLETED" ||
-                    message === "ALREADY_COMPLETED"
+                  parsed.message === "TASK_ALREADY_COMPLETED" ||
+                  message === "ALREADY_COMPLETED"
                 ) {
                   runInAction(() => {
-                    // считаем её завершённой и на клиенте, чтобы блок пропал
                     store.taskInvite3Status = "rewarded";
                     store.taskInvite3Error = null;
                   });
-                  toast.info("Награда за приглашение друзей уже была получена ранее.");
+                  toast.info(
+                    "Награда за приглашение друзей уже была получена ранее."
+                  );
                 } else {
                   toast.error(
-                      message || parsed.message || "Ошибка при получении награды"
+                    message || parsed.message || "Ошибка при получении награды"
                   );
                 }
               }
               break;
             }
 
-            // SUBSCRIBE_MAIN_CHANNEL — старое задание
-            if (data.code === "SUBSCRIBE_MAIN_CHANNEL") {
+            // ---------------- ADS_TASK_1 (реклама) ----------------
+            if (code === "ADS_TASK_1") {
+              if (parsed.success) {
+                runInAction(() => {
+                  if (rewardPcoin != null) {
+                    store.pcoin = (store.pcoin ?? 0) + Number(rewardPcoin);
+                  }
+                  if (rewardPizza != null) {
+                    store.pizza = (store.pizza ?? 0) + Number(rewardPizza);
+                  }
+                  if (rewardPdollar != null) {
+                    store.pdollar =
+                      (store.pdollar ?? 0) + Number(rewardPdollar);
+                  }
+                });
+
+                toast.success(
+                  message || parsed.message || "🎉 Награда за рекламу получена!"
+                );
+
+                const now = Date.now();
+                localStorage.setItem("adsTaskLastDoneAt", String(now));
+              } else {
+                if (
+                  parsed.message === "COOLDOWN_NOT_PASSED" ||
+                  message === "COOLDOWN_NOT_PASSED"
+                ) {
+                  toast.info(
+                    "Рекламное задание уже было выполнено недавно. Попробуйте позже."
+                  );
+                } else {
+                  toast.error(
+                    message ||
+                      parsed.message ||
+                      "Ошибка при выполнении рекламного задания"
+                  );
+                }
+              }
+              break;
+            }
+
+            // ---------------- Остальные таски ----------------
+            if (!parsed.success) {
+              toast.error(
+                message || parsed.message || "Ошибка при получении награды"
+              );
+              break;
+            }
+
+            // Успешный общий случай
+            toast.success(message || parsed.message || "🎉 Награда получена!");
+
+            // SUBSCRIBE_MAIN_CHANNEL
+            if (code === "SUBSCRIBE_MAIN_CHANNEL") {
               runInAction(() => {
-                if (data.rewardPcoin != null) {
-                  store.pcoin = (store.pcoin ?? 0) + Number(data.rewardPcoin);
+                if (rewardPcoin != null) {
+                  store.pcoin = (store.pcoin ?? 0) + Number(rewardPcoin);
                 } else {
                   store.pcoin = (store.pcoin ?? 0) + 40;
                 }
 
-                if (data.rewardPizza != null) {
-                  store.pizza = (store.pizza ?? 0) + Number(data.rewardPizza);
+                if (rewardPizza != null) {
+                  store.pizza = (store.pizza ?? 0) + Number(rewardPizza);
                 } else {
                   store.pizza = (store.pizza ?? 0) + 200;
                 }
               });
+              break;
             }
 
-            // ✅ SUBSCRIBE_TEAM_LOVE_CHANNEL — новое задание
-            if (data.code === "SUBSCRIBE_TEAM_LOVE_CHANNEL") {
+            // SUBSCRIBE_TEAM_LOVE_CHANNEL (MELEGATEAM) — 1000 pizza + 30 pcoin
+            if (code === "SUBSCRIBE_TEAM_LOVE_CHANNEL") {
               runInAction(() => {
-                if (data.rewardPcoin != null) {
-                  store.pcoin = (store.pcoin ?? 0) + Number(data.rewardPcoin);
+                if (rewardPcoin != null) {
+                  store.pcoin = (store.pcoin ?? 0) + Number(rewardPcoin);
                 } else {
-                  store.pcoin = (store.pcoin ?? 0) + 10;
+                  store.pcoin = (store.pcoin ?? 0) + 30; // fallback
                 }
 
-                if (data.rewardPizza != null) {
-                  store.pizza = (store.pizza ?? 0) + Number(data.rewardPizza);
+                if (rewardPizza != null) {
+                  store.pizza = (store.pizza ?? 0) + Number(rewardPizza);
                 } else {
-                  store.pizza = (store.pizza ?? 0) + 300;
+                  store.pizza = (store.pizza ?? 0) + 1000; // fallback
                 }
               });
+              // дубль тоста убрали — общий уже показан выше
+              break;
             }
 
+            // прочие успешные таски без спец‑логики
             break;
           }
 
+          // ---------------- DAILY COMBO ----------------
+          case "COMBO_TODAY": {
+            console.log("📨 COMBO_TODAY response received:", parsed);
+            if (parsed.success) {
+              const comboData = parsed.data;
+              console.log("🎯 Combo game data loaded:", comboData);
+
+              // Отправляем событие для обновления UI в Tasks.tsx
+              const event = new CustomEvent("comboTodayLoaded", {
+                detail: comboData,
+              });
+              window.dispatchEvent(event);
+            } else {
+              toast.error(parsed.message || "Ошибка загрузки данных игры");
+            }
+            break;
+          }
+
+          case "COMBO_PICK": {
+            console.log("📨 COMBO_PICK response received:", parsed);
+            if (parsed.success) {
+              const pickData = parsed.data;
+              console.log("🎯 Combo pick result:", pickData);
+
+              // Обновляем балансы если есть выигрыш
+              if (pickData.isWin && pickData.winAmount) {
+                runInAction(() => {
+                  store.pizza = (store.pizza ?? 0) + Number(pickData.winAmount);
+                });
+
+                // Отправляем уведомление о выигрыше
+                const winEvent = new CustomEvent("comboWinNotification", {
+                  detail: { amount: pickData.winAmount },
+                });
+                window.dispatchEvent(winEvent);
+              }
+
+              // Отправляем событие для обновления UI
+              const event = new CustomEvent("comboPickResult", {
+                detail: pickData,
+              });
+              window.dispatchEvent(event);
+            } else {
+              toast.error(parsed.message || "Ошибка при выборе пиццы");
+            }
+            break;
+          }
           /** ---------------- DEFAULT ---------------- */
           default:
             // другие типы можно обрабатывать позже
             break;
         }
       } catch (err) {
-        // текстовые "ping/pong" и т.п. сюда не попадают
         console.warn("WS message parse skipped:", err);
       }
     };
 
     ws.onerror = (e) => {
       console.error("❌ WS error:", e);
-      //store.resetSession();
       setStatus("error");
     };
 
     ws.onclose = () => {
       console.warn("⚠️ WS closed, reconnecting...");
-
       setStatus("disconnected");
 
-      // просто попробуем переподключиться без сброса данных
-      reconnectTimeout.current = setTimeout(connectWebSocket, 30000);
+      // чистим refresh‑интервал
+      if (claimRefreshIntervalRef.current) {
+        clearInterval(claimRefreshIntervalRef.current);
+        claimRefreshIntervalRef.current = null;
+      }
+
+      // запускаем реконнект
+      reconnectTimeout.current = setTimeout(connectWebSocket, 10000);
     };
   };
 
   useEffect(() => {
     connectWebSocket();
     return () => {
-      if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
+      if (reconnectTimeout.current) {
+        clearTimeout(reconnectTimeout.current);
+        reconnectTimeout.current = null;
+      }
+      if (claimRefreshIntervalRef.current) {
+        clearInterval(claimRefreshIntervalRef.current);
+        claimRefreshIntervalRef.current = null;
+      }
       if (wsRef.current) wsRef.current.close();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

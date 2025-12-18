@@ -19,6 +19,8 @@ export type OperationType =
   | "BANK_LINK_WALLET"
   | "ADMIN_ALL"
   | "PIZZA_BOX_OPEN"
+  | "COMBO_TODAY"
+  | "COMBO_PICK"
   | (string & {}); // резерв на будущее
 
 // -------------------- База запроса --------------------
@@ -127,6 +129,24 @@ export interface TaskCompleteResponse {
   message: string;
 }
 
+export interface ComboTodayRq {
+  telegramId: number;
+}
+
+export interface ComboPickRq {
+  telegramId: number;
+  index: number; // Индекс с 1
+}
+
+export interface ComboGameData {
+  picksUsed: number;
+  hits: number;
+  selected: number[];
+  isAvailable: boolean;
+  isWin: boolean;
+  winAmount: number | null;
+}
+
 // -------------------- Пользователь --------------------
 export interface TgUser {
   id?: number;
@@ -185,7 +205,6 @@ export interface PizzaBoxOpenResp {
   pizzaSpent: number;
   pcoinReward: number;
 }
-
 
 export interface BuyFloorRq {
   telegramId: number;
@@ -258,6 +277,8 @@ export interface WsRequest extends WsBase {
 
   // задачи
   taskRq?: TaskRq;
+  comboRq?: ComboTodayRq;
+  pickComboRq?: ComboPickRq;
   [key: string]: any;
 }
 
