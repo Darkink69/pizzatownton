@@ -726,11 +726,10 @@ function Tasks() {
           <img src={`${store.imgUrl}img_task_list.png`} alt="tasks" />
         </div>
 
-        {/* Уведомление о награде (как в Home.tsx) */}
+        {/* Уведомление о награде */}
         {taskRewardNotification.show && (
           <div className="fixed inset-0 z-[99] bg-black/50 flex items-end justify-center transition-opacity duration-300">
             <div className="relative mb-4 sm:mb-16 flex items-end gap-2 sm:gap-4 max-w-5xl mx-auto px-4 w-full">
-              {/* Повар - внизу как в Home.tsx */}
               <div className="flex-shrink-0">
                 <img
                   src={`${store.imgUrl}img_chif_talk.png`}
@@ -743,7 +742,7 @@ function Tasks() {
               <div className="relative bg-[#FFF3E0] border-4 border-amber-800 rounded-2xl shadow-2xl p-4 sm:p-6 flex-1 max-w-2xl">
                 <p className="text-green-600 shantell font-bold text-base sm:text-lg leading-relaxed whitespace-pre-wrap">
                   Ваш выигрыш {taskRewardNotification.message}
-                  {taskRewardNotification.message.includes("pizza") && (
+                  {taskRewardNotification.message.includes("") && (
                     <img
                       src={`${store.imgUrl}icon_pizza.png`}
                       alt="pizza"
