@@ -4,6 +4,7 @@ import store from "../store/store";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
 import LanguageSwitcher from "../components/LanguageSwitcher";
+import { Link } from "react-router-dom";
 
 const Friends = observer(() => {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -147,11 +148,13 @@ const Friends = observer(() => {
                   alt="coin"
                   className="w-6 sm:w-8 inline-block mx-1"
                 />
-                <img
-                  src={`${store.imgUrl}icon_dollar.png`}
-                  alt="dollar"
-                  className="w-8 sm:w-10 inline-block mx-1"
-                />
+                <Link key="1" to="/chests">
+                  <img
+                    src={`${store.imgUrl}icon_dollar.png`}
+                    alt="dollar"
+                    className="w-8 sm:w-10 inline-block mx-1"
+                  />
+                </Link>
               </div>
 
               {/* заголовок статистики */}
