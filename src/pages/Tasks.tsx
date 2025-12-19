@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import store from "../store/store";
+import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
@@ -884,26 +885,28 @@ function Tasks() {
                               </a>
                             ) : null
                           ) : (
-                            <button
-                              disabled={block.disabled}
-                              onClick={block.onClick}
-                              className={`relative w-full transition-opacity ${
-                                block.disabled
-                                  ? "opacity-70 cursor-not-allowed"
-                                  : "hover:opacity-90 cursor-pointer"
-                              }`}
-                            >
-                              <img
-                                src={`${store.imgUrl}${block.buttonBg}`}
-                                alt="Выполнить задачу"
-                                className="w-full h-auto"
-                              />
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="text-white text-sm sm:text-base shantell font-bold">
-                                  {block.buttonText}
+                            <Link to="/friends" className="block">
+                              <button
+                                disabled={block.disabled}
+                                onClick={block.onClick}
+                                className={`relative w-full transition-opacity ${
+                                  block.disabled
+                                    ? "opacity-70 cursor-not-allowed"
+                                    : "hover:opacity-90 cursor-pointer"
+                                }`}
+                              >
+                                <img
+                                  src={`${store.imgUrl}${block.buttonBg}`}
+                                  alt="Выполнить задачу"
+                                  className="w-full h-auto"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="text-white text-sm sm:text-base shantell font-bold">
+                                    {block.buttonText}
+                                  </div>
                                 </div>
-                              </div>
-                            </button>
+                              </button>
+                            </Link>
                           )}
                         </div>
                       </div>
