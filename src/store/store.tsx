@@ -65,7 +65,7 @@ class Store {
   // =========================================================================
 
   /** @observable */
-  keys = { quest: 0, referral: 0, deposit: 0 };
+  keys = { task: 0, referral: 0, deposit: 0 };
   /** @observable */
   pieces = { common: 0, uncommon: 0, rare: 0, mystical: 0 };
 
@@ -138,10 +138,10 @@ class Store {
 
   /**
    * Отправляет запрос на открытие сундука.
-   * @param {'quest' | 'referral' | 'deposit'} chestType - Тип сундука.
+   * @param {'task' | 'referral' | 'deposit'} chestType - Тип сундука.
    * @returns {boolean} - true, если запрос был отправлен.
    */
-  openChest = (chestType: "quest" | "referral" | "deposit"): boolean => {
+  openChest = (chestType: "task" | "referral" | "deposit"): boolean => {
     if (!this.wsSend || !this.sessionId || !this.user?.telegramId) return false;
 
     const rq: WsRequest = {

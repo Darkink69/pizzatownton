@@ -2,12 +2,12 @@
 
 /**
  * Типы сундуков.
- * quest - за задания/активности.
+ * task - за задания/активности.
  * referral - за рефералов.
  * deposit - за депозиты.
  */
 export const CHEST_TYPES = {
-  QUEST: "quest",
+  TASK: "task",
   REFERRAL: "referral",
   DEPOSIT: "deposit",
 } as const;
@@ -20,7 +20,7 @@ export const chestTypeList = Object.values(CHEST_TYPES);
  * Названия сундуков для отображения в UI.
  */
 export const CHEST_NAMES: Record<ChestType, string> = {
-  [CHEST_TYPES.QUEST]: "Активности",
+  [CHEST_TYPES.TASK]: "Активности",
   [CHEST_TYPES.REFERRAL]: "Рефералы",
   [CHEST_TYPES.DEPOSIT]: "Депозиты",
 };
