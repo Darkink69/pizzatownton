@@ -41,7 +41,12 @@ function Tasks() {
     isActive: boolean;
     isLoading: boolean;
     selectedPizzas: string[];
-    guessedPizzas: { pizza: string; index: number; visible: boolean }[];
+    guessedPizzas: {
+      pizza: string;
+      index: number;
+      visible: boolean;
+      isHit?: boolean; // Добавляем поле для статуса
+    }[];
     attempts: number;
     gameWon: number;
     wrongAttemptAnimation: boolean;
@@ -61,6 +66,7 @@ function Tasks() {
       pizza: "",
       index: i,
       visible: false,
+      isHit: false,
     })),
     attempts: 0,
     gameWon: 0,
@@ -522,38 +528,64 @@ function Tasks() {
       const comboData = customEvent.detail;
       console.log("🎯 Combo game data loaded from WebSocket:", comboData);
 
-      // Обновляем состояние игры на основе данных сервера
-      const updatedGuessedPizzas = Array.from({ length: 4 }, (_, slotIndex) => {
-        // Берем индекс пиццы из comboData.selected для этого слота
-        const pizzaIndex = comboData.selected?.[slotIndex] || 0;
-        const pizzaName = pizzaIndex > 0 ? pizzaList[pizzaIndex - 1] : "";
+      // Получаем сегодняшние пиццы из selected индексов сервера
+      const todayPizzaIndices = comboData.selected || [];
 
-        return {
-          pizza: pizzaName,
-          index: slotIndex,
-          visible: !!pizzaName, // Видимо, если есть название
-        };
+      // Определяем угаданные пиццы на основе hits
+      const hits = comboData.hits || 0;
+      const guessedPizzaIndices = todayPizzaIndices.slice(0, hits);
+
+      // Определяем индексы неудачных попыток (выбранные, но не угаданные)
+      const failedPizzaIndices = todayPizzaIndices.slice(
+        hits,
+        comboData.picksUsed || 0
+      );
+
+      // Создаем массив для хранения всех попыток (угаданные + неудачные)
+      const allAttempts = [
+        ...guessedPizzaIndices.map((index: any) => ({ index, isHit: true })),
+        ...failedPizzaIndices.map((index: any) => ({ index, isHit: false })),
+      ];
+
+      // Обновляем guessedPizzas с правильными названиями и статусами
+      const updatedGuessedPizzas = Array.from({ length: 4 }, (_, slotIndex) => {
+        if (slotIndex < allAttempts.length) {
+          const attempt = allAttempts[slotIndex];
+          const pizzaName = pizzaList[attempt.index - 1]; // Индексы с 1
+          return {
+            pizza: pizzaName,
+            index: slotIndex,
+            visible: true,
+            isHit: attempt.isHit,
+          };
+        } else {
+          return {
+            pizza: "",
+            index: slotIndex,
+            visible: false,
+            isHit: false,
+          };
+        }
       });
 
-      // Определяем угаданные пиццы на основе hits и selectedIndices
-      // Note: Мы не знаем конкретные пиццы, только количество угаданных
-      const hits = comboData.hits || 0;
-      const visibleCount = Math.min(hits, 4);
-
-      for (let i = 0; i < visibleCount; i++) {
-        updatedGuessedPizzas[i].visible = true;
-        // Мы не знаем название пиццы, оставляем пустым
-      }
+      // Обновляем showWinLabels для угаданных пицц
+      const updatedShowWinLabels = Array.from({ length: 4 }, (_, i) => {
+        if (i < allAttempts.length) {
+          return allAttempts[i].isHit; // true для "+250", false для "+0"
+        }
+        return false;
+      });
 
       setDailyComboRound((prev) => ({
         ...prev,
         isActive: true,
         isLoading: false,
         guessedPizzas: updatedGuessedPizzas,
+        showWinLabels: updatedShowWinLabels,
         attempts: comboData.picksUsed || 0,
         picksUsed: comboData.picksUsed || 0,
         hits: comboData.hits || 0,
-        selectedIndices: comboData.selected || [],
+        selectedIndices: todayPizzaIndices,
         isAvailable: comboData.isAvailable !== false,
         isWin: comboData.isWin || false,
         winAmount: comboData.winAmount || 0,
@@ -572,67 +604,57 @@ function Tasks() {
       const pickData = customEvent.detail;
       console.log("🎯 Combo pick result from WebSocket:", pickData);
 
-      // Обновляем состояние на основе результата выбора
+      // Получаем выбранный индекс из pickData
+      const newSelectedIndices = pickData.selected || [];
+      const prevSelectedIndices = dailyComboRound.selectedIndices || [];
+
+      // Находим нововыбранный индекс
+      const newIndex = newSelectedIndices.find(
+        (idx: number) => !prevSelectedIndices.includes(idx)
+      );
+      console.log("🔍 New selected index:", newIndex);
+
+      // Обновляем общие данные
       const newAttempts = pickData.picksUsed || dailyComboRound.attempts + 1;
       const newHits = pickData.hits || dailyComboRound.hits;
-      const newSelectedIndices = pickData.selected || [
-        ...dailyComboRound.selectedIndices,
-      ];
-
-      // Проверяем, было ли это успешное угадывание
       const wasHit = newHits > dailyComboRound.hits;
 
-      if (wasHit) {
-        // Находим первую пустую позицию для отображения угаданной пиццы
-        const emptySlotIndex = dailyComboRound.guessedPizzas.findIndex(
-          (p) => !p.visible
-        );
-        if (emptySlotIndex !== -1) {
-          const updatedGuessedPizzas = [...dailyComboRound.guessedPizzas];
-          // Мы не знаем название угаданной пиццы, оставляем как есть
-          updatedGuessedPizzas[emptySlotIndex] = {
-            ...updatedGuessedPizzas[emptySlotIndex],
-            visible: true,
-          };
+      // Находим позицию для отображения (первая пустая позиция)
+      const emptySlotIndex = dailyComboRound.guessedPizzas.findIndex(
+        (p) => !p.visible
+      );
 
-          const newWonPositions = [
-            ...dailyComboRound.wonPositions,
-            emptySlotIndex,
-          ];
-          const newShowWinLabels = [...dailyComboRound.showWinLabels];
-          newShowWinLabels[emptySlotIndex] = true;
+      if (emptySlotIndex !== -1 && newIndex) {
+        // Получаем название пиццы
+        const pizzaName = pizzaList[newIndex - 1];
 
-          playSound("win.mp3");
+        // Обновляем guessedPizzas
+        const updatedGuessedPizzas = [...dailyComboRound.guessedPizzas];
+        updatedGuessedPizzas[emptySlotIndex] = {
+          ...updatedGuessedPizzas[emptySlotIndex],
+          pizza: pizzaName,
+          visible: true,
+          isHit: wasHit,
+        };
 
-          // Рассчитываем выигрыш (250 за каждую угаданную пиццу)
-          const newGameWon = newHits * 250;
+        // Обновляем showWinLabels
+        const updatedShowWinLabels = [...dailyComboRound.showWinLabels];
+        updatedShowWinLabels[emptySlotIndex] = true; // Показываем надпись (+250 или +0)
 
-          setDailyComboRound((prev) => ({
-            ...prev,
-            guessedPizzas: updatedGuessedPizzas,
-            attempts: newAttempts,
-            gameWon: newGameWon,
-            wrongAttemptAnimation: false,
-            wonPositions: newWonPositions,
-            showWinLabels: newShowWinLabels,
-            picksUsed: pickData.picksUsed || prev.picksUsed + 1,
-            hits: newHits,
-            selectedIndices: newSelectedIndices,
-            isLoading: false,
-            isAvailable: pickData.isAvailable !== false,
-            isWin: pickData.isWin || false,
-            winAmount: pickData.winAmount || prev.winAmount,
-          }));
+        playSound(wasHit ? "win.mp3" : "lost.mp3");
 
-          toast.success(`✅ Угадана пицца! +250 pizza`);
-        }
-      } else {
-        // Неправильная попытка
+        // Рассчитываем выигрыш
+        const newGameWon = newHits * 250;
+
         setDailyComboRound((prev) => ({
           ...prev,
+          guessedPizzas: updatedGuessedPizzas,
+          showWinLabels: updatedShowWinLabels,
           attempts: newAttempts,
-          wrongAttemptAnimation: true,
+          gameWon: newGameWon,
+          wrongAttemptAnimation: !wasHit,
           picksUsed: pickData.picksUsed || prev.picksUsed + 1,
+          hits: newHits,
           selectedIndices: newSelectedIndices,
           isLoading: false,
           isAvailable: pickData.isAvailable !== false,
@@ -640,17 +662,11 @@ function Tasks() {
           winAmount: pickData.winAmount || prev.winAmount,
         }));
 
-        playSound("lost.mp3");
-
-        // Скрываем анимацию через секунду
-        setTimeout(() => {
-          setDailyComboRound((prev) => ({
-            ...prev,
-            wrongAttemptAnimation: false,
-          }));
-        }, 1000);
-
-        toast.error(`❌ Пицца не входит в сегодняшний список`);
+        if (wasHit) {
+          toast.success(`✅ Угадана пицца: ${pizzaName}! +250 pizza`);
+        } else {
+          toast.error(`❌ Пицца "${pizzaName}" не входит в сегодняшний список`);
+        }
       }
 
       // Если попытки закончились и есть выигрыш
@@ -995,12 +1011,13 @@ function Tasks() {
                         >
                           {/* Красная анимация при неправильном выборе */}
                           {dailyComboRound.wrongAttemptAnimation &&
-                            !slot.visible && (
+                            slot.visible &&
+                            !slot.isHit && (
                               <div className="absolute -inset-1 border-3 border-red-500 rounded-lg animate-pulse" />
                             )}
 
                           {/* Зеленый квадрат при угадывании */}
-                          {dailyComboRound.wonPositions.includes(index) && (
+                          {slot.visible && slot.isHit && (
                             <div className="absolute -inset-1 border-3 border-green-500 rounded-lg" />
                           )}
 
@@ -1011,7 +1028,7 @@ function Tasks() {
                               className="w-full h-full object-contain"
                             />
 
-                            {/* Показываем пиццу если угадана */}
+                            {/* Показываем пиццу если выбрана */}
                             {slot.visible && (
                               <>
                                 <div className="absolute inset-0 flex items-center justify-center p-2">
@@ -1022,11 +1039,17 @@ function Tasks() {
                                   />
                                 </div>
 
-                                {/* Надпись "+250" */}
+                                {/* Надпись "+250" или "+0" */}
                                 {dailyComboRound.showWinLabels[index] && (
                                   <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="bg-amber-300 text-amber-800 font-bold text-lg shantell px-2 py-1 rounded-md animate-bounce">
-                                      +250
+                                    <div
+                                      className={`font-bold text-lg shantell px-2 py-1 rounded-md animate-bounce ${
+                                        slot.isHit
+                                          ? "bg-amber-300 text-amber-800" // Зеленый для угаданных
+                                          : "bg-red-500 text-white" // Красный для неудачных
+                                      }`}
+                                    >
+                                      {slot.isHit ? "+250" : "+0"}
                                     </div>
                                   </div>
                                 )}
