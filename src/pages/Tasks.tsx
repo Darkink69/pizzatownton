@@ -382,7 +382,7 @@ function Tasks() {
       onClick:
         store.taskInvite3Status === "rewarded" ? undefined : handleInvite3Task,
       disabled: store.taskInvite3Status === "rewarded",
-      isCompleted: store.taskInvite3Status === "rewarded",
+      isCompleted: store.taskInvite3Status === "rewarded" || isInviteTaskDone,
     },
     {
       id: 3,
@@ -400,7 +400,9 @@ function Tasks() {
 
   // Фильтруем задания, чтобы показывать только невыполненные
   const visibleTaskBlocks = taskBlocks.filter(
-    (block) => !completedTaskIds.includes(block.id)
+    (block) =>
+      !(block.id === 2 && store.taskInvite3Status === "rewarded") &&
+      !completedTaskIds.includes(block.id)
   );
 
   // Если все задания выполнены, показываем сообщение
@@ -715,6 +717,31 @@ function Tasks() {
       );
     };
   }, [dailyComboRound]);
+
+  useEffect(() => {
+    // Проверяем статус из store при монтировании
+    if (store.taskInvite3Status === "rewarded") {
+      setIsInviteTaskDone(true);
+      localStorage.setItem("invite3TaskDone", "true");
+      setCompletedTaskIds((prev) => {
+        if (!prev.includes(2)) return [...prev, 2];
+        return prev;
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleInviteRewarded = () => {
+      setIsInviteTaskDone(true);
+      localStorage.setItem("invite3TaskDone", "true");
+      setCompletedTaskIds((prev) => [...prev.filter((id) => id !== 2), 2]);
+      showRewardNotification("2000 pizza");
+    };
+
+    window.addEventListener("inviteTaskRewarded", handleInviteRewarded);
+    return () =>
+      window.removeEventListener("inviteTaskRewarded", handleInviteRewarded);
+  }, []);
 
   // Рендерим adsgram-task только если он загружен и не скрыт
   const shouldRenderAdsgram = isAdsgramLoaded && showAdsgramBlock;
