@@ -3,22 +3,22 @@ import store from "../store/store";
 import { toast } from "react-toastify";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
-// import styles from "../css/task.module.css";
+import styles from "../css/task.module.css";
 
 /* eslint-disable @typescript-eslint/no-namespace */
-// declare global {
-//   namespace JSX {
-//     interface IntrinsicElements {
-//       "adsgram-task": React.DetailedHTMLProps<
-//         React.HTMLAttributes<HTMLElement>,
-//         HTMLElement
-//       > & {
-//         "data-block-id": string;
-//         ref?: React.RefObject<HTMLElement>;
-//       };
-//     }
-//   }
-// }
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      "adsgram-task": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        "data-block-id": string;
+        ref?: React.RefObject<HTMLElement>;
+      };
+    }
+  }
+}
 /* eslint-enable @typescript-eslint/no-namespace */
 
 function Tasks() {
@@ -27,9 +27,9 @@ function Tasks() {
   const [isSubscribedToTeamLove, setIsSubscribedToTeamLove] = useState(false);
   const [isInviteTaskDone, setIsInviteTaskDone] = useState(false);
   const [completedTaskIds, setCompletedTaskIds] = useState<number[]>([]);
-  // const [isAdsgramLoaded, setIsAdsgramLoaded] = useState(false);
-  // const [showAdsgramBlock, setShowAdsgramBlock] = useState(true);
-  // const [adsTaskEl, setAdsTaskEl] = useState<HTMLElement | null>(null);
+  const [isAdsgramLoaded, setIsAdsgramLoaded] = useState(false);
+  const [showAdsgramBlock, setShowAdsgramBlock] = useState(true);
+  const [adsTaskEl, setAdsTaskEl] = useState<HTMLElement | null>(null);
   // Состояние для уведомления о начислении денег
   const [taskRewardNotification, setTaskRewardNotification] = useState<{
     show: boolean;
@@ -143,98 +143,98 @@ function Tasks() {
   };
 
   // Эффект для adsgram-task
-  // useEffect(() => {
-  //   if (!adsTaskEl) {
-  //     console.log("🔧 adsgram-task element is not ready yet");
-  //     return;
-  //   }
+  useEffect(() => {
+    if (!adsTaskEl) {
+      console.log("🔧 adsgram-task element is not ready yet");
+      return;
+    }
 
-  //   console.log("🔧 Setting up adsgram-task listener, element:", adsTaskEl);
+    console.log("🔧 Setting up adsgram-task listener, element:", adsTaskEl);
 
-  //   const rewardHandler = (event: Event) => {
-  //     const customEvent = event as CustomEvent;
-  //     console.log("📢 Adsgram-task reward event received!", customEvent);
-  //     console.log("Event detail:", customEvent.detail);
+    const rewardHandler = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      console.log("📢 Adsgram-task reward event received!", customEvent);
+      console.log("Event detail:", customEvent.detail);
 
-  //     if (!store.sessionId || !store.user?.telegramId) {
-  //       toast.error("Авторизуйтесь, чтобы получить награду за рекламу");
-  //       return;
-  //     }
+      if (!store.sessionId || !store.user?.telegramId) {
+        toast.error("Авторизуйтесь, чтобы получить награду за рекламу");
+        return;
+      }
 
-  //     const rq = {
-  //       type: "TASKS_COMPLETE" as const,
-  //       requestId: Math.random().toString(36).substring(2, 10),
-  //       session: store.sessionId,
-  //       taskRq: {
-  //         telegramId: store.user.telegramId,
-  //         code: "ADS_TASK_1",
-  //       },
-  //     };
+      const rq = {
+        type: "TASKS_COMPLETE" as const,
+        requestId: Math.random().toString(36).substring(2, 10),
+        session: store.sessionId,
+        taskRq: {
+          telegramId: store.user.telegramId,
+          code: "ADS_TASK_1",
+        },
+      };
 
-  //     console.log("🚀 Sending ADS_TASK_1 request:", rq);
+      console.log("🚀 Sending ADS_TASK_1 request:", rq);
 
-  //     const ok = store.send(rq);
-  //     if (!ok) {
-  //       toast.error("WebSocket не подключён");
-  //       return;
-  //     }
+      const ok = store.send(rq);
+      if (!ok) {
+        toast.error("WebSocket не подключён");
+        return;
+      }
 
-  //     // Для adsgram не показываем уведомление с поваром
-  //     toast.success("🎉 Рекламное задание выполнено! Начисляем награду...");
-  //   };
+      // Для adsgram не показываем уведомление с поваром
+      toast.success("🎉 Рекламное задание выполнено! Начисляем награду...");
+    };
 
-  //   const stateHandler = (e: Event) => {
-  //     console.log("Adsgram-task statechange:", e);
-  //     const el = e.target as HTMLElement;
-  //     console.log("Current state:", el.getAttribute("state"));
-  //   };
+    const stateHandler = (e: Event) => {
+      console.log("Adsgram-task statechange:", e);
+      const el = e.target as HTMLElement;
+      console.log("Current state:", el.getAttribute("state"));
+    };
 
-  //   const bannerNotFoundHandler = (e: Event) => {
-  //     console.log("❌ Adsgram-task banner not found event:", e);
-  //     // Полностью скрываем блок с рекламным заданием
-  //     setShowAdsgramBlock(false);
-  //     toast.info("Рекламное задание временно недоступно");
-  //   };
+    const bannerNotFoundHandler = (e: Event) => {
+      console.log("❌ Adsgram-task banner not found event:", e);
+      // Полностью скрываем блок с рекламным заданием
+      setShowAdsgramBlock(false);
+      toast.info("Рекламное задание временно недоступно");
+    };
 
-  //   adsTaskEl.addEventListener("reward", rewardHandler);
-  //   adsTaskEl.addEventListener("statechange", stateHandler);
-  //   adsTaskEl.addEventListener("onBannerNotFound", bannerNotFoundHandler);
+    adsTaskEl.addEventListener("reward", rewardHandler);
+    adsTaskEl.addEventListener("statechange", stateHandler);
+    adsTaskEl.addEventListener("onBannerNotFound", bannerNotFoundHandler);
 
-  //   // Проверяем состояние
-  //   setTimeout(() => {
-  //     console.log(
-  //       "Adsgram-task initial state:",
-  //       adsTaskEl.getAttribute?.("state")
-  //     );
-  //     console.log("Adsgram-task attributes:", adsTaskEl.attributes);
-  //   }, 1000);
+    // Проверяем состояние
+    setTimeout(() => {
+      console.log(
+        "Adsgram-task initial state:",
+        adsTaskEl.getAttribute?.("state")
+      );
+      console.log("Adsgram-task attributes:", adsTaskEl.attributes);
+    }, 1000);
 
-  //   return () => {
-  //     adsTaskEl.removeEventListener("reward", rewardHandler);
-  //     adsTaskEl.removeEventListener("statechange", stateHandler);
-  //     adsTaskEl.removeEventListener("onBannerNotFound", bannerNotFoundHandler);
-  //   };
-  // }, [adsTaskEl, store.sessionId, store.user?.telegramId]);
+    return () => {
+      adsTaskEl.removeEventListener("reward", rewardHandler);
+      adsTaskEl.removeEventListener("statechange", stateHandler);
+      adsTaskEl.removeEventListener("onBannerNotFound", bannerNotFoundHandler);
+    };
+  }, [adsTaskEl, store.sessionId, store.user?.telegramId]);
 
   // Проверяем загрузку adsgram-task
-  // useEffect(() => {
-  //   const checkAdsgram = () => {
-  //     if (customElements.get("adsgram-task")) {
-  //       console.log("✅ Adsgram-task custom element loaded");
-  //       setIsAdsgramLoaded(true);
-  //     } else {
-  //       setIsAdsgramLoaded(false);
-  //       console.log("❌ Adsgram-task custom element not found");
-  //     }
-  //   };
+  useEffect(() => {
+    const checkAdsgram = () => {
+      if (customElements.get("adsgram-task")) {
+        console.log("✅ Adsgram-task custom element loaded");
+        setIsAdsgramLoaded(true);
+      } else {
+        setIsAdsgramLoaded(false);
+        console.log("❌ Adsgram-task custom element not found");
+      }
+    };
 
-  //   checkAdsgram();
+    checkAdsgram();
 
-  //   // Проверяем периодически
-  //   const checkInterval = setInterval(checkAdsgram, 5000);
+    // Проверяем периодически
+    const checkInterval = setInterval(checkAdsgram, 5000);
 
-  //   return () => clearInterval(checkInterval);
-  // }, []);
+    return () => clearInterval(checkInterval);
+  }, []);
 
   // следим за статусом INVITE_3_FRIENDS из стора:
   useEffect(() => {
@@ -716,7 +716,7 @@ function Tasks() {
   }, [dailyComboRound]);
 
   // Рендерим adsgram-task только если он загружен и не скрыт
-  // const shouldRenderAdsgram = isAdsgramLoaded && showAdsgramBlock;
+  const shouldRenderAdsgram = isAdsgramLoaded && showAdsgramBlock;
 
   return (
     <>
@@ -913,10 +913,10 @@ function Tasks() {
               )}
 
               {/* Рекламный таск -----------------------------------------------*/}
-              {/* {shouldRenderAdsgram ? (
+              {shouldRenderAdsgram ? (
                 <adsgram-task
                   className={styles.task}
-                  data-block-id="task-19032"
+                  data-block-id="task-18892"
                   ref={setAdsTaskEl}
                 >
                   <span
@@ -962,7 +962,7 @@ function Tasks() {
                     Сейчас нет заданий от наших партнеров, зайдите позже
                   </div>
                 </div>
-              ) : null} */}
+              ) : null}
 
               {/* Кнопка и блок Daily Combo */}
               <button
