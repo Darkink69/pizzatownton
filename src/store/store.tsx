@@ -1,7 +1,15 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import type { TgUser, UserFloor, UserState, WsRequest } from "../types/ws";
+import type {
+  ChestGetStatePayload,
+  ChestOpenPayload,
+  TgUser,
+  UserFloor,
+  WsRequest,
+  UserState,
+} from "../types/ws";
 import { bankStore } from "./BankStore";
 import translations, { type Language } from "../components/translations";
+import type { Rarity } from "../types/chests";
 
 class Store {
   imgUrl =
@@ -51,6 +59,132 @@ class Store {
 
   //  РЕЗУЛЬТАТ КОРОБКИ ПИЦЦЫ
   lastPizzaBoxResult: { pizzaSpent: number; pcoinReward: number } | null = null;
+
+  // =========================================================================
+  // CHESTS & CRAFTING START
+  // =========================================================================
+
+  /** @observable */
+  keys = { quest: 0, referral: 0, deposit: 0 };
+  /** @observable */
+  pieces = { common: 0, uncommon: 0, rare: 0, mystical: 0 };
+
+  /**
+   * @observable
+   * Хранит награды из последнего сундука для отображения в модальном окне.
+   */
+  lastRewards: any[] = []; // This will be typed more specifically when we have proper Reward type from BE
+
+  /**
+   * @observable
+   * Хранит результат последнего крафта для отображения в модальном окне.
+   */
+  lastCraftResult: { rarity: Rarity; nftBoxId: number } | null = null;
+
+  /**
+   * Очищает данные о последних полученных наградах.
+   */
+  clearLastRewards = () => {
+    this.lastRewards = [];
+  };
+
+  /**
+   * Очищает данные о последнем результате крафта.
+   */
+  clearLastCraftResult = () => {
+    this.lastCraftResult = null;
+  };
+
+  /**
+   * Обработчик обновлений состояния от WebSocket.
+   * @param {ChestGetStatePayload | ChestOpenPayload} payload - Данные из ответа CHEST_GET_STATE или CHEST_OPEN.
+   */
+  updateChestsState = (payload: ChestGetStatePayload | ChestOpenPayload) => {
+    runInAction(() => {
+      if (payload.keys) {
+        this.keys = payload.keys;
+      }
+      if (payload.pieces) {
+        this.pieces = payload.pieces;
+      }
+      // Обновляем балансы пользователя, если они есть в ответе
+      if ("user" in payload && payload.user) {
+        this.updateUserData(payload.user);
+      }
+      // Сохраняем награды для модального окна
+      if ("rewards" in payload && payload.rewards) {
+        this.lastRewards = payload.rewards;
+      }
+    });
+  };
+
+  /**
+   * Запрашивает начальное состояние сундуков и ключей.
+   * @returns {boolean} - true, если запрос был отправлен.
+   */
+  getChestsState = (): boolean => {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) return false;
+
+    const rq: WsRequest = {
+      type: "CHEST_GET_STATE",
+      requestId: genId(),
+      session: this.sessionId,
+      chestGetStateRq: { telegramId: this.user.telegramId },
+    };
+    this.wsSend(rq);
+    console.log("✅ CHEST_GET_STATE отправлен:", rq);
+    return true;
+  };
+
+  /**
+   * Отправляет запрос на открытие сундука.
+   * @param {'quest' | 'referral' | 'deposit'} chestType - Тип сундука.
+   * @returns {boolean} - true, если запрос был отправлен.
+   */
+  openChest = (chestType: "quest" | "referral" | "deposit"): boolean => {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) return false;
+
+    const rq: WsRequest = {
+      type: "CHEST_OPEN",
+      requestId: genId(),
+      session: this.sessionId,
+      chestOpenRq: {
+        telegramId: this.user.telegramId,
+        chestType,
+      },
+    };
+    this.wsSend(rq);
+    console.log("✅ CHEST_OPEN отправлен:", rq);
+    return true;
+  };
+
+  /**
+   * Отправляет запрос на крафт NFT-бокса.
+   * @param {'common' | 'uncommon' | 'rare' | 'mystical'} rarity - Редкость создаваемого бокса.
+   * @returns {boolean} - true, если запрос был отправлен.
+   */
+  craftPizza = (
+    rarity: "common" | "uncommon" | "rare" | "mystical"
+  ): boolean => {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) return false;
+
+    const rq: WsRequest = {
+      type: "PIZZA_CRAFT_BOX",
+      requestId: genId(),
+      session: this.sessionId,
+      pizzaCraftBoxRq: {
+        telegramId: this.user.telegramId,
+        rarity,
+      },
+    };
+    this.wsSend(rq);
+    console.log("✅ PIZZA_CRAFT_BOX отправлен:", rq);
+    return true;
+  };
+
+  // =========================================================================
+  // CHESTS & CRAFTING END
+  // =========================================================================
 
   // ---------------- TASK: INVITE_3_FRIENDS ----------------
   taskInvite3Status: "idle" | "checking" | "verified" | "rewarded" | "error" =

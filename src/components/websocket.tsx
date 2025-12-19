@@ -13,6 +13,9 @@ import type {
   TaskVerifyResponse,
   WsRequest,
   WsResponse,
+  ChestGetStatePayload,
+  ChestOpenPayload,
+  PizzaCraftBoxPayload,
 } from "../types/ws";
 import { bankStore } from "../store/BankStore.ts";
 import { runInAction } from "mobx";
@@ -287,6 +290,50 @@ const WebSocketComponent = observer(() => {
               toast.success("✅ Персонал нанят / обновлён!");
             } else {
               toast.error(parsed.message || "Ошибка найма персонала");
+            }
+            break;
+          }
+
+          // ===================================================================
+          // CHESTS & CRAFTING
+          // ===================================================================
+
+          /** ------------------ CHEST_GET_STATE ------------------ */
+          case "CHEST_GET_STATE": {
+            if (parsed.success && parsed.data) {
+              const data = parsed.data as ChestGetStatePayload;
+              store.updateChestsState(data);
+              console.log("✅ Chests state loaded:", data);
+            } else {
+              toast.error(
+                parsed.message || "Ошибка загрузки данных о сундуках"
+              );
+            }
+            break;
+          }
+
+          /** ------------------ CHEST_OPEN ------------------ */
+          case "CHEST_OPEN": {
+            if (parsed.success && parsed.data) {
+              const data = parsed.data as ChestOpenPayload;
+              store.updateChestsState(data);
+            } else {
+              toast.error(parsed.message || "Не удалось открыть сундук");
+            }
+            break;
+          }
+
+          /** ------------------ PIZZA_CRAFT_BOX ------------------ */
+          case "PIZZA_CRAFT_BOX": {
+            if (parsed.success && parsed.data) {
+              const data = parsed.data as PizzaCraftBoxPayload;
+              const { rarity, piecesLeft } = data;
+              runInAction(() => {
+                store.pieces[rarity] = piecesLeft;
+                store.lastCraftResult = data;
+              });
+            } else {
+              toast.error(parsed.message || "Ошибка крафта");
             }
             break;
           }

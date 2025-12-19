@@ -5,6 +5,7 @@ import Tasks from "../pages/Tasks.tsx";
 import Friends from "../pages/Friends.tsx";
 import Bank from "../pages/Bank.tsx";
 import { TONConnectPage } from "../pages/TONConnectPage/TONConnectPage";
+import ChestsPage from "../pages/Chests/Chests.tsx";
 
 interface Route {
   path: string;
@@ -18,6 +19,7 @@ export const routes: Route[] = [
   { path: "/tasks", Component: Tasks, title: "Tasks" },
   { path: "/friends", Component: Friends, title: "Friends" },
   { path: "/bank", Component: Bank, title: "Bank" },
+  { path: "/chests", Component: ChestsPage, title: "Chests" },
   {
     path: "/ton-connect",
     Component: TONConnectPage,
