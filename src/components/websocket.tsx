@@ -409,20 +409,34 @@ const WebSocketComponent = observer(() => {
                 toast.success(
                   "✅ Условие задания выполнено! Заберите награду."
                 );
+
+                if (store.sessionId && store.user?.telegramId) {
+                  const rq: WsRequest = {
+                    type: "TASKS_COMPLETE",
+                    requestId: generateRequestId(),
+                    session: store.sessionId,
+                    taskRq: {
+                      telegramId: store.user.telegramId,
+                      code: "INVITE_3_FRIENDS",
+                    },
+                  };
+                  ws.send(JSON.stringify(rq));
+                } else {
+                  toast.error("Не удалось завершить задачу: нет сессии или пользователя");
+                }
               } else {
                 runInAction(() => {
                   store.taskInvite3Status = "error";
-                  store.taskInvite3Error =
-                    data.message || parsed.message || null;
+                  store.taskInvite3Error = data.message || parsed.message || null;
                 });
 
                 if (data.message === "NOT_ENOUGH_REFERRALS_WITH_FLOOR") {
                   toast.error(
-                    "У вас ещё меньше 3 друзей, которые купили хотя бы 1 этаж."
+                      "У вас ещё меньше 3 друзей, которые купили хотя бы 1 этаж."
                   );
                 } else {
                   toast.error(
-                    data.message || parsed.message || "Ошибка проверки задания"
+                      data.message || parsed.message || "Ошибка проверки задания"
                   );
                 }
               }
