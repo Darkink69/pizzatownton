@@ -18,6 +18,17 @@ const ExchangeModal = observer(
     initialAmount: string;
   }) => {
     const [exchangeAmount, setExchangeAmount] = useState(initialAmount);
+    const [showHistory, setShowHistory] = useState(false);
+    const [withdrawalHistory, setWithdrawalHistory] = useState<
+      Array<{
+        id: number;
+        date: string;
+        amount: number;
+        status: string;
+      }>
+    >([]);
+    const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
     const userPdollarBalance = Number(store.pdollar) || 0;
     const hasSufficientBalance = userPdollarBalance >= 25000;
     const canSubmit =
@@ -25,8 +36,45 @@ const ExchangeModal = observer(
       Number(exchangeAmount) >= 25000 &&
       Number(exchangeAmount) <= userPdollarBalance;
 
-    // Получаем переводы
+    // Получаем переводы только для основного окна
     const t = store.currentTranslations;
+
+    // Функция для загрузки истории выводов
+    const loadWithdrawalHistory = async () => {
+      setIsLoadingHistory(true);
+      try {
+        // Здесь нужно реализовать запрос к серверу для получения истории выводов
+        // Пример запроса:
+        // const response = await store.getWithdrawalHistory();
+        // setWithdrawalHistory(response.data);
+
+        // Временные данные для демонстрации
+        const mockData = [
+          { id: 1, date: "2024-12-18 17:59", amount: 1000, status: "Успешно" },
+          { id: 2, date: "2024-12-17 14:30", amount: 500, status: "Успешно" },
+          {
+            id: 3,
+            date: "2024-12-16 10:15",
+            amount: 1500,
+            status: "В обработке",
+          },
+          { id: 4, date: "2024-12-15 16:45", amount: 2000, status: "Успешно" },
+          { id: 5, date: "2024-12-14 11:20", amount: 750, status: "Отклонено" },
+        ];
+        setWithdrawalHistory(mockData);
+      } catch (error) {
+        console.error("Ошибка загрузки истории выводов:", error);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+
+    // При открытии истории загружаем данные
+    useEffect(() => {
+      if (showHistory) {
+        loadWithdrawalHistory();
+      }
+    }, [showHistory]);
 
     const handleSubmit = async () => {
       const amount = Number(exchangeAmount);
@@ -50,8 +98,118 @@ const ExchangeModal = observer(
       }
     };
 
+    const handleShowHistory = () => {
+      setShowHistory(true);
+    };
+
+    const handleBackToWithdrawal = () => {
+      setShowHistory(false);
+    };
+
     if (!isOpen) return null;
 
+    // Если показываем историю выводов - УПРОЩЕННАЯ ВЕРСИЯ БЕЗ МУЛЬТИЯЗЫЧНОСТИ
+    if (showHistory) {
+      return (
+        <div className="fixed inset-0 z-[60] bg-black bg-opacity-70 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full text-center shadow-lg border-2 border-amber-800 shantell text-amber-800 relative">
+            <h2 className="text-xl mb-6 font-bold">История выводов</h2>
+
+            {/* Таблица истории выводов */}
+            <div className="overflow-x-auto mb-6">
+              <table className="w-full border-collapse border border-amber-300">
+                <thead>
+                  <tr className="bg-amber-100">
+                    <th className="border border-amber-300 px-3 py-2 text-left text-sm">
+                      Дата/время
+                    </th>
+                    <th className="border border-amber-300 px-3 py-2 text-left text-sm">
+                      Сумма
+                    </th>
+                    <th className="border border-amber-300 px-3 py-2 text-left text-sm">
+                      Статус
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isLoadingHistory ? (
+                    <tr>
+                      <td
+                        colSpan={3}
+                        className="border border-amber-300 px-3 py-4 text-center"
+                      >
+                        <div className="flex justify-center items-center">
+                          <span className="text-amber-600">Загрузка...</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : withdrawalHistory.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={3}
+                        className="border border-amber-300 px-3 py-4 text-center"
+                      >
+                        <span className="text-gray-500">
+                          Нет данных для отображения
+                        </span>
+                      </td>
+                    </tr>
+                  ) : (
+                    withdrawalHistory.map((item) => (
+                      <tr key={item.id} className="hover:bg-amber-50">
+                        <td className="border border-amber-300 px-3 py-2 text-sm">
+                          {item.date}
+                        </td>
+                        <td className="border border-amber-300 px-3 py-2 text-sm">
+                          {item.amount.toLocaleString()} TON
+                        </td>
+                        <td className="border border-amber-300 px-3 py-2 text-sm">
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-bold ${
+                              item.status === "Успешно"
+                                ? "bg-green-100 text-green-800"
+                                : item.status === "Отклонено"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-yellow-100 text-yellow-800"
+                            }`}
+                          >
+                            {item.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Кнопка возврата */}
+            <div className="flex justify-center">
+              <button
+                onClick={handleBackToWithdrawal}
+                className="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-6 rounded-lg transition"
+              >
+                Назад
+              </button>
+            </div>
+
+            {/* Кнопка закрытия модального окна */}
+            <button
+              onClick={onClose}
+              className="absolute -top-10 right-2 w-8 h-8 bg-transparent hover:scale-110 transition-transform z-10"
+            >
+              <img
+                src={`${store.imgUrl}b_close.png`}
+                alt="Закрыть"
+                className="w-full h-full"
+              />
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // Основное окно вывода средств (с мультиязычностью)
     return (
       <div className="fixed inset-0 z-[60] bg-black bg-opacity-70 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg p-6 max-w-md w-full text-center shadow-lg border-2 border-amber-800 shantell text-amber-800 relative">
@@ -82,6 +240,7 @@ const ExchangeModal = observer(
               </div>
             )}
           </div>
+
           <div className="text-left text-sm font-medium text-amber-800 ">
             {t.exchangeModal.walletLabel}
           </div>
@@ -111,7 +270,7 @@ const ExchangeModal = observer(
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className={`w-full font-bold py-3 px-6 rounded-lg transition ${
+            className={`w-full font-bold py-3 px-6 rounded-lg transition mb-4 ${
               canSubmit
                 ? "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
                 : "bg-gray-400 text-gray-200 cursor-not-allowed"
@@ -122,16 +281,13 @@ const ExchangeModal = observer(
               : t.exchangeModal.confirmButton}
           </button>
 
-          <div className="text-left text-sm font-medium text-amber-800 mt-4">
-            {t.exchangeModal.lastWithdrawal}
-          </div>
-          <div className="text-left text-xs text-gray-600">
-            ё 12/18/2025 17:59
-          </div>
-          <div className="text-left text-xs text-gray-600">1000 TON</div>
-          <div className="text-left text-xs text-green-600">
-            {t.exchangeModal.statusSuccess}
-          </div>
+          {/* Кнопка перехода к истории выводов */}
+          <button
+            onClick={handleShowHistory}
+            className="w-full text-center py-3 text-amber-600 hover:text-amber-800 font-medium transition-colors border-t border-amber-200 pt-4"
+          >
+            История выводов →
+          </button>
 
           <button
             onClick={onClose}

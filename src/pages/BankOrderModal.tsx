@@ -126,7 +126,6 @@ const BankOrderModal: React.FC<BankOrderModalProps> = ({ onClose }) => {
           </div>
         </div>
 
-        {/* Остальной код без изменений */}
         {!wallet && (
           <div className="mb-4 flex justify-center">
             <TonConnectButton />
