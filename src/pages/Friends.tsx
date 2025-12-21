@@ -3,10 +3,13 @@ import { observer } from "mobx-react-lite";
 import store from "../store/store";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
+import { useTranslation } from "react-i18next";
 
 const Friends = observer(() => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [copied, setCopied] = useState(false);
+  const { t } = useTranslation();
+
   // -------------------- запросим статистику при загрузке --------------------
   useEffect(() => {
     if (store.sessionId && store.user?.telegramId) {
@@ -59,11 +62,17 @@ const Friends = observer(() => {
     }
   };
 
-  const { link, earnedPcoin, earnedPdollar, totalReferrals } = store.referral;
+  const {
+    link,
+    earnedPcoin = 0,
+    earnedPdollar = 0,
+    totalReferrals = 0,
+  } = store.referral;
 
   return (
     <>
       <div className="relative min-h-screen w-full overflow-hidden">
+
         {/* фон */}
         <div className="absolute inset-0 bg-[#FFBC6B]">
           <div
@@ -76,39 +85,40 @@ const Friends = observer(() => {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 w-full max-w-[1550px]">
           <img
             src={`${store.imgUrl}testo.png`}
-            alt="Testo"
+            alt={t('tasks.alts.testo')}
             className="w-full h-auto"
           />
         </div>
 
         {/* картинка друзей */}
         <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20">
-          <img src={`${store.imgUrl}img_friends.png`} alt="friends" />
+          <img src={`${store.imgUrl}img_friends.png`} alt={t('friends.statistics.friends')} />
         </div>
 
         {/* окно */}
-        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-11/12 max-w-md">
+        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 w-11/12 max-w-md">
           <div className="relative">
             <img
               src={`${store.imgUrl}img_window2.png`}
-              alt="Modal background"
+              alt={t('friends.alts.modal_background')}
               className="w-full h-auto scale-y-110 object-contain"
             />
 
             <div className="absolute inset-0 flex flex-col p-4 sm:p-5">
               {/* заголовок */}
               <div className="text-center text-lg sm:text-2xl mb-2 text-amber-800 shantell font-bold">
-                ВАША ССЫЛКА
+                {t('friends.title')}
               </div>
 
               {/* ссылка */}
               <input
                 ref={inputRef}
                 type="text"
-                value={link || "Загрузка..."}
+                value={link || t('common.notifications.loading')}
                 readOnly
                 onFocus={(e) => e.currentTarget.select()}
                 className="bg-white rounded-xl px-4 py-3 mb-4 border-2 border-amber-800 shadow-inner text-center font-bold text-base sm:text-lg text-amber-800 shantell truncate"
+                placeholder={t('friends.referral_link')}
               />
 
               {/* кнопка копировать */}
@@ -121,51 +131,53 @@ const Friends = observer(() => {
               >
                 <img
                   src={`${store.imgUrl}b_yellow.png`}
-                  alt="copy"
+                  alt={t('friends.alts.copy_button_alt')}
                   className="w-1/2 h-auto"
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="text-amber-800 text-lg sm:text-xl shantell">
-                    Копировать
+                    {t('friends.copy_button')}
                   </span>
                 </div>
               </button>
 
               {/* описание */}
               <div className="text-center mb-5 text-amber-800 font-bold text-base sm:text-lg shantell leading-tight">
-                Получайте 7% от покупок PCoin
+                {t('friends.description')}
                 <img
                   src={`${store.imgUrl}icon_dollar_coin.png`}
-                  alt="coin"
+                  alt={t('common.labels.pcoin')}
                   className="w-6 sm:w-8 inline-block mx-1"
                 />
-                ваших друзей и 3% от прибыли PDollar
+                {t('common.labels.pdollar')}
                 <img
                   src={`${store.imgUrl}icon_dollar.png`}
-                  alt="dollar"
+                  alt={t('common.labels.pdollar')}
                   className="w-8 sm:w-10 inline-block mx-1"
                 />
-                ваших друзей
               </div>
 
               {/* заголовок статистики */}
               <div className="text-center font-bold text-lg sm:text-2xl mb-5 text-amber-800 shantell">
-                ПАРТНЕРСКАЯ СТАТИСТИКА
+                {t('friends.subtitle')}
               </div>
 
               {/* три блока статистики */}
               <div className="flex justify-between gap-3">
                 <StatBlock
-                    icon={`${store.imgUrl}icon_dollar.png`}
-                    value={`+${(earnedPdollar ?? 0).toLocaleString()}`}
+                  icon={`${store.imgUrl}icon_dollar.png`}
+                  value={`+${(earnedPdollar ?? 0).toLocaleString()}`}
+                  // label={t('common.labels.pdollar')}
                 />
                 <StatBlock
-                    icon={`${store.imgUrl}icon_dollar_coin.png`}
-                    value={`+${(earnedPcoin ?? 0).toLocaleString()}`}
+                  icon={`${store.imgUrl}icon_dollar_coin.png`}
+                  value={`+${(earnedPcoin ?? 0).toLocaleString()}`}
+                  // label={t('common.labels.pcoin')}
                 />
                 <StatBlock
-                    icon={`${store.imgUrl}icon_friends.png`}
-                    value={`+${totalReferrals ?? 0}`}
+                  icon={`${store.imgUrl}icon_friends.png`}
+                  value={`+${totalReferrals ?? 0}`}
+                  // label={t('friends.statistics.friends')}
                 />
               </div>
             </div>

@@ -18,6 +18,12 @@ const Footer = () => {
       alt: "Tasks",
       to: "/tasks",
     },
+    // {
+    //   id: 5,
+    //   baseName: "b_tasks",
+    //   alt: "chests",
+    //   to: "/chests",
+    // },
     {
       id: 3,
       baseName: "b_friends",

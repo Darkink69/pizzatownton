@@ -1,3 +1,13 @@
+ 
+import type {
+  ChestKeys,
+  ChestType,
+  PizzaPieces,
+  Rarity,
+  Reward,
+  UserData,
+} from "./chests";
+
 // -------------------- Типы операций --------------------
 export type OperationType =
   | "AUTH_INIT"
@@ -21,6 +31,9 @@ export type OperationType =
   | "PIZZA_BOX_OPEN"
   | "COMBO_TODAY"
   | "COMBO_PICK"
+  | "CHEST_GET_STATE"
+  | "CHEST_OPEN"
+  | "PIZZA_CRAFT_BOX"
   | (string & {}); // резерв на будущее
 
 // -------------------- База запроса --------------------
@@ -243,6 +256,21 @@ export interface PDollarExchangeRq {
   amountPDollar: number;
 }
 
+// --- Сундуки (Chests) ---
+export interface ChestGetStateRq {
+  telegramId: number;
+}
+
+export interface ChestOpenRq {
+  telegramId: number;
+  chestType: ChestType;
+}
+
+export interface PizzaCraftBoxRq {
+  telegramId: number;
+  rarity: Rarity;
+}
+
 // -------------------- Полный WS-запрос --------------------
 export interface WsRequest extends WsBase {
   // авторизация
@@ -268,6 +296,11 @@ export interface WsRequest extends WsBase {
 
   // лутбокс (коробка пиццы)
   pizzaBoxOpenRq?: PizzaBoxOpenRq;
+
+  // сундуки и крафт
+  chestGetStateRq?: ChestGetStateRq;
+  chestOpenRq?: ChestOpenRq;
+  pizzaCraftBoxRq?: PizzaCraftBoxRq;
 
   // банк
   createOrderRq?: CreateOrderRq; // BANK_BUY_PCOIN
@@ -315,6 +348,36 @@ export interface ReferralInfoData {
   earnedPdollar: number;
   link: string;
   referralLink?: string;
+}
+
+// --- Сундуки (Chests) Payloads ---
+
+/**
+ * Payload для ответа на CHEST_GET_STATE.
+ */
+export interface ChestGetStatePayload {
+  keys: ChestKeys;
+  pieces: PizzaPieces;
+}
+
+/**
+ * Payload для ответа на CHEST_OPEN.
+ */
+export interface ChestOpenPayload {
+  chestType: ChestType;
+  rewards: Reward[];
+  keys: ChestKeys;
+  pieces: PizzaPieces;
+  user: UserData;
+}
+
+/**
+ * Payload для ответа на PIZZA_CRAFT_BOX.
+ */
+export interface PizzaCraftBoxPayload {
+  rarity: Rarity;
+  piecesLeft: number;
+  nftBoxId: number;
 }
 
 // -------------------- Банк --------------------

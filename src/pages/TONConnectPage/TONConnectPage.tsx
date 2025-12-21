@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, type FC } from "react";
 import { useTonConnectUI } from "@tonconnect/ui-react";
+import { useTranslation } from "react-i18next";
 import {
   TonConnectButton,
   useTonWallet,
@@ -24,6 +25,7 @@ function nanosToTonStr(nano: string | number, fractionDigits = 2): string {
 }
 
 export const TONConnectPage: FC = observer(() => {
+  const { t } = useTranslation();
   const wallet = useTonWallet();
   const adrss = useTonAddress();
   const [tonConnectUI] = useTonConnectUI();
@@ -138,7 +140,7 @@ export const TONConnectPage: FC = observer(() => {
 
   const handleCopyAddress = async () => {
     if (!adrss) {
-      setCopyError("Адрес не доступен");
+      setCopyError(t("ton_connect.address_not_available"));
       setTimeout(() => setCopyError(null), 3000);
       return;
     }
@@ -170,9 +172,7 @@ export const TONConnectPage: FC = observer(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } else {
-      setCopyError(
-        "Не удалось скопировать. Выделите текст и скопируйте вручную"
-      );
+      setCopyError(t("ton_connect.copy_failed"));
       setTimeout(() => setCopyError(null), 4000);
 
       // Предлагаем ручное копирование
@@ -256,14 +256,14 @@ export const TONConnectPage: FC = observer(() => {
   if (!wallet) {
     return (
       <Page>
-        <div className="relative h-screen w-full flex flex-col bg-[#FFBC6B] overflow-hidden text-amber-800">
+        <div className="relative h-screen w-full flex flex-col bg-[#FFBC6B] overflow-hidden text-amber-800 z-45">
           <Placeholder
             className={e("placeholder")}
-            header="TON Connect"
+            header={t("ton_connect.title")}
             description={
               <Text>
                 <div className="text-amber-800 mb-2 ">
-                  Подключите ваш TON-кошелёк, чтобы увидеть баланс.
+                  {t("ton_connect.connect_wallet_to_see_balance")}
                 </div>
                 <div className="flex justify-center text-center">
                   <TonConnectButton className={e("button")} />
@@ -285,7 +285,7 @@ export const TONConnectPage: FC = observer(() => {
         <div className="mt-10 mb-10 flex justify-center items-center text-3xl text-amber-800 shantell">
           <img
             src={`${store.imgUrl}icon_ton.png`}
-            alt="Pizza Logo"
+            alt={t("ton_connect.alt.pizza_logo")}
             className="w-10 mr-4"
           />
           {store.tonBalance} TON
@@ -298,7 +298,7 @@ export const TONConnectPage: FC = observer(() => {
             <div className="flex items-center gap-3 mb-4">
               <img
                 src="https://s3.twcstorage.ru/c6bae09a-a5938890-9b68-453c-9c54-76c439a70d3e/Pizzatownton/pizza_logo.png"
-                alt="Wallet logo"
+                alt={t("ton_connect.alt.wallet_logo")}
                 className="w-40"
               />
               <div className="flex-1"></div>
@@ -313,7 +313,7 @@ export const TONConnectPage: FC = observer(() => {
 
             {copied && (
               <div className="mb-2 p-2 bg-green-100 border border-green-400 text-green-700 rounded text-sm text-center">
-                Адрес скопирован в буфер обмена!
+                {t("ton_connect.copied_to_clipboard")}
               </div>
             )}
 
@@ -321,10 +321,10 @@ export const TONConnectPage: FC = observer(() => {
             <div
               className="mb-4 p-3 bg-amber-50 rounded-lg border border-amber-200 cursor-pointer hover:bg-amber-100 transition-colors"
               onClick={handleAddressClick}
-              title="Нажмите чтобы скопировать"
+              title={t("ton_connect.click_to_copy")}
             >
               <div className="text-xs text-amber-600 shantell mb-1">
-                Адрес кошелька:
+                {t("ton_connect.wallet_address")}
               </div>
               <div
                 ref={addressRef}
@@ -338,7 +338,10 @@ export const TONConnectPage: FC = observer(() => {
               >
                 {adrss
                   ? `${adrss.slice(0, 8)}...${adrss.slice(-8)}`
-                  : "Не подключен"}
+                  : t("ton_connect.not_connected")}
+              </div>
+              <div className="text-xs text-amber-500 mt-1 text-center">
+                {t("ton_connect.click_to_copy_short")}
               </div>
               <div className="text-xs text-amber-500 mt-1 text-center">
                 Нажмите для копирования
@@ -360,7 +363,9 @@ export const TONConnectPage: FC = observer(() => {
                     copied ? "animate-pulse" : ""
                   }`}
                 >
-                  {copied ? "СКОПИРОВАНО!" : "Скопировать адрес"}
+                  {copied
+                    ? t("ton_connect.copied")
+                    : t("ton_connect.copy_address")}
                 </span>
               </button>
 
@@ -369,7 +374,7 @@ export const TONConnectPage: FC = observer(() => {
                 onClick={() => tonConnectUI.disconnect()}
                 className="w-full relative py-3 rounded-lg flex items-center justify-center bg-red-500 hover:bg-red-600 text-white font-bold shantell text-lg transition-all duration-200 active:scale-95"
               >
-                Выйти
+                {t("ton_connect.disconnect")}
               </button>
             </div>
           </div>
@@ -378,7 +383,7 @@ export const TONConnectPage: FC = observer(() => {
         <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 z-20">
           <img
             src={`${store.imgUrl}img_blue_pizza.png`}
-            alt="Pizza Logo"
+            alt={t("ton_connect.alt.pizza_logo")}
             className="w-max max-w-md"
           />
         </div>

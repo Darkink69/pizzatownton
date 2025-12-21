@@ -1,0 +1,140 @@
+@import "tailwindcss";
+
+/* languageSwitcher Button */
+.languageSwitcher {
+  @apply fixed top-7 right-4 z-40; 
+  @apply flex items-center gap-1.5;
+  @apply bg-white/90 backdrop-blur-sm;
+  @apply rounded-full shadow-lg;
+  @apply px-3 py-2;
+  @apply transition-all duration-200;
+  @apply active:scale-95;
+}
+
+.languageSwitcher:hover {
+  @apply bg-white shadow-xl;
+}
+
+.icon {
+  @apply w-4 h-4 text-gray-600;
+}
+
+.code {
+  @apply text-xs font-semibold text-gray-800;
+}
+
+/* Overlay */
+.overlay {
+  @apply fixed inset-0 z-[100];
+  @apply bg-black/40 backdrop-blur-sm;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Action Sheet */
+.sheet {
+  @apply fixed bottom-0 left-0 right-0;
+  @apply bg-white rounded-t-3xl;
+  @apply shadow-2xl;
+  @apply max-w-lg mx-auto;
+  animation: slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Handle */
+.handle {
+  @apply w-10 h-1 bg-gray-300 rounded-full;
+  @apply mx-auto mt-3 mb-4;
+}
+
+/* Header */
+.header {
+  @apply px-6 pb-4;
+  @apply border-b border-gray-100;
+}
+
+.title {
+  @apply text-lg font-semibold text-gray-900;
+  @apply text-center;
+}
+
+/* Options */
+.options {
+  @apply px-4 py-2;
+  @apply space-y-1;
+}
+
+.option {
+  @apply w-full flex items-center justify-between;
+  @apply px-4 py-3.5 rounded-xl;
+  @apply transition-all duration-150;
+  @apply active:scale-[0.98];
+}
+
+.option:hover {
+  @apply bg-gray-50;
+}
+
+.option.active {
+  @apply bg-blue-50;
+}
+
+.langCode {
+  @apply text-sm font-bold text-gray-500;
+  @apply w-8;
+}
+
+.option.active .langCode {
+  @apply text-blue-600;
+}
+
+.langName {
+  @apply flex-1 text-left text-base text-gray-900;
+  @apply ml-3;
+}
+
+.checkmark {
+  @apply text-blue-600 text-xl font-bold;
+}
+
+/* Cancel Button */
+.cancelWrapper {
+  @apply px-4 py-2;
+  @apply space-y-1;
+}
+
+.cancel {
+  @apply w-full flex items-center justify-center;
+  @apply px-4 py-3.5 rounded-xl;
+  @apply bg-gray-100;
+  @apply text-base font-semibold text-gray-900;
+  @apply transition-all duration-150;
+  @apply active:scale-[0.98];
+}
+
+.cancel:hover {
+  @apply bg-gray-200;
+}
+
+/* Safe area for mobile devices */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .sheet {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
