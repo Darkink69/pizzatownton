@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import store from "../store/store";
-// import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
 import { Link } from "react-router-dom";
 import FooterHome from "../components/FooterHome";
@@ -11,11 +10,8 @@ import { getFloorUpgradeData, getCurrentUpgradeCost } from "./floorUpgradeData";
 const Home = observer(() => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedFloorId, setSelectedFloorId] = useState<number | null>(null);
-  // Добавляем состояние для управления анимацией лифта
-  const [liftPosition, setLiftPosition] = useState<number>(0); // 0 - внизу, 100 - наверху
+  const [liftPosition, setLiftPosition] = useState<number>(0);
   const [liftHasPizza, setLiftHasPizza] = useState<boolean>(false);
-  // const [isLiftMoving, setIsLiftMoving] = useState<boolean>(true);
-
   const [notification, setNotification] = useState<{
     message: string;
     type: "error" | "success";
@@ -28,7 +24,7 @@ const Home = observer(() => {
   const [staffModal, setStaffModal] = useState<"accountant" | null>(null);
   const [_selectedSubscription, setSelectedSubscription] = useState<
     number | null
-  >(null); // 7/14/30
+  >(null);
   const [_selectedCost, setSelectedCost] = useState<number>(0);
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
@@ -36,7 +32,6 @@ const Home = observer(() => {
     minutes: 0,
     seconds: 0,
   });
-
   const [showGuide, setShowGuide] = useState(false);
   const [showPizzaNotification, setShowPizzaNotification] = useState(false);
   const [wonPcoins, setWonPcoins] = useState(0);
@@ -47,6 +42,48 @@ const Home = observer(() => {
   const [showChancesInfo, setShowChancesInfo] = useState(false);
   const audioNotificationRef = useRef<HTMLAudioElement | null>(null);
 
+  // Получаем переводы
+  const t = store.currentTranslations;
+
+  // Создаем массив шагов обучения с переводами
+  const introGuideSteps = [
+    {
+      id: "welcome",
+      center: true,
+      text: t.home.tutorialWelcome,
+    },
+    {
+      id: "floors",
+      selector: "#floors-block",
+      text: t.home.tutorialFloors,
+    },
+    {
+      id: "balances",
+      selector: "#balances-block",
+      text: t.home.tutorialBalances,
+    },
+    {
+      id: "claim",
+      selector: "#claim-button",
+      text: t.home.tutorialClaim,
+    },
+    {
+      id: "accountant",
+      selector: "#accountant-block",
+      text: t.home.tutorialAccountant,
+    },
+    {
+      id: "bank",
+      selector: "#bank-link",
+      text: t.home.tutorialBank,
+    },
+    {
+      id: "finish",
+      center: true,
+      text: t.home.tutorialFinish,
+    },
+  ];
+
   // Запрос данных при монтировании
   useEffect(() => {
     if (!store.areFloorsLoaded) {
@@ -55,10 +92,9 @@ const Home = observer(() => {
     }
   }, [store.areFloorsLoaded]);
 
-  // Автоскролл при загрузке.
+  // Автоскролл при загрузке
   useEffect(() => {
     if (store.areFloorsLoaded) {
-      // Небольшая задержка чтобы DOM успел обновиться
       setTimeout(() => {
         window.scrollTo({
           top: document.documentElement.scrollHeight,
@@ -77,11 +113,10 @@ const Home = observer(() => {
       setShowGuide(true);
     }
 
-    const delay = Math.floor(Math.random() * 5000); // 5 секунд
+    const delay = Math.floor(Math.random() * 5000);
     const timer = setTimeout(() => {
       setShowPizzaNotification(true);
 
-      // Воспроизводим звук
       audioNotificationRef.current = new Audio(
         `${store.imgUrl}message-notification.m4a`
       );
@@ -94,73 +129,27 @@ const Home = observer(() => {
     return () => clearTimeout(timer);
   }, [store.sessionId, store.user.telegramId]);
 
-  const introGuideSteps = [
-    {
-      id: "welcome",
-      center: true,
-      text: "Добро пожаловать в ПИЦЦЕРИЮ!\n\nЗдесь ты строишь свой первый ресторанный бизнес — пиццерию!\nПокупай этажи, улучшай их, нанимай персонал и собирай доход в PDollar!",
-    },
-    {
-      id: "floors",
-      selector: "#floors-block",
-      text: "Базовый этаж — бесплатный и фармит будущий мемкоин PizzaSlice.\nЭтажи 1–8 покупаются за PCoin и приносят PDollar.",
-    },
-    {
-      id: "balances",
-      selector: "#balances-block",
-      text: "Здесь ты видишь свои балансы:\n\n— PCoin — для покупок;\n— PDollar — доход с этажей;\n— Доход PD/час — твоя мощность бизнеса!",
-    },
-    {
-      id: "claim",
-      selector: "#claim-button",
-      text: "Нажимай «Забрать» каждые 12часов, чтобы собрать прибыль.\n\nНе хочешь следить вручную?\nНайми бухгалтера!",
-    },
-    {
-      id: "accountant",
-      selector: "#accountant-block",
-      text: "Бухгалтер собирает прибыль каждые 12часов автоматически.\nНанимай его на 7, 14 или 30 дней за PCoin — и спи спокойно!",
-    },
-    {
-      id: "bank",
-      selector: "#bank-link",
-      text: "В банке можно купить PCoin и обменять PDollar на TON.\nСледи за курсом и увеличивай доход!",
-    },
-    {
-      id: "finish",
-      center: true,
-      text: "Готово! Ты всё знаешь, чтобы построить пицца‑империю.\nУдачи, шеф!",
-    },
-  ];
-
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const soundRef = useRef<HTMLAudioElement | null>(null);
-  const floors = 11;
-
   // Эффект для анимации лифта
   useEffect(() => {
     const liftAnimation = () => {
-      // Поднимаем пустой лифт вверх
       if (!liftHasPizza) {
         setLiftPosition((prev) => {
           const newPosition = prev + 1;
           if (newPosition >= 85) {
-            // Достигли верха - меняем на лифт с пиццей
             setTimeout(() => {
               setLiftHasPizza(true);
-            }, 500); // Небольшая пауза наверху
+            }, 500);
             return 85;
           }
           return newPosition;
         });
       } else {
-        // Опускаем лифт с пиццей вниз
         setLiftPosition((prev) => {
           const newPosition = prev - 1;
           if (newPosition <= -2) {
-            // Достигли низа - меняем на пустой лифт
             setTimeout(() => {
               setLiftHasPizza(false);
-            }, 500); // Небольшая пауза внизу
+            }, 500);
             return -2;
           }
           return newPosition;
@@ -168,17 +157,13 @@ const Home = observer(() => {
       }
     };
 
-    // Анимация длится 5 секунд в каждую сторону (100 шагов по 50мс)
     const interval = setInterval(liftAnimation, 50);
-
     return () => clearInterval(interval);
   }, [liftHasPizza]);
 
-  // Функция для расчета позиции лифта относительно этажей
+  // Функция для получения позиции лифта
   const getLiftStyle = (): React.CSSProperties => {
-    const liftHeight = 10; // высота одного лифта в процентах (100% / 11 этажей ≈ 9.09%)
-
-    // Позиция рассчитывается от низа контейнера
+    const liftHeight = 10;
     const bottomPosition = ((100 - liftHeight) * liftPosition) / 100;
 
     return {
@@ -186,7 +171,7 @@ const Home = observer(() => {
       bottom: `${bottomPosition}%`,
       right: "14px",
       zIndex: 20,
-      transition: "bottom 0.05s linear", // Плавное движение
+      transition: "bottom 0.05s linear",
       width: "60px",
       height: `${liftHeight}%`,
     };
@@ -227,7 +212,6 @@ const Home = observer(() => {
 
     calculateTimeLeft();
     const timer = setInterval(calculateTimeLeft, 1000);
-
     return () => clearInterval(timer);
   }, [store.accountantEndTime]);
 
@@ -237,6 +221,10 @@ const Home = observer(() => {
   };
 
   // Инициализация аудио
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const soundRef = useRef<HTMLAudioElement | null>(null);
+  const floors = 11;
+
   useEffect(() => {
     audioRef.current = new Audio(`${store.imgUrl}pizza.mp3`);
     audioRef.current.loop = true;
@@ -309,7 +297,6 @@ const Home = observer(() => {
       );
       return;
     }
-    // 🌐 Контроль сессии и авторизации
     if (!store.sessionId) {
       showNotification("Сессия не установлена. Подождите загрузки.", "error");
       return;
@@ -337,22 +324,17 @@ const Home = observer(() => {
     const res = store.lastPizzaBoxResult;
     if (!res) return;
 
-    // переключаем модалку в режим результата
     setPrizeModalStage("result");
     setWonPcoins(res.pcoinReward);
-
     playSound("win.mp3");
-
     showNotification(
       `Лутбокс открыт! Вы получили: ${res.pcoinReward} PCoin`,
       "success"
     );
-
-    // очищаем результат, чтобы следующее открытие сработало корректно
     store.setLastPizzaBoxResult(null);
   }, [store.lastPizzaBoxResult]);
 
-  // Функция для проверки условий сообщений
+  // Функции для уведомлений (оставим на русском, так как они генерируются системой)
   const getRandomNotification = () => {
     const hasAccountant = isAccountantActive();
     const hasAnyManager =
@@ -393,7 +375,6 @@ const Home = observer(() => {
         )
       ) ?? false;
 
-    // Массив возможных сообщений с условиями
     const possibleMessages: Array<{
       message: string;
       type: "error" | "success";
@@ -430,26 +411,24 @@ const Home = observer(() => {
         message:
           "Отличная работа! Мы получили замечательные отзывы о нашей пицце!",
         type: "success",
-        condition: true, // Всегда доступно
+        condition: true,
       },
       {
         message:
           "Отличная работа, синьор! Все этажи пашут, как танцы на тесте!",
         type: "success",
-        condition: true, // Всегда доступно
+        condition: true,
       },
       {
         message:
           "Все идеально, начальник! Но бизнес нужно расширять, хорошо бы купить еще один этаж.",
         type: "success",
-        condition: true, // Всегда доступно
+        condition: true,
       },
     ];
 
-    // Фильтруем сообщения по условиям
     const availableMessages = possibleMessages.filter((msg) => msg.condition);
 
-    // Иногда не показываем никаких сообщений (30% chance)
     if (availableMessages.length > 0 && Math.random() > 0.3) {
       const randomIndex = Math.floor(Math.random() * availableMessages.length);
       return availableMessages[randomIndex];
@@ -462,9 +441,7 @@ const Home = observer(() => {
   useEffect(() => {
     if (!store.areFloorsLoaded) return;
 
-    // Случайное время от 20 до 50 секунд
-    const randomTime = Math.floor(Math.random() * 30000) + 20000; // 20-50 секунд
-
+    const randomTime = Math.floor(Math.random() * 30000) + 20000;
     const timer = setTimeout(() => {
       const notification = getRandomNotification();
       if (notification) {
@@ -478,7 +455,6 @@ const Home = observer(() => {
   // Проверка, есть ли нанятый персонал на любом этаже
   const hasAnyStaffHired = (): boolean => {
     if (!store.safeUserFloorList) return false;
-
     return store.safeUserFloorList.some((floor) =>
       floor.staff?.some((staff) => staff.owned && staff.staffLevel > 0)
     );
@@ -487,20 +463,16 @@ const Home = observer(() => {
   const handleClaimDo = () => {
     playSound("claim.mp3");
 
-    // Проверяем, есть ли нанятый персонал
     if (!hasAnyStaffHired()) {
-      showNotification(
-        "⚠️ Вы теряете до 5% дохода, не используя дополнительных наемных сотрудников",
-        "error"
-      );
+      showNotification(t.home.incomeWarning, "error");
     } else {
-      showNotification("Доход собирается...", "success");
+      showNotification(t.home.incomeCollection, "success");
     }
 
     if (store.sendClaimDo(0)) {
       // Уведомление уже показано выше
     } else {
-      showNotification("❌ Ошибка при сборе дохода", "error");
+      showNotification(t.home.incomeError, "error");
     }
   };
 
@@ -515,7 +487,6 @@ const Home = observer(() => {
   const handleHireAccountant = (option?: number) => {
     if (!staffModal) return;
 
-    // ищем данные по выбранной подписке (7 / 14 / 30)
     const accountantLevels = store.userStaff?.accountantLevel ?? [];
     const selected = accountantLevels.find(
       (lvl: { duration?: number; durationDay?: number }) =>
@@ -524,7 +495,6 @@ const Home = observer(() => {
 
     const cost = selected?.cost ?? 0;
 
-    // проверяем, хватает ли PCoin
     if (store.pcoin < cost) {
       showNotification(
         "Недостаточно средств. Нужно купить PCoin в банке!",
@@ -534,11 +504,9 @@ const Home = observer(() => {
     }
 
     playSound("staff.mp3");
-
     const ok = store.sendHireStaff(3, undefined, option ?? 7, 0);
 
     if (ok) {
-      // списываем PCoin и показываем успех
       store.pcoin -= cost;
       showNotification("Бухгалтер нанят!", "success");
       handleCloseStaffModal();
@@ -551,7 +519,6 @@ const Home = observer(() => {
   const getFloorData = (index: number) => {
     if (index === 0 || index === floors - 1) return null;
     const realFloorId = floors - 1 - index;
-
     return (
       store.safeUserFloorList?.find((f) => f.floorId === realFloorId) || null
     );
@@ -610,7 +577,6 @@ const Home = observer(() => {
     if (!selectedFloor) return;
     playSound("update.mp3");
 
-    // Исправляем уведомление - используем правильный номер этажа для отображения
     const displayFloorNumber = getDisplayFloorNumber(selectedFloor.floorId);
     showNotification(
       `🚀 Отправляем запрос на улучшение этажа ${displayFloorNumber}...`,
@@ -635,7 +601,6 @@ const Home = observer(() => {
         );
       }, 800);
     }
-    // handleCloseModal();
   };
 
   const getFloorIdByIndex = (index: number): number => {
@@ -650,14 +615,12 @@ const Home = observer(() => {
 
     const floorId = getFloorIdByIndex(index);
     const floor = store.getFloorById(floorId);
-
     return floor?.owned ? "img_floor_empty.png" : "img_floor_dark.png";
   };
 
   const isFilledFloor = (index: number) => {
     const floorId = getFloorIdByIndex(index);
     if (floorId === -1 || floorId === -2) return true;
-
     const floor = store.getFloorById(floorId);
     return floor?.owned;
   };
@@ -665,23 +628,21 @@ const Home = observer(() => {
   const isEmptyFloor = (index: number) => {
     const floorId = getFloorIdByIndex(index);
     if (floorId === -1 || floorId === -2) return false;
-
     const floor = store.getFloorById(floorId);
     return !floor?.owned;
   };
 
-  // Функция для получения отображаемого номера этажа (исправленная)
+  // Функция для получения отображаемого номера этажа
   const getDisplayFloorNumber = (floorId: number): string => {
-    if (floorId === 1) return "Базовый этаж";
-    if (floorId >= 2 && floorId <= 9) return `${floorId - 1} этаж`;
-    return `${floorId} этаж`;
+    if (floorId === 1) return t.home.basement;
+    if (floorId >= 2 && floorId <= 9) return `${floorId - 1} ${t.home.floor}`;
+    return `${floorId} ${t.home.floor}`;
   };
 
   const getFloorNameByIndex = (index: number): string => {
     const floorId = getFloorIdByIndex(index);
-    if (index === 0) return "Крыша";
-    if (floorId === -1) return "Базовый этаж";
-
+    if (index === 0) return t.home.roof;
+    if (floorId === -1) return t.home.basement;
     return getDisplayFloorNumber(floorId);
   };
 
@@ -689,8 +650,6 @@ const Home = observer(() => {
     const floorId = getFloorIdByIndex(index);
     playSound("buy.mp3");
     const success = store.buyNewFloor(floorId);
-
-    // Используем правильный номер этажа для уведомления
     const displayFloorNumber = getDisplayFloorNumber(floorId);
 
     if (success) {
@@ -729,7 +688,6 @@ const Home = observer(() => {
       (s) => s.staffName.toLowerCase() === staffType
     );
     if (!staff?.upgradeStaff?.length) return 0;
-    // стоимость следующего уровня
     const next = staff.upgradeStaff.find(
       (u) => u.level === staff.staffLevel + 1
     );
@@ -753,21 +711,18 @@ const Home = observer(() => {
     floorId: number
   ) => {
     playSound("staff.mp3");
-    // Находим этаж в списке пользователя
     const floor = store.safeUserFloorList.find((f) => f.floorId === floorId);
     if (!floor) {
       showNotification(`Этаж ${floorId} не найден`, "error");
       return;
     }
 
-    // Проверяем, есть ли данные по персоналу на этом этаже
     if (!Array.isArray(floor.staff) || floor.staff.length === 0) {
       showNotification("Персонал для этого этажа ещё не загружен", "error");
       console.warn(`Нет данных floor.staff для этажа ${floorId}`);
       return;
     }
 
-    // Ищем нужного персонажа по роли (Manager / Guard)
     const staff = floor.staff.find(
       (s) => s.staffName.toLowerCase() === staffType
     );
@@ -775,7 +730,7 @@ const Home = observer(() => {
     if (!staff) {
       showNotification(
         `Не найден персонаж ${
-          staffType === "manager" ? "Менеджер" : "Охранник"
+          staffType === "manager" ? t.home.manager : t.home.guard
         }`,
         "error"
       );
@@ -783,10 +738,9 @@ const Home = observer(() => {
       return;
     }
 
-    // Берём его реальные данные
-    const staffId = staff.staffId; // ✅ Правильный id из spr_staff / Redis
-    const currentLevel = staff.staffLevel ?? 0; // Текущий уровень
-    const nextLevel = currentLevel + 1; // К следующему апгрейду
+    const staffId = staff.staffId;
+    const currentLevel = staff.staffLevel ?? 0;
+    const nextLevel = currentLevel + 1;
 
     console.debug("🟢 sendHireStaff:", {
       staffType,
@@ -796,7 +750,6 @@ const Home = observer(() => {
       floorId,
     });
 
-    // Отправляем запрос на сервер
     const ok = store.sendHireStaff(
       staffId,
       nextLevel,
@@ -806,10 +759,9 @@ const Home = observer(() => {
     );
 
     if (ok) {
-      // Используем правильный номер этажа для уведомления
       const displayFloorNumber = getDisplayFloorNumber(floorId);
       showNotification(
-        `${staffType === "manager" ? "Менеджер" : "Охранник"} ${
+        `${staffType === "manager" ? t.home.manager : t.home.guard} ${
           currentLevel ? "улучшен" : "нанят"
         } (уровень ${nextLevel}) ${displayFloorNumber}`,
         "success"
@@ -819,7 +771,7 @@ const Home = observer(() => {
     }
   };
 
-  // Функция для отображения уровней персонала с звездочками (исправленная)
+  // Функция для отображения уровней персонала с звездочками
   const renderStaffLevelWithStars = (
     currentLevel: number,
     labels: string[]
@@ -827,9 +779,7 @@ const Home = observer(() => {
     return (
       <div className="flex gap-1 mt-2">
         {labels.map((label, index) => {
-          // Уровень считается активным только если index < currentLevel
           const isActive = index < currentLevel;
-
           return (
             <div
               key={index}
@@ -839,7 +789,6 @@ const Home = observer(() => {
                   : "bg-gray-100 text-amber-800 border border-gray-300"
               }`}
             >
-              {/* Звездочка над процентом */}
               <img
                 src={`${store.imgUrl}${
                   isActive ? "icon_star.png" : "icon_star_empty.png"
@@ -858,25 +807,16 @@ const Home = observer(() => {
   // Расчет накопленного дохода для этажа на основе claimProgress
   const calculateFloorBalance = (floor: any): number => {
     if (!floor || !floor.earningsPerHour) return 0;
-
-    // claimProgress - процент от 12-часового периода (0-100)
-    // 12 часов = 43200 секунд
     const totalSecondsInPeriod = 43200;
     const progressSeconds = (store.claimProgress / 100) * totalSecondsInPeriod;
-
-    // Переводим секунды в часы для расчета дохода
     const progressHours = progressSeconds / 3600;
-
-    // Рассчитываем накопленный доход
     const accumulatedIncome = Math.floor(floor.earningsPerHour * progressHours);
-
     return accumulatedIncome;
   };
 
   // Расчет общего дохода со всех этажей
   const calculateTotalIncome = (): number => {
     if (!store.safeUserFloorList) return 0;
-
     return store.safeUserFloorList.reduce((total, floor) => {
       if (floor.owned && floor.earningsPerHour && floor.floorId !== 1) {
         return total + floor.earningsPerHour;
@@ -887,51 +827,32 @@ const Home = observer(() => {
 
   const totalIncome = calculateTotalIncome();
 
-  // Проверка, активен ли бухгалтер (таймер идет)
+  // Проверка, активен ли бухгалтер
   const isAccountantActive = (): boolean => {
     const endDate = new Date(store.accountantEndTime);
     const now = new Date();
     return endDate.getTime() > now.getTime();
   };
 
-  // Функция для получения правильных данных улучшения этажа (исправленный сдвиг)
+  // Функции для получения данных улучшения этажа
   const getCorrectFloorUpgradeData = (floorId: number) => {
-    // Сдвигаем данные: для basement (floorId=1) берем данные для 1 этажа и т.д.
     let dataFloorId = floorId;
-
     if (floorId >= 1 && floorId <= 8) {
-      // Сдвигаем данные на один этаж вниз
       dataFloorId = floorId;
     }
-
     return getFloorUpgradeData(dataFloorId);
   };
 
-  // Функция для получения правильной стоимости улучшения (исправленный сдвиг)
   const getCorrectUpgradeCost = (
     floorId: number,
     currentLevel: number
   ): number => {
     let dataFloorId = floorId;
-
     if (floorId >= 1 && floorId <= 8) {
-      // Сдвигаем данные на один этаж вниз
       dataFloorId = floorId;
     }
-
     return getCurrentUpgradeCost(dataFloorId, currentLevel);
   };
-
-  // Показываем загрузку пока данные не получены -----------------------------------------------------------
-  // if (!store.areFloorsLoaded) {
-  //   return (
-  //     <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B] flex items-center justify-center">
-  //       <div className="text-white text-xl shantell">Загрузка этажей...</div>
-  //       <Footer />
-  //       <WebSocketComponent />
-  //     </div>
-  //   );
-  // }
 
   return (
     <>
@@ -940,9 +861,10 @@ const Home = observer(() => {
         <button
           onClick={toggleMusic}
           className="fixed scale-30 top-4 left-4 z-50 w-12 h-12 sm:w-14 sm:h-14 hover:scale-50 transition-transform"
-          aria-label={isMusicPlaying ? "Выключить звук" : "Включить звук"}
+          aria-label={
+            isMusicPlaying ? t.home.soundToggleOn : t.home.soundToggleOff
+          }
         >
-          {/* SVG иконки звука */}
           {isMusicPlaying ? (
             <svg width="108" height="108" viewBox="0 0 108 108" fill="none">
               <circle
@@ -1000,7 +922,6 @@ const Home = observer(() => {
         {notification && (
           <div className="fixed inset-0 z-[99] bg-black/50 flex items-end justify-center transition-opacity duration-300">
             <div className="relative mb-4 sm:mb-16 flex items-end gap-2 sm:gap-4 max-w-5xl mx-auto px-4 w-full">
-              {/* Повар - крупнее и слева */}
               <div className="flex-shrink-0">
                 <img
                   src={`${store.imgUrl}img_chif_talk.png`}
@@ -1008,8 +929,6 @@ const Home = observer(() => {
                   className="w-36 sm:w-48 object-contain"
                 />
               </div>
-
-              {/* Окно сообщения */}
               <div className="relative bg-[#FFF3E0] border-4 border-amber-800 rounded-2xl shadow-2xl p-4 sm:p-6 flex-1 max-w-2xl">
                 <p
                   className={`text-amber-800 shantell font-bold text-base sm:text-lg leading-relaxed whitespace-pre-wrap ${
@@ -1020,12 +939,11 @@ const Home = observer(() => {
                 >
                   {notification.message}
                 </p>
-
                 <button
                   onClick={() => setNotification(null)}
                   className="mt-4 bg-amber-500 hover:bg-amber-600 text-white px-8 py-2 rounded-full font-bold shantell text-base tracking-wide transition transform hover:scale-105"
                 >
-                  Понятно
+                  {t.home.notificationOkay}
                 </button>
               </div>
             </div>
@@ -1036,7 +954,6 @@ const Home = observer(() => {
         {randomNotification && (
           <div className="fixed inset-0 z-[99] bg-black/50 flex items-end justify-center transition-opacity duration-300">
             <div className="relative mb-4 sm:mb-20 flex items-end gap-3 sm:gap-6 max-w-4xl mx-auto px-4 w-full">
-              {/* Повар - всегда слева */}
               <div className="flex-shrink-0">
                 <img
                   src={`${store.imgUrl}img_chif_talk.png`}
@@ -1044,8 +961,6 @@ const Home = observer(() => {
                   className="w-36 sm:w-48 object-contain"
                 />
               </div>
-
-              {/* Окно сообщения */}
               <div className="relative bg-[#FFF3E0] border-4 border-amber-800 rounded-2xl shadow-2xl p-4 sm:p-5 flex-1 max-w-2xl">
                 <p
                   className={`text-amber-800 shantell font-bold text-base sm:text-lg leading-relaxed whitespace-pre-wrap ${
@@ -1056,13 +971,11 @@ const Home = observer(() => {
                 >
                   {randomNotification.message}
                 </p>
-
-                {/* Кнопка закрытия */}
                 <button
                   onClick={() => setRandomNotification(null)}
                   className="mt-3 bg-amber-500 hover:bg-amber-600 text-white px-6 py-1.5 rounded-full font-bold shantell text-sm tracking-wide transition"
                 >
-                  Понятно
+                  {t.home.randomNotificationOkay}
                 </button>
               </div>
             </div>
@@ -1096,8 +1009,6 @@ const Home = observer(() => {
                 const floorCost = store.getFloorCost(floorId);
                 const isBasementImage = floorId === -1;
                 const isRoof = floorId === -2;
-
-                // Данные персонала с сервера
                 const manager = floorData?.staff?.find(
                   (s) => s.staffName === "Manager"
                 );
@@ -1148,7 +1059,7 @@ const Home = observer(() => {
                               </span>
                             </div>
                             <div className="text-blue-900 text-sm sm:text-md shantell font-bold whitespace-nowrap">
-                              ОТКРЫТЬ {floorName.toUpperCase()}
+                              {t.home.openFloor} {floorName.toUpperCase()}
                             </div>
                           </div>
                         </div>
@@ -1195,7 +1106,6 @@ const Home = observer(() => {
                                   className="h-10 sm:h-12 w-auto"
                                 />
                                 <div className="absolute inset-0 flex items-center justify-center gap-0 px-1 sm:px-2">
-                                  {/* Добавлена иконка стрелки перед надписью этажа */}
                                   <img
                                     src={`${store.imgUrl}icon_arrow.png`}
                                     alt="Arrow"
@@ -1314,7 +1224,6 @@ const Home = observer(() => {
                                     className="h-10 sm:h-12 w-auto"
                                   />
                                   <div className="absolute inset-0 flex items-center justify-center gap-0 px-1 sm:px-2">
-                                    {/* Добавлена иконка стрелки перед надписью этажа */}
                                     <img
                                       src={`${store.imgUrl}icon_arrow.png`}
                                       alt="Arrow"
@@ -1558,7 +1467,7 @@ const Home = observer(() => {
                 >
                   <img
                     src={`${store.imgUrl}b_close.png`}
-                    alt="Закрыть"
+                    alt={t.common.close}
                     className="w-full h-full"
                   />
                 </button>
@@ -1577,7 +1486,7 @@ const Home = observer(() => {
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium text-amber-800 shantell">
-                        Доходность Этажа:
+                        {t.home.floorProfit}
                       </span>
                       <div className="flex items-center gap-1">
                         <span className="font-bold text-amber-800 shantell">
@@ -1589,13 +1498,13 @@ const Home = observer(() => {
                           className="w-6 h-4"
                         />
                         <span className="text-xs text-amber-800 shantell">
-                          / час
+                          {t.home.perHour}
                         </span>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium text-amber-800 shantell">
-                        Баланс Этажа:
+                        {t.home.floorBalance}
                       </span>
                       <div className="flex items-center gap-1">
                         <span className="font-bold text-amber-800 shantell">
@@ -1665,7 +1574,8 @@ const Home = observer(() => {
                         className="w-5 h-5 relative z-10"
                       />
                       <span className="text-white font-bold shantell relative z-10">
-                        Улучшить до уровня {(selectedFloor.level ?? 0) + 1}
+                        {t.home.upgradeFloor} {t.common.level}{" "}
+                        {(selectedFloor.level ?? 0) + 1}
                       </span>
                       <div className="flex items-center gap-1 relative z-10">
                         <img
@@ -1686,7 +1596,7 @@ const Home = observer(() => {
                   {/* Персонал */}
                   <div className="mt-2">
                     <h3 className="text-lg font-bold mb-2 text-amber-800 shantell text-center">
-                      ПЕРСОНАЛ:
+                      {t.home.staffTitle}
                     </h3>
 
                     {/* Менеджер */}
@@ -1699,12 +1609,11 @@ const Home = observer(() => {
                         />
                         <div className="flex-1">
                           <h4 className="font-bold text-amber-800 shantell">
-                            Менеджер
+                            {t.home.manager}
                           </h4>
                           <p className="text-xs text-amber-600 shantell mb-2">
-                            Повышает доход PDollar/час
+                            {t.home.managerDescription}
                           </p>
-                          {/* Проценты улучшения менеджера с звездочками */}
                           {renderStaffLevelWithStars(
                             getStaffCurrentLevel(
                               selectedFloor.floorId,
@@ -1715,7 +1624,6 @@ const Home = observer(() => {
                         </div>
                       </div>
 
-                      {/* Кнопка найма/улучшения менеджера - показываем только если не достигнут максимальный уровень */}
                       {getStaffCurrentLevel(selectedFloor.floorId, "manager") <
                         5 && (
                         <button
@@ -1747,13 +1655,13 @@ const Home = observer(() => {
                               selectedFloor.floorId,
                               "manager"
                             ) === 0
-                              ? "Нанять"
-                              : `Улучшить до ${
+                              ? t.home.hire
+                              : `${t.home.upgradeToLevel} ${
                                   getStaffCurrentLevel(
                                     selectedFloor.floorId,
                                     "manager"
                                   ) + 1
-                                } уровня`}
+                                }`}
                           </span>
                           <div className="flex items-center gap-1 relative z-10">
                             <img
@@ -1782,12 +1690,11 @@ const Home = observer(() => {
                         />
                         <div className="flex-1">
                           <h4 className="font-bold text-amber-800 shantell">
-                            Охранник
+                            {t.home.guard}
                           </h4>
                           <p className="text-xs text-amber-600 shantell mb-2">
-                            Снижает потери дохода PDollar
+                            {t.home.guardDescription}
                           </p>
-                          {/* Проценты улучшения охранника с звездочками */}
                           {renderStaffLevelWithStars(
                             getStaffCurrentLevel(
                               selectedFloor.floorId,
@@ -1798,7 +1705,6 @@ const Home = observer(() => {
                         </div>
                       </div>
 
-                      {/* Кнопка найма/улучшения охранника - показываем только если не достигнут максимальный уровень */}
                       {getStaffCurrentLevel(selectedFloor.floorId, "guard") <
                         5 && (
                         <button
@@ -1830,13 +1736,13 @@ const Home = observer(() => {
                               selectedFloor.floorId,
                               "guard"
                             ) === 0
-                              ? "Нанять"
-                              : `Улучшить до ${
+                              ? t.home.hire
+                              : `${t.home.upgradeToLevel} ${
                                   getStaffCurrentLevel(
                                     selectedFloor.floorId,
                                     "guard"
                                   ) + 1
-                                } уровня`}
+                                }`}
                           </span>
                           <div className="flex items-center gap-1 relative z-10">
                             <img
@@ -1860,6 +1766,7 @@ const Home = observer(() => {
             </div>
           </div>
         )}
+
         {/* Модалка бухгалтера */}
         {staffModal === "accountant" && (
           <div
@@ -1880,7 +1787,7 @@ const Home = observer(() => {
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span className="text-amber-800 text-lg shantell">
-                      Бухгалтер
+                      {t.home.accountant}
                     </span>
                   </div>
                 </div>
@@ -1891,7 +1798,7 @@ const Home = observer(() => {
                 >
                   <img
                     src={`${store.imgUrl}b_close.png`}
-                    alt="Закрыть"
+                    alt={t.common.close}
                     className="w-full h-full"
                   />
                 </button>
@@ -1921,13 +1828,13 @@ const Home = observer(() => {
                       {formatTime(timeLeft.seconds)}
                     </div>
                     <div className="text-sm text-amber-600 shantell">
-                      Осталось времени найма
+                      {t.home.accountantTimeLeft}
                     </div>
                   </div>
 
                   {/* описание */}
                   <p className="text-lg text-amber-800 shantell leading-tight mb-6">
-                    Бухгалтер. Автосбор прибыли каждые 12 часов.
+                    {t.home.accountantDescription}
                   </p>
 
                   {/* варианты подписки - показываем только если бухгалтер не активен */}
@@ -1970,8 +1877,7 @@ const Home = observer(() => {
                   {isAccountantActive() && (
                     <div className="bg-green-100 border border-green-400 rounded-lg p-4 mb-6 w-full">
                       <p className="text-green-800 shantell text-sm">
-                        Бухгалтер уже нанят и работает. Вы можете продлить найм
-                        после окончания текущего периода.
+                        {t.home.accountantActive}
                       </p>
                     </div>
                   )}
@@ -1981,6 +1887,7 @@ const Home = observer(() => {
           </div>
         )}
       </div>
+
       {/* Обучающая подсказка — показывается один раз */}
       {showGuide && (
         <GuideOverlay
@@ -2027,10 +1934,10 @@ const Home = observer(() => {
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="text-amber-800 font-bold text-lg shantell">
                     {showChancesInfo
-                      ? "О лутбоксе"
+                      ? t.home.lootboxInfo
                       : prizeModalStage === "intro"
-                      ? "Лутбокс"
-                      : "Поздравляем!"}
+                      ? t.home.lootboxTitle
+                      : t.home.lootboxCongratulations}
                   </span>
                 </div>
               </div>
@@ -2043,7 +1950,7 @@ const Home = observer(() => {
             >
               <img
                 src={`${store.imgUrl}b_close.png`}
-                alt="Закрыть"
+                alt={t.common.close}
                 className="w-full h-full"
               />
             </button>
@@ -2067,7 +1974,7 @@ const Home = observer(() => {
                 <>
                   <div className="mb-1">
                     <h3 className="text-xl font-bold text-amber-800 shantell mb-4">
-                      Выиграй pcoin для роста!
+                      {t.home.lootboxChances}
                     </h3>
 
                     <div className="text-left space-y-3 mb-6">
@@ -2085,10 +1992,10 @@ const Home = observer(() => {
                     <div className="bg-white/50 rounded-xl p-2 border border-amber-300 mb-6">
                       <div className="text-center mb-4">
                         <div className="text-xl font-bold text-amber-800 shantell mb-2">
-                          Цена коробки 2000 pizza
+                          {t.home.lootboxPrice}
                         </div>
                         <div className="text-sm font-bold text-amber-800 shantell">
-                          В ней будет pcoin с вероятностью:
+                          {t.home.lootboxOdds}
                         </div>
                       </div>
 
@@ -2141,7 +2048,7 @@ const Home = observer(() => {
                     onClick={() => setShowChancesInfo(false)}
                     className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-1 rounded-full font-bold shantell text-lg tracking-wide transition transform hover:scale-105"
                   >
-                    Понятно
+                    {t.home.notificationOkay}
                   </button>
                 </>
               ) : prizeModalStage === "intro" ? (
@@ -2154,11 +2061,10 @@ const Home = observer(() => {
                       className="w-2/3 mx-auto"
                     />
                     <h3 className="text-xl font-bold text-amber-800 shantell mb-4">
-                      Открой Лутбокс <br></br>за 2000 pizza
+                      {t.home.lootboxOpen}
+                      <br></br>
+                      {t.home.lootboxDetails}
                     </h3>
-                    <p className="text-md text-amber-700 shantell mb-2">
-                      и получи гарантированно pcoin!
-                    </p>
                   </div>
 
                   <div className="mb-8 bg-white/50 rounded-xl p-4 border border-amber-300">
@@ -2173,7 +2079,8 @@ const Home = observer(() => {
                       </span>
                     </div>
                     <p className="text-sm text-amber-600 shantell">
-                      Ваш баланс: {store.pizza.toLocaleString()} pizza
+                      {t.home.lootboxBalance} {store.pizza.toLocaleString()}{" "}
+                      pizza
                     </p>
                   </div>
 
@@ -2182,7 +2089,7 @@ const Home = observer(() => {
                       onClick={handleClosePrizeModal}
                       className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-3 rounded-full font-bold shantell text-lg transition transform hover:scale-105"
                     >
-                      Закрыть
+                      {t.home.lootboxClose}
                     </button>
                     <button
                       onClick={handleBuyLootbox}
@@ -2193,7 +2100,7 @@ const Home = observer(() => {
                           : "bg-gray-400 text-gray-700 cursor-not-allowed"
                       }`}
                     >
-                      Купить
+                      {t.home.lootboxBuy}
                     </button>
                   </div>
                 </>
@@ -2207,7 +2114,7 @@ const Home = observer(() => {
                       className="w-32 h-32 mx-auto mb-4"
                     />
                     <h3 className="text-2xl font-bold text-amber-800 shantell mb-2">
-                      Вы выиграли!
+                      {t.home.lootboxWon}
                     </h3>
                     <p className="text-lg text-amber-700 shantell">
                       <span className="font-bold">{wonPcoins} pcoin</span> и
@@ -2237,7 +2144,7 @@ const Home = observer(() => {
                     onClick={handleClosePrizeModal}
                     className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-3 rounded-full font-bold shantell text-lg tracking-wide transition transform hover:scale-105"
                   >
-                    Забрать призы
+                    {t.home.lootboxPrizes}
                   </button>
                 </>
               )}

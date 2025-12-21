@@ -4,7 +4,6 @@ import store from "../store/store";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
 import LanguageSwitcher from "../components/LanguageSwitcher";
-import { Link } from "react-router-dom";
 
 const Friends = observer(() => {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -60,11 +59,17 @@ const Friends = observer(() => {
 
     if (ok) {
       setCopied(true);
+      // вернём в исходное состояние через 600мс
       setTimeout(() => setCopied(false), 600);
     }
   };
 
-  const { link, earnedPcoin, earnedPdollar, totalReferrals } = store.referral;
+  const {
+    link,
+    earnedPcoin = 0,
+    earnedPdollar = 0,
+    totalReferrals = 0,
+  } = store.referral;
 
   return (
     <>
@@ -95,7 +100,7 @@ const Friends = observer(() => {
         </div>
 
         {/* окно */}
-        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-11/12 max-w-md">
+        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 w-11/12 max-w-md">
           <div className="relative">
             <img
               src={`${store.imgUrl}img_window2.png`}
@@ -106,18 +111,18 @@ const Friends = observer(() => {
             <div className="absolute inset-0 flex flex-col p-4 sm:p-5">
               {/* заголовок */}
               <div className="text-center text-lg sm:text-2xl mb-2 text-amber-800 shantell font-bold">
-                {t.title}
+                {t.friends.title}
               </div>
 
               {/* ссылка */}
               <input
                 ref={inputRef}
                 type="text"
-                value={link || t.loading}
+                value={link || t.common.loading}
                 readOnly
                 onFocus={(e) => e.currentTarget.select()}
                 className="bg-white rounded-xl px-4 py-3 mb-4 border-2 border-amber-800 shadow-inner text-center font-bold text-base sm:text-lg text-amber-800 shantell truncate"
-                placeholder={t.referralLink}
+                placeholder={t.friends.referralLink}
               />
 
               {/* кнопка копировать */}
@@ -135,49 +140,48 @@ const Friends = observer(() => {
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="text-amber-800 text-lg sm:text-xl shantell">
-                    {t.copyButton}
+                    {t.friends.copyButton}
                   </span>
                 </div>
               </button>
 
               {/* описание */}
               <div className="text-center mb-5 text-amber-800 font-bold text-base sm:text-lg shantell leading-tight">
-                {t.description}
+                {t.friends.description}
                 <img
                   src={`${store.imgUrl}icon_dollar_coin.png`}
                   alt="coin"
                   className="w-6 sm:w-8 inline-block mx-1"
                 />
-                <Link key="1" to="/chests">
-                  <img
-                    src={`${store.imgUrl}icon_dollar.png`}
-                    alt="dollar"
-                    className="w-8 sm:w-10 inline-block mx-1"
-                  />
-                </Link>
+                {t.friends.statistics.pdollar}
+                <img
+                  src={`${store.imgUrl}icon_dollar.png`}
+                  alt="dollar"
+                  className="w-8 sm:w-10 inline-block mx-1"
+                />
               </div>
 
               {/* заголовок статистики */}
               <div className="text-center font-bold text-lg sm:text-2xl mb-5 text-amber-800 shantell">
-                {t.subtitle}
+                {t.friends.subtitle}
               </div>
 
               {/* три блока статистики */}
               <div className="flex justify-between gap-3">
                 <StatBlock
                   icon={`${store.imgUrl}icon_dollar.png`}
-                  value={`+${(earnedPdollar ?? 0).toLocaleString()}`}
-                  label={t.statistics.pdollar}
+                  value={`+${earnedPdollar.toLocaleString()}`}
+                  label={t.friends.statistics.pdollar}
                 />
                 <StatBlock
                   icon={`${store.imgUrl}icon_dollar_coin.png`}
-                  value={`+${(earnedPcoin ?? 0).toLocaleString()}`}
-                  label={t.statistics.pcoin}
+                  value={`+${earnedPcoin.toLocaleString()}`}
+                  label={t.friends.statistics.pcoin}
                 />
                 <StatBlock
                   icon={`${store.imgUrl}icon_friends.png`}
-                  value={`+${totalReferrals ?? 0}`}
-                  label={t.statistics.friends}
+                  value={`+${totalReferrals}`}
+                  label={t.friends.statistics.friends}
                 />
               </div>
             </div>
@@ -194,8 +198,8 @@ const Friends = observer(() => {
 function StatBlock({
   icon,
   value,
-}: // label,
-{
+  label,
+}: {
   icon: string;
   value: string;
   label: string;
@@ -207,11 +211,12 @@ function StatBlock({
         alt="bg"
         className="w-full h-auto"
       />
-      <div className="absolute inset-0 flex items-center justify-center gap-2 sm:gap-3 px-2 py-1">
-        <img src={icon} alt="icon" className="w-8 sm:w-10 inline-block" />
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 sm:gap-2 px-2 py-2">
+        <img src={icon} alt="icon" className="w-6 sm:w-8 inline-block" />
         <span className="font-bold text-base sm:text-lg text-amber-800 shantell">
           {value}
         </span>
+        <span className="text-xs text-amber-800/80 shantell">{label}</span>
       </div>
     </div>
   );

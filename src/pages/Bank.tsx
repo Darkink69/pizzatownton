@@ -17,40 +17,36 @@ const ExchangeModal = observer(
     onClose: () => void;
     initialAmount: string;
   }) => {
-    //const [walletAddress, setWalletAddress] = useState("");
     const [exchangeAmount, setExchangeAmount] = useState(initialAmount);
-
     const userPdollarBalance = Number(store.pdollar) || 0;
     const hasSufficientBalance = userPdollarBalance >= 25000;
-
     const canSubmit =
-      // walletAddress.trim() !== "" &&
       exchangeAmount !== "" &&
       Number(exchangeAmount) >= 25000 &&
       Number(exchangeAmount) <= userPdollarBalance;
 
+    // Получаем переводы
+    const t = store.currentTranslations;
+
     const handleSubmit = async () => {
       const amount = Number(exchangeAmount);
       if (!amount || amount < 25000) {
-        alert("Минимум для вывода — 25000 PDollar");
+        alert(t.exchangeModal.minAmountError);
         return;
       }
       if (amount > userPdollarBalance) {
-        alert("Недостаточно средств на балансе");
+        alert(t.bank.insufficientFunds);
         return;
       }
 
       try {
         await bankStore.createManualWithdraw(amount);
-        alert(
-          "Ваша заявка на вывод принята и будет обработана в течении 24 часов. Вывод средств осуществляется на тот же адрес кошелька, с которого была сделана последняя покупка."
-        );
-        // Статус вашей заявки вы можете посмотреть в Истории транзакций.
+        alert(t.exchangeModal.successMessage);
         setExchangeAmount("");
         onClose();
       } catch (e) {
         console.error("Ошибка отправки заявки на вывод:", e);
-        alert("❌ Ошибка при создании заявки на вывод");
+        alert("❌ " + t.bank.insufficientFunds);
       }
     };
 
@@ -59,12 +55,14 @@ const ExchangeModal = observer(
     return (
       <div className="fixed inset-0 z-[60] bg-black bg-opacity-70 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg p-6 max-w-md w-full text-center shadow-lg border-2 border-amber-800 shantell text-amber-800 relative">
-          <h2 className="text-xl mb-4 font-bold">Заявка на вывод</h2>
+          <h2 className="text-xl mb-4 font-bold">{t.exchangeModal.title}</h2>
 
           {/* Блок баланса */}
           <div className="mb-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
             <div className="flex items-center justify-center gap-2 text-sm">
-              <span className="font-semibold">Ваш баланс PDollar:</span>
+              <span className="font-semibold">
+                {t.exchangeModal.balanceLabel}
+              </span>
               <span
                 className={`font-bold ${
                   hasSufficientBalance ? "text-green-600" : "text-red-600"
@@ -80,12 +78,12 @@ const ExchangeModal = observer(
             </div>
             {!hasSufficientBalance && (
               <div className="text-xs text-red-600 mt-1">
-                У вас пока меньше 25,000 PDollar
+                {t.exchangeModal.insufficientBalance}
               </div>
             )}
           </div>
           <div className="text-left text-sm font-medium text-amber-800 ">
-            Кошелек для вывода:
+            {t.exchangeModal.walletLabel}
           </div>
           <div className="text-left text-xs text-amber-400 mb-4">
             {store.adrss.slice(0, 40)}...
@@ -94,7 +92,7 @@ const ExchangeModal = observer(
           {/* Ввод суммы */}
           <div className="mb-6">
             <label className="block text-left text-sm font-medium text-amber-800 mb-2">
-              Сумма вывода (мин. 25 000)
+              {t.exchangeModal.amountLabel}
             </label>
             <input
               type="number"
@@ -105,7 +103,7 @@ const ExchangeModal = observer(
               className="w-full px-3 py-2 border-2 border-amber-800 rounded-lg text-amber-800 placeholder-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
             <div className="text-xs text-gray-600 mt-1 text-left">
-              Максимум: {userPdollarBalance.toLocaleString()}
+              {t.exchangeModal.maxAmount} {userPdollarBalance.toLocaleString()}
             </div>
           </div>
 
@@ -119,17 +117,21 @@ const ExchangeModal = observer(
                 : "bg-gray-400 text-gray-200 cursor-not-allowed"
             }`}
           >
-            {Number(exchangeAmount) < 25000 ? "Минимум 25,000" : "Подтвердить"}
+            {Number(exchangeAmount) < 25000
+              ? t.exchangeModal.minAmountError
+              : t.exchangeModal.confirmButton}
           </button>
 
           <div className="text-left text-sm font-medium text-amber-800 mt-4">
-            Последний вывод:
+            {t.exchangeModal.lastWithdrawal}
           </div>
           <div className="text-left text-xs text-gray-600">
             ё 12/18/2025 17:59
           </div>
           <div className="text-left text-xs text-gray-600">1000 TON</div>
-          <div className="text-left text-xs text-green-600">Успешно</div>
+          <div className="text-left text-xs text-green-600">
+            {t.exchangeModal.statusSuccess}
+          </div>
 
           <button
             onClick={onClose}
@@ -137,7 +139,7 @@ const ExchangeModal = observer(
           >
             <img
               src={`${store.imgUrl}b_close.png`}
-              alt="Закрыть"
+              alt={t.common.close}
               className="w-full h-full"
             />
           </button>
@@ -158,11 +160,26 @@ const AdminModal = observer(
       }
     }, [isOpen]);
 
+    // Получаем переводы
+    const t = store.currentTranslations;
+
     if (!isOpen) return null;
 
     const formatWalletAddress = (address: string) => {
       if (address.length <= 12) return address;
       return `${address.slice(0, 6)}...${address.slice(-6)}`;
+    };
+
+    // Функция для перевода статуса
+    const translateStatus = (status: string) => {
+      switch (status) {
+        case "APPROVED":
+          return t.adminModal.approved;
+        case "PENDING":
+          return t.adminModal.pending;
+        default:
+          return status;
+      }
     };
 
     return (
@@ -173,13 +190,13 @@ const AdminModal = observer(
         >
           <img
             src={`${store.imgUrl}b_close.png`}
-            alt="Закрыть"
+            alt={t.common.close}
             className="w-full h-full"
           />
         </button>
         <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-lg border-2 border-amber-800 shantell text-amber-800 relative">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">Админка</h2>
+            <h2 className="text-2xl font-bold">{t.adminModal.title}</h2>
           </div>
           {/* Таблица */}
           <div className="overflow-x-auto">
@@ -187,16 +204,16 @@ const AdminModal = observer(
               <thead>
                 <tr className="bg-amber-100">
                   <th className="border border-amber-300 px-3 py-2 text-left">
-                    Telegram ID
+                    {t.adminModal.telegramId}
                   </th>
                   <th className="border border-amber-300 px-3 py-2 text-left">
-                    Wallet Address
+                    {t.adminModal.walletAddress}
                   </th>
                   <th className="border border-amber-300 px-3 py-2 text-left">
-                    Amount TON
+                    {t.adminModal.amountTon}
                   </th>
                   <th className="border border-amber-300 px-3 py-2 text-left">
-                    Status
+                    {t.adminModal.status}
                   </th>
                 </tr>
               </thead>
@@ -222,7 +239,7 @@ const AdminModal = observer(
                             : "bg-gray-100 text-gray-800"
                         }`}
                       >
-                        {item.status}
+                        {translateStatus(item.status)}
                       </span>
                     </td>
                   </tr>
@@ -233,7 +250,7 @@ const AdminModal = observer(
                       colSpan={4}
                       className="border border-amber-300 px-3 py-4 text-center text-gray-500"
                     >
-                      Нет данных для отображения
+                      {t.adminModal.noData}
                     </td>
                   </tr>
                 )}
@@ -243,7 +260,7 @@ const AdminModal = observer(
 
           {/* Информация о количестве записей */}
           <div className="mt-4 text-sm text-gray-600">
-            Всего записей: {store.adminData.length}
+            {t.adminModal.totalRecords} {store.adminData.length}
           </div>
         </div>
       </div>
@@ -265,9 +282,11 @@ const Bank = observer(() => {
   const [isExchangeModalOpen, setIsExchangeModalOpen] = useState(false);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
-  //   const { buyCooldown } = bankStore;
 
-  const PDOLLAR_TO_TON_RATE = 0.00001; // 1 PDollar = 0.00001 TON
+  const PDOLLAR_TO_TON_RATE = 0.00001;
+
+  // Получаем переводы
+  const t = store.currentTranslations;
 
   useEffect(() => {
     const isAdmin = store.checkIsAdmin();
@@ -280,7 +299,7 @@ const Bank = observer(() => {
   const handleBuy = async () => {
     const parsed = parseInt(pcoinAmount);
     if (Number.isNaN(parsed) || parsed < 100) {
-      alert("Минимум — 100 PCoin");
+      alert(t.bank.minAmount);
       return;
     }
 
@@ -338,17 +357,17 @@ const Bank = observer(() => {
           <CurrencyCard
             icon={`${store.imgUrl}icon_pizza.png`}
             value={Number(pizza) || 0}
-            label="Pizza"
+            label={t.bank.pizza}
           />
           <CurrencyCard
             icon={`${store.imgUrl}icon_dollar_coin.png`}
             value={Number(pcoin) || 0}
-            label="PCoin"
+            label={t.bank.pcoin}
           />
           <CurrencyCard
             icon={`${store.imgUrl}icon_dollar.png`}
             value={Number(pdollar) || 0}
-            label="PDollar"
+            label={t.bank.pdollar}
           />
         </div>
 
@@ -404,13 +423,13 @@ const Bank = observer(() => {
                   />
                   <div className="absolute inset-0 flex flex-col p-4 sm:p-5">
                     <div className="text-base text-center sm:text-lg text-amber-800 shantell mb-2 font-bold">
-                      Сколько PCoin вы хотите купить
+                      {t.bank.howMuchPcoin}
                     </div>
 
                     {/* Поле PCoin */}
                     <CurrencyInput
                       icon={`${store.imgUrl}icon_dollar_coin.png`}
-                      label="PCoin"
+                      label={t.bank.pcoin}
                       balance={store.pcoin ?? 0}
                       value={pcoinAmount}
                       onChange={(v) => {
@@ -427,14 +446,14 @@ const Bank = observer(() => {
                     {/* Поле TON */}
                     <CurrencyInput
                       icon={`${store.imgUrl}icon_ton.png`}
-                      label="TON"
+                      label={t.common.ton}
                       balance={0}
                       value={String(tonAmount)}
                       onChange={(v) => setTonAmount(Number(v))}
                     />
 
                     <div className="text-center mb-4 sm:mb-6 font-bold text-base sm:text-lg text-amber-800 shantell flex items-center justify-center">
-                      Курс: 1 TON = 1000 PCoin
+                      {t.bank.exchangeRate} {t.bank.tonRate}
                       <img
                         src={`${store.imgUrl}icon_dollar_coin.png`}
                         alt="PCoin"
@@ -444,7 +463,7 @@ const Bank = observer(() => {
 
                     {/* Кнопка покупки */}
                     <ActionButton
-                      label={buying ? "Создание заказа..." : "Купить"}
+                      label={buying ? t.bank.createOrder : t.bank.buyButton}
                       disabled={buying}
                       onClick={handleBuy}
                       img={`${store.imgUrl}b_blue2.png`}
@@ -464,13 +483,13 @@ const Bank = observer(() => {
                   />
                   <div className="absolute inset-0 flex flex-col p-4 sm:p-5">
                     <div className="text-center text-lg sm:text-2xl mb-3 text-amber-800 shantell font-bold">
-                      ОБМЕННИК
+                      {t.bank.exchange}
                     </div>
 
-                    {/* Поле ввода PDollar (БЕЗ Math.max) */}
+                    {/* Поле ввода PDollar */}
                     <CurrencyInput
                       icon={`${store.imgUrl}icon_dollar.png`}
-                      label="PDollar"
+                      label={t.bank.pdollar}
                       balance={store.pdollar ?? 0}
                       value={pdollarAmount}
                       onChange={(v) => {
@@ -488,7 +507,7 @@ const Bank = observer(() => {
                     <ArrowDown />
                     <CurrencyInput
                       icon={`${store.imgUrl}icon_ton.png`}
-                      label="TON"
+                      label={t.common.ton}
                       balance={0}
                       value={tonExchangeAmount}
                       onChange={(v) => {
@@ -502,11 +521,11 @@ const Bank = observer(() => {
                     />
 
                     <div className="text-center mb-4 sm:mb-6 font-bold text-base sm:text-lg text-amber-800 shantell">
-                      Курс: 1 PDollar = 0.00001 TON
+                      {t.bank.exchangeRate} {t.bank.pdollarRate}
                     </div>
 
                     <ActionButton
-                      label="ОБМЕНЯТЬ"
+                      label={t.bank.exchangeButton}
                       onClick={handleExchange}
                       img={`${store.imgUrl}b_blue2.png`}
                       textColor="text-blue-900"
@@ -524,8 +543,7 @@ const Bank = observer(() => {
         <BankOrderModal onClose={() => setIsOrderModalOpen(false)} />
       )}
 
-      {/* модалка обмена (ручной вывод) */}
-      {/* Используем условный рендеринг &&, чтобы компонент создался заново с нужным initialAmount */}
+      {/* модалка обмена */}
       {isExchangeModalOpen && (
         <ExchangeModal
           isOpen={isExchangeModalOpen}
@@ -651,10 +669,7 @@ function ActionButton({
           : "hover:opacity-90 cursor-pointer"
       }`}
     >
-      {/* фон‑текстура кнопки */}
       <img src={img} alt={label} className="w-1/2 h-2/3 z-50" />
-
-      {/* надпись */}
       <div className="absolute inset-0 flex flex-col items-center justify-center z-50">
         <span
           className={`${
