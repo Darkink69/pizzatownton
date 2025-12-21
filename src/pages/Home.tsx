@@ -1,3 +1,4 @@
+ 
 import { useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import store from "../store/store";
@@ -6,8 +7,10 @@ import { Link } from "react-router-dom";
 import FooterHome from "../components/FooterHome";
 import GuideOverlay from "../pages/GuideOverlay";
 import { getFloorUpgradeData, getCurrentUpgradeCost } from "./floorUpgradeData";
+import { useTranslation } from "react-i18next";
 
 const Home = observer(() => {
+  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedFloorId, setSelectedFloorId] = useState<number | null>(null);
   const [liftPosition, setLiftPosition] = useState<number>(0);
@@ -41,48 +44,6 @@ const Home = observer(() => {
   );
   const [showChancesInfo, setShowChancesInfo] = useState(false);
   const audioNotificationRef = useRef<HTMLAudioElement | null>(null);
-
-  // Получаем переводы
-  const t = store.currentTranslations;
-
-  // Создаем массив шагов обучения с переводами
-  const introGuideSteps = [
-    {
-      id: "welcome",
-      center: true,
-      text: t.home.tutorialWelcome,
-    },
-    {
-      id: "floors",
-      selector: "#floors-block",
-      text: t.home.tutorialFloors,
-    },
-    {
-      id: "balances",
-      selector: "#balances-block",
-      text: t.home.tutorialBalances,
-    },
-    {
-      id: "claim",
-      selector: "#claim-button",
-      text: t.home.tutorialClaim,
-    },
-    {
-      id: "accountant",
-      selector: "#accountant-block",
-      text: t.home.tutorialAccountant,
-    },
-    {
-      id: "bank",
-      selector: "#bank-link",
-      text: t.home.tutorialBank,
-    },
-    {
-      id: "finish",
-      center: true,
-      text: t.home.tutorialFinish,
-    },
-  ];
 
   // Запрос данных при монтировании
   useEffect(() => {
@@ -127,7 +88,45 @@ const Home = observer(() => {
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [store.sessionId, store.user.telegramId]);
+  }, [store.sessionId, store.user.telegramId, t]);
+
+  const introGuideSteps = [
+    {
+      id: "welcome",
+      center: true,
+      text: "home.guide.welcome",
+    },
+    {
+      id: "floors",
+      selector: "#floors-block",
+      text: "home.guide.floors",
+    },
+    {
+      id: "balances",
+      selector: "#balances-block",
+      text: "home.guide.balances",
+    },
+    {
+      id: "claim",
+      selector: "#claim-button",
+      text: "home.guide.claim",
+    },
+    {
+      id: "accountant",
+      selector: "#accountant-block",
+      text: "home.guide.accountant",
+    },
+    {
+      id: "bank",
+      selector: "#bank-link",
+      text: "home.guide.bank",
+    },
+    {
+      id: "finish",
+      center: true,
+      text: "home.guide.finish",
+    },
+  ];
 
   // Эффект для анимации лифта
   useEffect(() => {
@@ -291,31 +290,25 @@ const Home = observer(() => {
 
   const handleBuyLootbox = () => {
     if (!store.isAuthed) {
-      showNotification(
-        "⏳ Авторизация с сервером не завершена. Подождите...",
-        "error"
-      );
+      showNotification(t("common.notifications.auth_pending"), "error");
       return;
     }
     if (!store.sessionId) {
-      showNotification("Сессия не установлена. Подождите загрузки.", "error");
+      showNotification(t("common.notifications.session_not_set"), "error");
       return;
     }
     if (!store.user?.telegramId && !store.user?.id) {
-      showNotification(
-        "Пользователь не авторизован. Подождите загрузки профиля.",
-        "error"
-      );
+      showNotification(t("common.notifications.user_not_authorized"), "error");
       return;
     }
 
     if (store.pizza < 2000) {
-      showNotification("Недостаточно pizza для покупки лутбокса!", "error");
+      showNotification(t("home.lootbox_modal.buy_error_pizza"), "error");
       return;
     }
     const ok = store.openPizzaBox();
     if (!ok) {
-      showNotification("Не удалось отправить запрос на лутбокс", "error");
+      showNotification(t("home.lootbox_modal.buy_error_request"), "error");
     }
   };
 
@@ -328,11 +321,11 @@ const Home = observer(() => {
     setWonPcoins(res.pcoinReward);
     playSound("win.mp3");
     showNotification(
-      `Лутбокс открыт! Вы получили: ${res.pcoinReward} PCoin`,
+      t("home.lootbox_modal.buy_success", { reward: res.pcoinReward }),
       "success"
     );
     store.setLastPizzaBoxResult(null);
-  }, [store.lastPizzaBoxResult]);
+  }, [store.lastPizzaBoxResult, t]);
 
   // Функции для уведомлений (оставим на русском, так как они генерируются системой)
   const getRandomNotification = () => {
@@ -381,47 +374,42 @@ const Home = observer(() => {
       condition: boolean;
     }> = [
       {
-        message:
-          "Шеф! Вы иногда забываете забрать прибыль. Может быть нам стоит нанять бухгалтера?",
+        message: "home.random_notifications.forgot_profit",
         type: "error",
         condition: !hasAccountant,
       },
       {
-        message: "Шеф! Нам просто необходим хотя бы один менеджер!",
+        message: "home.random_notifications.need_manager",
         type: "error",
         condition: !hasAnyManager,
       },
       {
-        message: "На кассе дырка… Потери пять процентов, шеф!",
+        message: "home.random_notifications.cash_desk_hole",
         type: "error",
         condition: !hasAnyGuard,
       },
       {
-        message:
-          "Синьор! Один из ваших менеджеров нуждается в повышении квалификации. Это в наших интересах!",
+        message: "home.random_notifications.manager_needs_upgrade",
         type: "error",
         condition: hasManagerNotMaxLevel,
       },
       {
-        message: "Хозяин! Нам нужен более опытный охранник. Большие потери!",
+        message: "home.random_notifications.guard_needs_upgrade",
         type: "error",
         condition: hasGuardNotMaxLevel,
       },
       {
-        message:
-          "Отличная работа! Мы получили замечательные отзывы о нашей пицце!",
+        message: "home.random_notifications.good_reviews",
         type: "success",
         condition: true,
       },
       {
-        message:
-          "Отличная работа, синьор! Все этажи пашут, как танцы на тесте!",
+        message: "home.random_notifications.floors_working_hard",
         type: "success",
         condition: true,
       },
       {
-        message:
-          "Все идеально, начальник! Но бизнес нужно расширять, хорошо бы купить еще один этаж.",
+        message: "home.random_notifications.need_to_expand",
         type: "success",
         condition: true,
       },
@@ -464,15 +452,15 @@ const Home = observer(() => {
     playSound("claim.mp3");
 
     if (!hasAnyStaffHired()) {
-      showNotification(t.home.incomeWarning, "error");
+      showNotification(t("home.notifications.losing_income_warning"), "error");
     } else {
-      showNotification(t.home.incomeCollection, "success");
+      showNotification(t("home.notifications.claiming_income"), "success");
     }
 
     if (store.sendClaimDo(0)) {
       // Уведомление уже показано выше
     } else {
-      showNotification(t.home.incomeError, "error");
+      showNotification(t("home.notifications.claim_error"), "error");
     }
   };
 
@@ -496,10 +484,7 @@ const Home = observer(() => {
     const cost = selected?.cost ?? 0;
 
     if (store.pcoin < cost) {
-      showNotification(
-        "Недостаточно средств. Нужно купить PCoin в банке!",
-        "error"
-      );
+      showNotification(t("home.accountant_modal.insufficient_funds"), "error");
       return;
     }
 
@@ -508,10 +493,10 @@ const Home = observer(() => {
 
     if (ok) {
       store.pcoin -= cost;
-      showNotification("Бухгалтер нанят!", "success");
+      showNotification(t("home.accountant_modal.hired_success"), "success");
       handleCloseStaffModal();
     } else {
-      showNotification("Ошибка при найме бухгалтера", "error");
+      showNotification(t("home.accountant_modal.hire_error"), "error");
     }
   };
 
@@ -531,7 +516,9 @@ const Home = observer(() => {
         src={`${store.imgUrl}${
           i < level ? "icon_star.png" : "icon_star_empty.png"
         }`}
-        alt={i < level ? "Star" : "Empty star"}
+        alt={
+          i < level ? t("common.labels.star") : t("common.labels.empty_star")
+        }
         className="w-4 h-4"
       />
     ));
@@ -579,7 +566,7 @@ const Home = observer(() => {
 
     const displayFloorNumber = getDisplayFloorNumber(selectedFloor.floorId);
     showNotification(
-      `🚀 Отправляем запрос на улучшение этажа ${displayFloorNumber}...`,
+      t("home.notifications.upgrade_request_sent", { displayFloorNumber }),
       "success"
     );
 
@@ -587,16 +574,17 @@ const Home = observer(() => {
     if (success) {
       setTimeout(() => {
         showNotification(
-          `Этаж ${displayFloorNumber} улучшен до уровня ${
-            (selectedFloor.level ?? 0) + 1
-          }!`,
+          t("home.notifications.upgrade_success", {
+            displayFloorNumber,
+            level: (selectedFloor.level ?? 0) + 1,
+          }),
           "success"
         );
       }, 800);
     } else {
       setTimeout(() => {
         showNotification(
-          `Не удалось улучшить этаж ${displayFloorNumber}. Недостаточно средств!`,
+          t("home.notifications.upgrade_failed", { displayFloorNumber }),
           "error"
         );
       }, 800);
@@ -634,15 +622,17 @@ const Home = observer(() => {
 
   // Функция для получения отображаемого номера этажа
   const getDisplayFloorNumber = (floorId: number): string => {
-    if (floorId === 1) return t.home.basement;
-    if (floorId >= 2 && floorId <= 9) return `${floorId - 1} ${t.home.floor}`;
-    return `${floorId} ${t.home.floor}`;
+    if (floorId === 1) return t("home.floor.base");
+    if (floorId >= 2 && floorId <= 9)
+      return t("home.floor.name", { floorId: floorId - 1 });
+    return t("home.floor.name", { floorId });
   };
 
   const getFloorNameByIndex = (index: number): string => {
     const floorId = getFloorIdByIndex(index);
-    if (index === 0) return t.home.roof;
-    if (floorId === -1) return t.home.basement;
+    if (index === 0) return t("home.floor.roof");
+    if (floorId === -1) return t("home.floor.base");
+
     return getDisplayFloorNumber(floorId);
   };
 
@@ -654,12 +644,12 @@ const Home = observer(() => {
 
     if (success) {
       showNotification(
-        `Запрос на покупку этажа ${displayFloorNumber} отправлен!`,
+        t("home.floor.buy_request_sent", { displayFloorNumber }),
         "success"
       );
     } else {
       showNotification(
-        `Не удалось купить этаж ${displayFloorNumber}. Проверь баланс или соединение.`,
+        t("home.floor.buy_request_failed", { displayFloorNumber }),
         "error"
       );
     }
@@ -668,10 +658,7 @@ const Home = observer(() => {
   const handleUpgradeFloor = (floorId: number, event: React.MouseEvent) => {
     event.stopPropagation();
     if (floorId === 1) {
-      showNotification(
-        "Базовый этаж сейчас нельзя улучшить — ждём звёздный апгрейд!",
-        "error"
-      );
+      showNotification(t("home.floor.upgrade_unavailable"), "error");
       return;
     }
     handleOpenUpgradeModal(floorId);
@@ -713,12 +700,12 @@ const Home = observer(() => {
     playSound("staff.mp3");
     const floor = store.safeUserFloorList.find((f) => f.floorId === floorId);
     if (!floor) {
-      showNotification(`Этаж ${floorId} не найден`, "error");
+      showNotification(t("home.notifications.staff_not_found", { floorId }), "error");
       return;
     }
 
     if (!Array.isArray(floor.staff) || floor.staff.length === 0) {
-      showNotification("Персонал для этого этажа ещё не загружен", "error");
+      showNotification(t("home.notifications.staff_data_not_loaded"), "error");
       console.warn(`Нет данных floor.staff для этажа ${floorId}`);
       return;
     }
@@ -729,9 +716,12 @@ const Home = observer(() => {
 
     if (!staff) {
       showNotification(
-        `Не найден персонаж ${
-          staffType === "manager" ? t.home.manager : t.home.guard
-        }`,
+        t("home.notifications.character_not_found", {
+          character:
+            staffType === "manager"
+              ? t("home.upgrade_modal.manager_title")
+              : t("home.upgrade_modal.guard_title"),
+        }),
         "error"
       );
       console.warn(`Не найден ${staffType} на этаже ${floorId}`, floor.staff);
@@ -761,13 +751,21 @@ const Home = observer(() => {
     if (ok) {
       const displayFloorNumber = getDisplayFloorNumber(floorId);
       showNotification(
-        `${staffType === "manager" ? t.home.manager : t.home.guard} ${
-          currentLevel ? "улучшен" : "нанят"
-        } (уровень ${nextLevel}) ${displayFloorNumber}`,
+        t("home.notifications.staff_hired_or_upgraded", {
+          character:
+            staffType === "manager"
+              ? t("home.upgrade_modal.manager_title")
+              : t("home.upgrade_modal.guard_title"),
+          status: currentLevel
+            ? t("home.notifications.upgraded")
+            : t("home.notifications.hired"),
+          level: nextLevel,
+          displayFloorNumber,
+        }),
         "success"
       );
     } else {
-      showNotification("Ошибка при покупке/апгрейде персонала", "error");
+      showNotification(t("home.notifications.staff_hire_error"), "error");
     }
   };
 
@@ -862,7 +860,7 @@ const Home = observer(() => {
           onClick={toggleMusic}
           className="fixed scale-30 top-4 left-4 z-50 w-12 h-12 sm:w-14 sm:h-14 hover:scale-50 transition-transform"
           aria-label={
-            isMusicPlaying ? t.home.soundToggleOn : t.home.soundToggleOff
+            isMusicPlaying ? t("home.sound_off") : t("home.sound_on")
           }
         >
           {isMusicPlaying ? (
@@ -925,7 +923,7 @@ const Home = observer(() => {
               <div className="flex-shrink-0">
                 <img
                   src={`${store.imgUrl}img_chif_talk.png`}
-                  alt="Повар"
+                  alt={t("home.chef_alt")}
                   className="w-36 sm:w-48 object-contain"
                 />
               </div>
@@ -943,7 +941,7 @@ const Home = observer(() => {
                   onClick={() => setNotification(null)}
                   className="mt-4 bg-amber-500 hover:bg-amber-600 text-white px-8 py-2 rounded-full font-bold shantell text-base tracking-wide transition transform hover:scale-105"
                 >
-                  {t.home.notificationOkay}
+                  {t("common.buttons.ok")}
                 </button>
               </div>
             </div>
@@ -957,7 +955,7 @@ const Home = observer(() => {
               <div className="flex-shrink-0">
                 <img
                   src={`${store.imgUrl}img_chif_talk.png`}
-                  alt="Повар"
+                  alt={t("home.chef_alt")}
                   className="w-36 sm:w-48 object-contain"
                 />
               </div>
@@ -969,13 +967,13 @@ const Home = observer(() => {
                       : "text-green-600"
                   }`}
                 >
-                  {randomNotification.message}
+                  {t(randomNotification.message)}
                 </p>
                 <button
                   onClick={() => setRandomNotification(null)}
                   className="mt-3 bg-amber-500 hover:bg-amber-600 text-white px-6 py-1.5 rounded-full font-bold shantell text-sm tracking-wide transition"
                 >
-                  {t.home.randomNotificationOkay}
+                  {t("common.buttons.ok")}
                 </button>
               </div>
             </div>
@@ -997,7 +995,10 @@ const Home = observer(() => {
           </div>
 
           {/* Этажи */}
-          <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-10 w-[90%] sm:w-[60%] md:w-[50%] lg:w-[40%] xl:w-[16%]">
+          <div
+            id="floors-block"
+            className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-10 w-[90%] sm:w-[60%] md:w-[50%] lg:w-[40%] xl:w-[16%]"
+          >
             <div className="flex flex-col items-center relative">
               {Array.from({ length: floors }, (_, index) => {
                 const floorData = getFloorData(index);
@@ -1026,7 +1027,7 @@ const Home = observer(() => {
                   >
                     <img
                       src={`${store.imgUrl}${getFloorImage(index)}`}
-                      alt={`Этаж ${floorName}`}
+                      alt={floorName}
                       className="w-full max-w-md object-contain"
                     />
 
@@ -1044,14 +1045,14 @@ const Home = observer(() => {
                         <div className="flex items-center relative">
                           <img
                             src={`${store.imgUrl}b_blue_small.png`}
-                            alt="Open new floor"
+                            alt={t("home.open_new_floor")}
                             className="w-4/5"
                           />
                           <div className="absolute inset-0 flex items-center px-2 sm:px-4">
                             <div className="flex items-center gap-1">
                               <img
                                 src={`${store.imgUrl}icon_dollar_coin.png`}
-                                alt="Coin"
+                                alt={t("common.labels.coin_icon")}
                                 className="w-8 sm:w-10"
                               />
                               <span className="text-white text-sm sm:text-base shantell pr-4">
@@ -1059,7 +1060,9 @@ const Home = observer(() => {
                               </span>
                             </div>
                             <div className="text-blue-900 text-sm sm:text-md shantell font-bold whitespace-nowrap">
-                              {t.home.openFloor} {floorName.toUpperCase()}
+                              {t("home.buy_floor_button", {
+                                floorName: floorName.toUpperCase(),
+                              })}
                             </div>
                           </div>
                         </div>
@@ -1081,7 +1084,7 @@ const Home = observer(() => {
                               src={`${store.imgUrl}${getFloorVideo(floorData)}`}
                               type="video/mp4"
                             />
-                            Your browser does not support the video tag.
+                            {t("home.your_browser_no_video")}
                           </video>
                         </div>
 
@@ -1102,13 +1105,13 @@ const Home = observer(() => {
                               >
                                 <img
                                   src={`${store.imgUrl}b_red_mini.png`}
-                                  alt="Upgrade"
+                                  alt={t("common.labels.upgrade")}
                                   className="h-10 sm:h-12 w-auto"
                                 />
                                 <div className="absolute inset-0 flex items-center justify-center gap-0 px-1 sm:px-2">
                                   <img
                                     src={`${store.imgUrl}icon_arrow.png`}
-                                    alt="Arrow"
+                                    alt={t("common.labels.arrow")}
                                     className="w-4 h-4 mr-1"
                                   />
                                   <span className="text-white text-sm sm:text-md shantell font-bold">
@@ -1131,7 +1134,7 @@ const Home = observer(() => {
                                         ? "Manager_icon.png"
                                         : "Manager_icon_0.png"
                                     }`}
-                                    alt="Manager"
+                                    alt={t("common.labels.manager")}
                                     className="w-6 h-6 sm:w-8 sm:h-8"
                                   />
                                   <img
@@ -1140,7 +1143,7 @@ const Home = observer(() => {
                                         ? "icon_star.png"
                                         : "icon_star_empty.png"
                                     }`}
-                                    alt="Star"
+                                    alt={t("common.labels.star")}
                                     className="w-4 h-4 -translate-x-[2px]"
                                   />
                                   <span className="text-amber-800 text-xs sm:text-sm shantell font-bold -translate-x-[3px]">
@@ -1158,7 +1161,7 @@ const Home = observer(() => {
                                         ? "Guard_icon.png"
                                         : "Guard_icon_0.png"
                                     }`}
-                                    alt="Guard"
+                                    alt={t("common.labels.guard")}
                                     className="w-6 h-6 sm:w-8 sm:h-8"
                                   />
                                   <img
@@ -1167,7 +1170,7 @@ const Home = observer(() => {
                                         ? "icon_star.png"
                                         : "icon_star_empty.png"
                                     }`}
-                                    alt="Star"
+                                    alt={t("common.labels.star")}
                                     className="w-4 h-4 -translate-x-[2px]"
                                   />
                                   <span className="text-amber-800 text-xs sm:text-sm shantell -translate-x-[3px]">
@@ -1199,7 +1202,7 @@ const Home = observer(() => {
                                 src={`${store.imgUrl}chif.mp4`}
                                 type="video/mp4"
                               />
-                              Your browser does not support the video tag.
+                              {t("home.your_browser_no_video")}
                             </video>
                           </div>
 
@@ -1220,13 +1223,13 @@ const Home = observer(() => {
                                 >
                                   <img
                                     src={`${store.imgUrl}b_red_mini.png`}
-                                    alt="Upgrade"
+                                    alt={t("common.labels.upgrade")}
                                     className="h-10 sm:h-12 w-auto"
                                   />
                                   <div className="absolute inset-0 flex items-center justify-center gap-0 px-1 sm:px-2">
                                     <img
                                       src={`${store.imgUrl}icon_arrow.png`}
-                                      alt="Arrow"
+                                      alt={t("common.labels.arrow")}
                                       className="w-4 h-4 mr-1"
                                     />
                                     <span className="text-white text-sm sm:text-md shantell font-bold">
@@ -1244,7 +1247,7 @@ const Home = observer(() => {
                                 <div className="flex items-center gap-1 -translate-x-[6px]">
                                   <img
                                     src={`${store.imgUrl}icon_pizza.png`}
-                                    alt="Pizza"
+                                    alt={t("common.labels.pizza")}
                                     className="w-6 h-6 sm:w-8 sm:h-8"
                                   />
                                   <span className="text-amber-800 text-xs sm:text-sm shantell font-bold -translate-x-[3px]">
@@ -1261,7 +1264,7 @@ const Home = observer(() => {
                                           ? "Manager_icon.png"
                                           : "Manager_icon_0.png"
                                       }`}
-                                      alt="Manager"
+                                      alt={t("common.labels.manager")}
                                       className="w-6 h-6 sm:w-8 sm:h-8"
                                     />
                                     <img
@@ -1270,7 +1273,7 @@ const Home = observer(() => {
                                           ? "icon_star.png"
                                           : "icon_star_empty.png"
                                       }`}
-                                      alt="Star"
+                                      alt={t("common.labels.star")}
                                       className="w-4 h-4 -translate-x-[2px]"
                                     />
                                     <span className="text-amber-800 text-xs sm:text-sm shantell font-bold -translate-x-[3px]">
@@ -1288,7 +1291,7 @@ const Home = observer(() => {
                                           ? "Guard_icon.png"
                                           : "Guard_icon_0.png"
                                       }`}
-                                      alt="Guard"
+                                      alt={t("common.labels.guard")}
                                       className="w-6 h-6 sm:w-8 sm:h-8"
                                     />
                                     <img
@@ -1297,7 +1300,7 @@ const Home = observer(() => {
                                           ? "icon_star.png"
                                           : "icon_star_empty.png"
                                       }`}
-                                      alt="Star"
+                                      alt={t("common.labels.star")}
                                       className="w-4 h-4 -translate-x-[2px]"
                                     />
                                     <span className="text-amber-800 text-xs sm:text-sm shantell -translate-x-[3px]">
@@ -1350,9 +1353,15 @@ const Home = observer(() => {
         </div>
 
         {/* Нижний блок */}
-        <div className="absolute bottom-36 left-1/2 transform -translate-x-1/2 w-full max-w-lg mx-auto z-30">
+        <div
+          id="balances-block"
+          className="absolute bottom-36 left-1/2 transform -translate-x-1/2 w-full max-w-lg mx-auto z-30"
+        >
           {/* Блок только с бухгалтером */}
-          <div className="flex justify-center items-end px-4 mb-2">
+          <div
+            id="accountant-block"
+            className="flex justify-center items-end px-4 mb-2"
+          >
             {/* Accountant */}
             <div
               className="flex flex-col items-center relative"
@@ -1360,7 +1369,7 @@ const Home = observer(() => {
             >
               <img
                 src={`${store.imgUrl}Accountant.png`}
-                alt="Accountant"
+                alt={t("home.accountant_modal.title")}
                 className="w-28 sm:w-24 sm:h-24 object-contain"
               />
               <div className="absolute -bottom-0 flex items-center text-xs text-white shantell">
@@ -1371,15 +1380,21 @@ const Home = observer(() => {
           </div>
 
           {/* Блоки балансов */}
-          <div className="absolute -bottom-5 left-6 flex-col justify-between items-center">
+          <div
+            id="bank-link"
+            className="absolute -bottom-5 left-6 flex-col justify-between items-center"
+          >
             {/* PCOIN */}
             <div className="relative w-20 hover:opacity-90 transition-opacity mb-4">
-              <img src={`${store.imgUrl}b_white.png`} alt="pcoin" />
+              <img
+                src={`${store.imgUrl}b_white.png`}
+                alt={t("common.labels.pcoin")}
+              />
               <div className="absolute inset-0 flex items-center ml-2 text-xs text-amber-800 shantell">
                 <span>
                   <img
                     src={`${store.imgUrl}icon_dollar_coin.png`}
-                    alt="icon_dollar_coin"
+                    alt={t("common.labels.coin_icon")}
                     className="w-4"
                   />
                 </span>
@@ -1388,7 +1403,7 @@ const Home = observer(() => {
                   <span className="absolute -top-0.5 -right-14">
                     <img
                       src={`${store.imgUrl}b_red_plus.png`}
-                      alt="icon_dollar"
+                      alt={t("common.labels.dollar_icon")}
                       className="w-1/2"
                     />
                   </span>
@@ -1398,12 +1413,15 @@ const Home = observer(() => {
 
             {/* PDOLLAR */}
             <div className="relative w-20 hover:opacity-90 transition-opacity mr-7">
-              <img src={`${store.imgUrl}b_white.png`} alt="pdollar" />
+              <img
+                src={`${store.imgUrl}b_white.png`}
+                alt={t("common.labels.pdollar")}
+              />
               <div className="absolute inset-0 flex items-center ml-1 text-xs text-amber-800 shantell">
                 <span>
                   <img
                     src={`${store.imgUrl}icon_dollar.png`}
-                    alt="icon_dollar"
+                    alt={t("common.labels.dollar_icon")}
                     className="w-6"
                   />
                 </span>
@@ -1412,13 +1430,15 @@ const Home = observer(() => {
                   <span className="absolute -top-0.5 -right-14">
                     <img
                       src={`${store.imgUrl}b_red_minus.png`}
-                      alt="icon_dollar"
+                      alt={t("common.labels.dollar_icon")}
                       className="w-1/2"
                     />
                   </span>
                 </Link>
                 <span className="absolute top-8 text-xs text-white 500 shantell whitespace-nowrap tracking-tight">
-                  +{Number(totalIncome ?? 0).toLocaleString()}/час
+                  {t("home.income_per_hour", {
+                    totalIncome: Number(totalIncome ?? 0).toLocaleString(),
+                  })}
                 </span>
               </div>
             </div>
@@ -1427,13 +1447,17 @@ const Home = observer(() => {
 
         {/* Центральная кнопка handleClaimDo */}
         <button
+          id="claim-button"
           onClick={handleClaimDo}
           className="fixed bottom-4 left-1/2 w-30 lg:w-50 transform -translate-x-1/2 z-50 hover:opacity-90 transition-opacity active:scale-95"
         >
           <div className="absolute top-8 left-1/2 transform -translate-x-1/2 flex items-center justify-center text-2xl md:text-4xl text-blue-900 shantell">
             {store.claimProgress.toFixed(1)}%
           </div>
-          <img src={`${store.imgUrl}b_zabrat2.png`} alt="Claim" />
+          <img
+            src={`${store.imgUrl}b_zabrat2.png`}
+            alt={t("home.claim_button_alt")}
+          />
         </button>
 
         {/* Модальное окно улучшения этажа */}
@@ -1451,7 +1475,7 @@ const Home = observer(() => {
                 <div className="w-1/2 relative">
                   <img
                     src={`${store.imgUrl}img_window_header.png`}
-                    alt="Header"
+                    alt={t("common.labels.header")}
                     className="w-full h-auto "
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -1467,7 +1491,7 @@ const Home = observer(() => {
                 >
                   <img
                     src={`${store.imgUrl}b_close.png`}
-                    alt={t.common.close}
+                    alt={t("common.buttons.close")}
                     className="w-full h-full"
                   />
                 </button>
@@ -1486,7 +1510,7 @@ const Home = observer(() => {
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium text-amber-800 shantell">
-                        {t.home.floorProfit}
+                        {t("home.upgrade_modal.income_label")}
                       </span>
                       <div className="flex items-center gap-1">
                         <span className="font-bold text-amber-800 shantell">
@@ -1494,17 +1518,17 @@ const Home = observer(() => {
                         </span>
                         <img
                           src={`${store.imgUrl}icon_dollar.png`}
-                          alt="Доллар"
+                          alt={t("common.labels.dollar_icon")}
                           className="w-6 h-4"
                         />
                         <span className="text-xs text-amber-800 shantell">
-                          {t.home.perHour}
+                          {t("home.upgrade_modal.per_hour")}
                         </span>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium text-amber-800 shantell">
-                        {t.home.floorBalance}
+                        {t("home.upgrade_modal.balance_label")}
                       </span>
                       <div className="flex items-center gap-1">
                         <span className="font-bold text-amber-800 shantell">
@@ -1512,7 +1536,7 @@ const Home = observer(() => {
                         </span>
                         <img
                           src={`${store.imgUrl}icon_dollar.png`}
-                          alt="Доллар"
+                          alt={t("common.labels.dollar_icon")}
                           className="w-6 h-4"
                         />
                       </div>
@@ -1534,7 +1558,7 @@ const Home = observer(() => {
                             src={`${store.imgUrl}${
                               isActive ? "icon_star.png" : "icon_star_empty.png"
                             }`}
-                            alt="Звезда"
+                            alt={t("common.labels.star")}
                             className="w-8 h-8 mb-1"
                           />
                           <div className="flex items-center gap-0 bg-white px-2 py-1 rounded border border-amber-800">
@@ -1543,7 +1567,7 @@ const Home = observer(() => {
                             </span>
                             <img
                               src={`${store.imgUrl}icon_dollar.png`}
-                              alt="Доллар"
+                              alt={t("common.labels.dollar_icon")}
                               className="w-5"
                             />
                           </div>
@@ -1570,17 +1594,18 @@ const Home = observer(() => {
                       />
                       <img
                         src={`${store.imgUrl}icon_arrow.png`}
-                        alt="Стрелка"
+                        alt={t("common.labels.arrow")}
                         className="w-5 h-5 relative z-10"
                       />
                       <span className="text-white font-bold shantell relative z-10">
-                        {t.home.upgradeFloor} {t.common.level}{" "}
-                        {(selectedFloor.level ?? 0) + 1}
+                        {t("home.upgrade_modal.upgrade_to_level", {
+                          level: (selectedFloor.level ?? 0) + 1,
+                        })}
                       </span>
                       <div className="flex items-center gap-1 relative z-10">
                         <img
                           src={`${store.imgUrl}icon_dollar_coin.png`}
-                          alt="Монетка"
+                          alt={t("common.labels.coin_icon")}
                           className="w-5 h-5"
                         />
                         <span className="text-white font-bold shantell">
@@ -1596,7 +1621,7 @@ const Home = observer(() => {
                   {/* Персонал */}
                   <div className="mt-2">
                     <h3 className="text-lg font-bold mb-2 text-amber-800 shantell text-center">
-                      {t.home.staffTitle}
+                      {t("home.upgrade_modal.staff_title")}
                     </h3>
 
                     {/* Менеджер */}
@@ -1604,15 +1629,15 @@ const Home = observer(() => {
                       <div className="flex items-start gap-0 mb-3">
                         <img
                           src={`${store.imgUrl}Manager_small.png`}
-                          alt="Менеджер"
+                          alt={t("home.upgrade_modal.manager_title")}
                           className="w-18 flex-shrink-0"
                         />
                         <div className="flex-1">
                           <h4 className="font-bold text-amber-800 shantell">
-                            {t.home.manager}
+                            {t("home.upgrade_modal.manager_title")}
                           </h4>
                           <p className="text-xs text-amber-600 shantell mb-2">
-                            {t.home.managerDescription}
+                            {t("home.upgrade_modal.manager_description")}
                           </p>
                           {renderStaffLevelWithStars(
                             getStaffCurrentLevel(
@@ -1655,18 +1680,19 @@ const Home = observer(() => {
                               selectedFloor.floorId,
                               "manager"
                             ) === 0
-                              ? t.home.hire
-                              : `${t.home.upgradeToLevel} ${
-                                  getStaffCurrentLevel(
-                                    selectedFloor.floorId,
-                                    "manager"
-                                  ) + 1
-                                }`}
+                              ? t("home.upgrade_modal.hire_button")
+                              : t("home.upgrade_modal.upgrade_to_level_button", {
+                                  level:
+                                    getStaffCurrentLevel(
+                                      selectedFloor.floorId,
+                                      "manager"
+                                    ) + 1,
+                                })}
                           </span>
                           <div className="flex items-center gap-1 relative z-10">
                             <img
                               src={`${store.imgUrl}icon_dollar_coin.png`}
-                              alt="Монетка"
+                              alt={t("common.labels.coin_icon")}
                               className="w-4 h-4"
                             />
                             <span className="text-white font-bold text-sm shantell">
@@ -1685,15 +1711,15 @@ const Home = observer(() => {
                       <div className="flex items-start gap-0 mb-3">
                         <img
                           src={`${store.imgUrl}Guard_small.png`}
-                          alt="Охранник"
+                          alt={t("home.upgrade_modal.guard_title")}
                           className="w-18 flex-shrink-0"
                         />
                         <div className="flex-1">
                           <h4 className="font-bold text-amber-800 shantell">
-                            {t.home.guard}
+                            {t("home.upgrade_modal.guard_title")}
                           </h4>
                           <p className="text-xs text-amber-600 shantell mb-2">
-                            {t.home.guardDescription}
+                            {t("home.upgrade_modal.guard_description")}
                           </p>
                           {renderStaffLevelWithStars(
                             getStaffCurrentLevel(
@@ -1736,18 +1762,19 @@ const Home = observer(() => {
                               selectedFloor.floorId,
                               "guard"
                             ) === 0
-                              ? t.home.hire
-                              : `${t.home.upgradeToLevel} ${
-                                  getStaffCurrentLevel(
-                                    selectedFloor.floorId,
-                                    "guard"
-                                  ) + 1
-                                }`}
+                              ? t("home.upgrade_modal.hire_button")
+                              : t("home.upgrade_modal.upgrade_to_level_button", {
+                                  level:
+                                    getStaffCurrentLevel(
+                                      selectedFloor.floorId,
+                                      "guard"
+                                    ) + 1,
+                                })}
                           </span>
                           <div className="flex items-center gap-1 relative z-10">
                             <img
                               src={`${store.imgUrl}icon_dollar_coin.png`}
-                              alt="Монетка"
+                              alt={t("common.labels.coin_icon")}
                               className="w-4 h-4"
                             />
                             <span className="text-white font-bold text-sm shantell">
@@ -1782,12 +1809,12 @@ const Home = observer(() => {
                 <div className="w-1/2 relative translate-y-[8px]">
                   <img
                     src={`${store.imgUrl}img_window_header.png`}
-                    alt="Header"
+                    alt={t("common.labels.header")}
                     className="w-full h-auto"
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span className="text-amber-800 text-lg shantell">
-                      {t.home.accountant}
+                      {t("home.accountant_modal.title")}
                     </span>
                   </div>
                 </div>
@@ -1798,7 +1825,7 @@ const Home = observer(() => {
                 >
                   <img
                     src={`${store.imgUrl}b_close.png`}
-                    alt={t.common.close}
+                    alt={t("common.buttons.close")}
                     className="w-full h-full"
                   />
                 </button>
@@ -1816,7 +1843,7 @@ const Home = observer(() => {
                   {/* изображение */}
                   <img
                     src={`${store.imgUrl}Accountant_big.png`}
-                    alt="Accountant"
+                    alt={t("home.accountant_modal.title")}
                     className="w-3/4 mb-4 object-contain"
                   />
 
@@ -1828,13 +1855,13 @@ const Home = observer(() => {
                       {formatTime(timeLeft.seconds)}
                     </div>
                     <div className="text-sm text-amber-600 shantell">
-                      {t.home.accountantTimeLeft}
+                      {t("home.accountant_modal.time_left")}
                     </div>
                   </div>
 
                   {/* описание */}
                   <p className="text-lg text-amber-800 shantell leading-tight mb-6">
-                    {t.home.accountantDescription}
+                    {t("home.accountant_modal.description")}
                   </p>
 
                   {/* варианты подписки - показываем только если бухгалтер не активен */}
@@ -1858,13 +1885,20 @@ const Home = observer(() => {
                           >
                             <img
                               src={`${store.imgUrl}b_white.png`}
-                              alt={`${opt.duration ?? opt.durationDay}дней`}
+                              alt={t("home.accountant_modal.subscription_days", {
+                                days: opt.duration ?? opt.durationDay,
+                              })}
                               className="w-full scale-y-110"
                             />
                             <span className="absolute inset-0 flex flex-col items-center justify-center text-amber-800 shantell text-sm">
-                              <span>{opt.duration ?? opt.durationDay}дней</span>
+                              <span>
+                                {t("home.accountant_modal.subscription_days", {
+                                  days: opt.duration ?? opt.durationDay,
+                                })}
+                              </span>
                               <span className="text-xs text-blue-800 font-bold">
-                                {opt.cost}pcoin
+                                {opt.cost}
+                                {t("common.labels.pcoin")}
                               </span>
                             </span>
                           </button>
@@ -1877,7 +1911,7 @@ const Home = observer(() => {
                   {isAccountantActive() && (
                     <div className="bg-green-100 border border-green-400 rounded-lg p-4 mb-6 w-full">
                       <p className="text-green-800 shantell text-sm">
-                        {t.home.accountantActive}
+                        {t("home.accountant_modal.active_message")}
                       </p>
                     </div>
                   )}
@@ -1934,10 +1968,10 @@ const Home = observer(() => {
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="text-amber-800 font-bold text-lg shantell">
                     {showChancesInfo
-                      ? t.home.lootboxInfo
+                      ? t("home.lootbox_modal.title_about")
                       : prizeModalStage === "intro"
-                      ? t.home.lootboxTitle
-                      : t.home.lootboxCongratulations}
+                      ? t("home.lootbox_modal.title")
+                      : t("home.lootbox_modal.title_congrats")}
                   </span>
                 </div>
               </div>
@@ -1950,7 +1984,7 @@ const Home = observer(() => {
             >
               <img
                 src={`${store.imgUrl}b_close.png`}
-                alt={t.common.close}
+                alt={t("common.buttons.close")}
                 className="w-full h-full"
               />
             </button>
@@ -1962,7 +1996,7 @@ const Home = observer(() => {
             >
               <img
                 src={`${store.imgUrl}qwe.png`}
-                alt="Информация"
+                alt={t("common.labels.info")}
                 className="w-full h-full"
               />
             </button>
@@ -1974,28 +2008,25 @@ const Home = observer(() => {
                 <>
                   <div className="mb-1">
                     <h3 className="text-xl font-bold text-amber-800 shantell mb-4">
-                      {t.home.lootboxChances}
+                      {t("home.lootbox_modal.info_title")}
                     </h3>
 
                     <div className="text-left space-y-3 mb-6">
                       <p className="text-sm text-amber-700 shantell">
-                        Игровая валюта pizza - ценная вещь, очень скоро она
-                        станет мемкоином. Но что делать, если срочно нужно
-                        купить еще этажей и нанять персонал?
+                        {t("home.lootbox_modal.info_p1")}
                       </p>
                       <p className="text-sm text-amber-700 shantell">
-                        Купи лутбокс всего за 2000 pizza и получи шанс выиграть
-                        много pcoin для быстрого развития своей пиццерии!
+                        {t("home.lootbox_modal.info_p2")}
                       </p>
                     </div>
 
                     <div className="bg-white/50 rounded-xl p-2 border border-amber-300 mb-6">
                       <div className="text-center mb-4">
                         <div className="text-xl font-bold text-amber-800 shantell mb-2">
-                          {t.home.lootboxPrice}
+                          {t("home.lootbox_modal.box_price")}
                         </div>
                         <div className="text-sm font-bold text-amber-800 shantell">
-                          {t.home.lootboxOdds}
+                          {t("home.lootbox_modal.probabilities_title")}
                         </div>
                       </div>
 
@@ -2005,7 +2036,7 @@ const Home = observer(() => {
                             1-9 pcoin
                           </span>
                           <span className="text-lg font-bold text-amber-800 shantell">
-                            50%
+                            {t("home.lootbox_modal.probabilities.1-9")}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
@@ -2013,7 +2044,7 @@ const Home = observer(() => {
                             10-19 pcoin
                           </span>
                           <span className="text-lg font-bold text-amber-800 shantell">
-                            25%
+                            {t("home.lootbox_modal.probabilities.10-19")}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
@@ -2021,7 +2052,7 @@ const Home = observer(() => {
                             20-29 pcoin
                           </span>
                           <span className="text-lg font-bold text-amber-800 shantell">
-                            15%
+                            {t("home.lootbox_modal.probabilities.20-29")}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
@@ -2029,7 +2060,7 @@ const Home = observer(() => {
                             30-39 pcoin
                           </span>
                           <span className="text-lg font-bold text-amber-800 shantell">
-                            10%
+                            {t("home.lootbox_modal.probabilities.30-39")}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
@@ -2037,7 +2068,7 @@ const Home = observer(() => {
                             40-50 pcoin
                           </span>
                           <span className="text-lg font-bold text-amber-800 shantell">
-                            5%
+                            {t("home.lootbox_modal.probabilities.40-50")}
                           </span>
                         </div>
                       </div>
@@ -2048,7 +2079,7 @@ const Home = observer(() => {
                     onClick={() => setShowChancesInfo(false)}
                     className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-1 rounded-full font-bold shantell text-lg tracking-wide transition transform hover:scale-105"
                   >
-                    {t.home.notificationOkay}
+                    {t("common.buttons.ok")}
                   </button>
                 </>
               ) : prizeModalStage === "intro" ? (
@@ -2060,11 +2091,15 @@ const Home = observer(() => {
                       alt="Lootbox"
                       className="w-2/3 mx-auto"
                     />
-                    <h3 className="text-xl font-bold text-amber-800 shantell mb-4">
-                      {t.home.lootboxOpen}
-                      <br></br>
-                      {t.home.lootboxDetails}
-                    </h3>
+                    <h3
+                      className="text-xl font-bold text-amber-800 shantell mb-4"
+                      dangerouslySetInnerHTML={{
+                        __html: t("home.lootbox_modal.open_for"),
+                      }}
+                    ></h3>
+                    <p className="text-md text-amber-700 shantell mb-2">
+                      {t("home.lootbox_modal.guaranteed_pcoin")}
+                    </p>
                   </div>
 
                   <div className="mb-8 bg-white/50 rounded-xl p-4 border border-amber-300">
@@ -2079,8 +2114,9 @@ const Home = observer(() => {
                       </span>
                     </div>
                     <p className="text-sm text-amber-600 shantell">
-                      {t.home.lootboxBalance} {store.pizza.toLocaleString()}{" "}
-                      pizza
+                      {t("home.lootbox_modal.your_balance", {
+                        balance: store.pizza.toLocaleString(),
+                      })}
                     </p>
                   </div>
 
@@ -2089,7 +2125,7 @@ const Home = observer(() => {
                       onClick={handleClosePrizeModal}
                       className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-3 rounded-full font-bold shantell text-lg transition transform hover:scale-105"
                     >
-                      {t.home.lootboxClose}
+                      {t("common.buttons.close")}
                     </button>
                     <button
                       onClick={handleBuyLootbox}
@@ -2100,7 +2136,7 @@ const Home = observer(() => {
                           : "bg-gray-400 text-gray-700 cursor-not-allowed"
                       }`}
                     >
-                      {t.home.lootboxBuy}
+                      {t("common.buttons.buy")}
                     </button>
                   </div>
                 </>
@@ -2114,27 +2150,33 @@ const Home = observer(() => {
                       className="w-32 h-32 mx-auto mb-4"
                     />
                     <h3 className="text-2xl font-bold text-amber-800 shantell mb-2">
-                      {t.home.lootboxWon}
+                      {t("home.lootbox_modal.prize_title")}
                     </h3>
-                    <p className="text-lg text-amber-700 shantell">
-                      <span className="font-bold">{wonPcoins} pcoin</span> и
-                      другие призы!
-                    </p>
+                    <p
+                      className="text-lg text-amber-700 shantell"
+                      dangerouslySetInnerHTML={{
+                        __html: t("home.lootbox_modal.prize_subtitle", {
+                          pcoins: wonPcoins,
+                        }),
+                      }}
+                    ></p>
                   </div>
 
                   <div className="space-y-4 mb-8">
                     <div className="flex items-center justify-center gap-3 bg-white/50 rounded-xl p-3">
                       <img
                         src={`${store.imgUrl}icon_dollar_coin.png`}
-                        alt="PCoin"
+                        alt={t("common.labels.coin_icon")}
                         className="w-10 h-10"
                       />
                       <div className="text-left">
                         <p className="text-lg font-bold text-amber-800">
-                          +{wonPcoins} PCoin
+                          {t("home.lootbox_modal.prize_pcoin_label", {
+                            pcoins: wonPcoins,
+                          })}
                         </p>
                         <p className="text-sm text-amber-600">
-                          Для покупок в игре
+                          {t("home.lootbox_modal.prize_pcoin_description")}
                         </p>
                       </div>
                     </div>
@@ -2144,7 +2186,7 @@ const Home = observer(() => {
                     onClick={handleClosePrizeModal}
                     className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-3 rounded-full font-bold shantell text-lg tracking-wide transition transform hover:scale-105"
                   >
-                    {t.home.lootboxPrizes}
+                    {t("common.buttons.claim_prizes")}
                   </button>
                 </>
               )}

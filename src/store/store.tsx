@@ -8,7 +8,6 @@ import type {
   UserState,
 } from "../types/ws";
 import { bankStore } from "./BankStore";
-import translations, { type Language } from "../components/translations";
 import type { Rarity } from "../types/chests";
 
 class Store {
@@ -53,9 +52,6 @@ class Store {
     earnedPdollar: 0,
     link: "",
   };
-
-  language: Language = "ru";
-  translations = translations;
 
   //  РЕЗУЛЬТАТ КОРОБКИ ПИЦЦЫ
   lastPizzaBoxResult: { pizzaSpent: number; pcoinReward: number } | null = null;
@@ -312,7 +308,7 @@ class Store {
 
   constructor() {
     makeAutoObservable(this);
-    this.loadLanguageFromStorage();
+
     //  Восстанавливаем данные при старте
     const savedUser = localStorage.getItem("user");
     const savedStaff = localStorage.getItem("staffData");
@@ -352,51 +348,6 @@ class Store {
   get currentBalance(): number {
     return this.pcoin ?? 0;
   }
-
-  // -------------------------------------------------------------------------
-  // Languages
-  // -------------------------------------------------------------------------
-
-  // Загружаем язык из localStorage
-  loadLanguageFromStorage() {
-    if (typeof window !== "undefined") {
-      const savedLang = localStorage.getItem("app_language") as Language;
-      if (
-        savedLang &&
-        (savedLang === "ru" || savedLang === "en" || savedLang === "es")
-      ) {
-        this.language = savedLang;
-      }
-    }
-  }
-
-  // Сохраняем язык в localStorage
-  saveLanguageToStorage(lang: Language) {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("app_language", lang);
-    }
-  }
-
-  // Устанавливаем язык
-  setLanguage(lang: Language) {
-    this.language = lang;
-    this.saveLanguageToStorage(lang);
-  }
-
-  // Получаем текущие переводы
-  get currentTranslations() {
-    return this.translations[this.language];
-  }
-
-  // Получаем массив доступных языков
-  get availableLanguages(): { code: Language; name: string }[] {
-    return [
-      { code: "ru", name: "Русский" },
-      { code: "en", name: "English" },
-      { code: "es", name: "Español" },
-    ];
-  }
-
   // -------------------------------------------------------------------------
   // CURRENCY OPERATIONS
   // -------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { TonConnectButton, useTonWallet } from "@tonconnect/ui-react";
+import { useTranslation } from "react-i18next";
 import store from "../store/store";
 import { useTonConnectUI } from "@tonconnect/ui-react";
 import { encodeCommentAsPayload } from "../utils/ton";
@@ -19,10 +20,8 @@ interface BankOrderModalProps {
 }
 
 const BankOrderModal: React.FC<BankOrderModalProps> = ({ onClose }) => {
+  const { t } = useTranslation();
   const { order } = store.bank;
-
-  // Получаем переводы
-  const t = store.currentTranslations;
 
   const [tonConnectUI] = useTonConnectUI();
   const wallet = useTonWallet();
@@ -99,30 +98,26 @@ const BankOrderModal: React.FC<BankOrderModalProps> = ({ onClose }) => {
   return (
     <div className="fixed inset-0 z-[50] bg-black bg-opacity-70 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg p-6 max-w-md w-full text-center shadow-lg border-2 border-amber-800 shantell text-amber-800 relative">
-        <h2 className="text-xl mb-4 font-bold">{t.bank.buyPcoin}</h2>
+        <h2 className="text-xl mb-4 font-bold">{t('bank.order_modal.title')}</h2>
 
         {/* Новый блок с суммами */}
         <div className="mb-4 space-y-2">
           <div className="flex justify-between items-center">
-            <span className="text-amber-800 shantell">
-              {t.bank.buyConfirm}:
-            </span>
+            <span className="text-amber-800 shantell">{t('bank.order_modal.payment_amount')}</span>
             <strong className="text-blue-700 shantell">
-              {numericAmountTon} {t.common.ton}
+              {numericAmountTon} {t('bank.currency.TON')}
             </strong>
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="text-amber-800 shantell">
-              {t.bank.buySuccess}:
-            </span>
+            <span className="text-amber-800 shantell">{t('bank.order_modal.credit_amount')}</span>
             <strong className="text-green-700 shantell">
-              {calculatePcoinAmount(numericAmountTon)} {t.bank.pcoin}
+              {calculatePcoinAmount(numericAmountTon)} {t('bank.currency.pcoin')}
             </strong>
           </div>
 
           <div className="text-xs text-gray-600 text-left mt-1">
-            *{t.bank.processing}
+            {t('bank.order_modal.referral_fee_note')}
           </div>
         </div>
 
@@ -137,7 +132,7 @@ const BankOrderModal: React.FC<BankOrderModalProps> = ({ onClose }) => {
             onClick={handleTonConnectPayment}
             className="mb-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded transition"
           >
-            💸 {t.bank.buyButton}
+            💸 {t('bank.order_modal.pay_button')}
           </button>
         )}
 
@@ -147,7 +142,7 @@ const BankOrderModal: React.FC<BankOrderModalProps> = ({ onClose }) => {
         >
           <img
             src={`${store.imgUrl}b_close.png`}
-            alt={t.common.close}
+            alt={t('common.buttons.close')}
             className="w-full h-full"
           />
         </button>

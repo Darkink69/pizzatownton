@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
 import styles from "../css/task.module.css";
+import { useTranslation } from "react-i18next";
 
 /* eslint-disable @typescript-eslint/no-namespace */
 declare global {
@@ -22,6 +23,7 @@ declare global {
 /* eslint-enable @typescript-eslint/no-namespace */
 
 function Tasks() {
+  const { t } = useTranslation();
   const [showDailyCombo, setShowDailyCombo] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isSubscribedToTeamLove, setIsSubscribedToTeamLove] = useState(false);
@@ -151,7 +153,7 @@ function Tasks() {
       console.log("Event detail:", customEvent.detail);
 
       if (!store.sessionId || !store.user?.telegramId) {
-        toast.error("Авторизуйтесь, чтобы получить награду за рекламу");
+        toast.error(t("tasks.adsgram.auth_error"));
         return;
       }
 
@@ -169,12 +171,12 @@ function Tasks() {
 
       const ok = store.send(rq);
       if (!ok) {
-        toast.error("WebSocket не подключён");
+        toast.error(t("tasks.common.websocket_error"));
         return;
       }
 
       // Для adsgram не показываем уведомление с поваром
-      toast.success("🎉 Рекламное задание выполнено! Начисляем награду...");
+      toast.success(t("tasks.adsgram.success"));
     };
 
     const stateHandler = (e: Event) => {
@@ -187,7 +189,7 @@ function Tasks() {
       console.log("❌ Adsgram-task banner not found event:", e);
       // Полностью скрываем блок с рекламным заданием
       setShowAdsgramBlock(false);
-      toast.info("Рекламное задание временно недоступно");
+      toast.info(t("tasks.adsgram.unavailable"));
     };
 
     adsTaskEl.addEventListener("reward", rewardHandler);
@@ -208,7 +210,7 @@ function Tasks() {
       adsTaskEl.removeEventListener("statechange", stateHandler);
       adsTaskEl.removeEventListener("onBannerNotFound", bannerNotFoundHandler);
     };
-  }, [adsTaskEl, store.sessionId, store.user?.telegramId]);
+  }, [adsTaskEl, store.sessionId, store.user?.telegramId, t]);
 
   // Проверяем загрузку adsgram-task
   useEffect(() => {
@@ -238,27 +240,25 @@ function Tasks() {
       setCompletedTaskIds((prev) => [...prev.filter((id) => id !== 2), 2]);
 
       // Показываем уведомление о награде
-      showRewardNotification("2000 pizza");
+      showRewardNotification(t("tasks.common.reward_pizza_2000"));
     }
-  }, [store.taskInvite3Status]);
+  }, [store.taskInvite3Status, t]);
 
   useEffect(() => {
     if (
       store.referral.totalReferrals >= 3 &&
       store.taskInvite3Status === "idle"
     ) {
-      toast.info(
-        "У вас уже 3+ приглашённых. Если они открыли этаж, вы сможете забрать награду."
-      );
+      toast.info(t("tasks.invite.can_claim"));
     }
-  }, [store.referral.totalReferrals, store.taskInvite3Status]);
+  }, [store.referral.totalReferrals, store.taskInvite3Status, t]);
 
   // выполнение таски подписки на канал Pizza TowerTON
   const handleSubscribe = () => {
     if (isSubscribed) return;
 
     const tgId = store.user?.telegramId ?? 0;
-    toast.info("🔔 Проверяем подписку...");
+    toast.info(t("tasks.subscribe.checking"));
 
     const timer = setTimeout(() => {
       const rq = {
@@ -273,15 +273,15 @@ function Tasks() {
 
       if (store.send(rq)) {
         toast.dismiss();
-        toast.success("✅ Подписка подтверждена! Получаем награду...");
+        toast.success(t("tasks.subscribe.success"));
         setIsSubscribed(true);
         localStorage.setItem("subscribedTaskDone", "true");
         setCompletedTaskIds((prev) => [...prev.filter((id) => id !== 1), 1]);
 
         // Показываем уведомление о награде
-        showRewardNotification("1000 pizza");
+        showRewardNotification(t("tasks.common.reward_pizza_1000"));
       } else {
-        toast.error("WebSocket не подключён");
+        toast.error(t("tasks.common.websocket_error"));
       }
     }, 8000);
     return () => clearTimeout(timer);
@@ -291,7 +291,7 @@ function Tasks() {
     if (isSubscribedToTeamLove) return;
 
     const tgId = store.user?.telegramId ?? 0;
-    toast.info("🔔 Проверяем подписку на TEAM LOVE...");
+    toast.info(t("tasks.subscribe.team_love_checking"));
 
     const timer = setTimeout(() => {
       const rq = {
@@ -306,15 +306,15 @@ function Tasks() {
 
       if (store.send(rq)) {
         toast.dismiss();
-        toast.success("✅ Подписка на TEAM LOVE подтверждена!");
+        toast.success(t("tasks.subscribe.team_love_success"));
         setIsSubscribedToTeamLove(true);
         localStorage.setItem("subscribedTeamLoveTaskDone", "true");
         setCompletedTaskIds((prev) => [...prev.filter((id) => id !== 3), 3]);
 
         // Показываем уведомление о награде
-        showRewardNotification("1000 pizza + 30 pcoin");
+        showRewardNotification(t("tasks.common.reward_pizza_pcoin"));
       } else {
-        toast.error("WebSocket не подключён");
+        toast.error(t("tasks.common.websocket_error"));
       }
     }, 8000);
     return () => clearTimeout(timer);
@@ -323,36 +323,38 @@ function Tasks() {
   // выполнение таски INVITE_3_FRIENDS (инициируем проверку)
   const handleInvite3Task = () => {
     if (store.taskInvite3Status === "rewarded") {
-      toast.info("✅ Награда уже получена!");
+      toast.info(t("tasks.invite.already_rewarded"));
       return;
     }
 
     if (isInviteTaskDone) return;
 
     if (!store.sessionId || !store.user?.telegramId) {
-      toast.error("Авторизуйтесь, чтобы выполнить задание");
+      toast.error(t("tasks.invite.auth_error"));
       return;
     }
 
     const totalReferrals = Number(store.referral?.totalReferrals ?? 0);
 
     if (totalReferrals === 0) {
-      toast.info("Сначала пригласите друзей, чтобы выполнить задание.");
+      toast.info(t("tasks.invite.invite_first"));
       return;
     }
 
     // есть хотя бы один друг — сервер сам проверит, есть ли 3 с этажами
-    toast.info("🔍 Проверяем, есть ли 3 друга, которые купили этаж...");
+    toast.info(t("tasks.invite.checking"));
     store.verifyInvite3Task();
   };
 
   const taskBlocks = [
     {
       id: 1,
-      title: "Подписаться на официальный канал",
+      title: t("tasks.blocks.subscribe_channel"),
       rewardPizza: "1000",
       link: "https://t.me/pizzatowerton",
-      buttonText: isSubscribed ? "ВЫПОЛНЕНО" : "ПЕРЕЙТИ",
+      buttonText: isSubscribed
+        ? t("tasks.blocks.button_completed")
+        : t("tasks.blocks.button_go"),
       buttonBg: isSubscribed ? "b_blue_small.png" : "b_red_small.png",
       onClick: !isSubscribed ? handleSubscribe : undefined,
       disabled: isSubscribed,
@@ -360,14 +362,14 @@ function Tasks() {
     },
     {
       id: 2,
-      title: "Пригласи 3 друзей, которые купят 1 этаж",
+      title: t("tasks.blocks.invite_friends"),
       rewardPizza: "2000",
       buttonText:
         store.taskInvite3Status === "rewarded"
-          ? "ВЫПОЛНЕНО"
+          ? t("tasks.blocks.button_completed")
           : store.referral.totalReferrals >= 3
-          ? "ПРОВЕРИТЬ УСЛОВИЕ"
-          : "ПРИГЛАСИТЬ ДРУЗЕЙ",
+          ? t("tasks.blocks.button_check")
+          : t("tasks.blocks.button_invite"),
       buttonBg:
         store.taskInvite3Status === "rewarded"
           ? "b_blue_small.png"
@@ -379,11 +381,13 @@ function Tasks() {
     },
     {
       id: 3,
-      title: "Подписаться на канал MELEGATEAM",
+      title: t("tasks.blocks.subscribe_team"),
       rewardPizza: "1000",
       rewardPcoin: "30",
       link: "https://t.me/+GlIl1TY4Lsg4MzMx",
-      buttonText: isSubscribedToTeamLove ? "ВЫПОЛНЕНО" : "ПЕРЕЙТИ",
+      buttonText: isSubscribedToTeamLove
+        ? t("tasks.blocks.button_completed")
+        : t("tasks.blocks.button_go"),
       buttonBg: isSubscribedToTeamLove ? "b_blue_small.png" : "b_red_small.png",
       onClick: !isSubscribedToTeamLove ? handleSubscribeToTeamLove : undefined,
       disabled: isSubscribedToTeamLove,
@@ -402,7 +406,7 @@ function Tasks() {
   // Функции для игры Daily Combo
   const startDailyComboGame = async () => {
     if (!store.sessionId || !store.user?.telegramId) {
-      toast.error("Авторизуйтесь, чтобы играть в Daily Combo");
+      toast.error(t("tasks.daily_combo.auth_error"));
       return;
     }
 
@@ -449,7 +453,7 @@ function Tasks() {
 
     const ok = store.send(rq);
     if (!ok) {
-      toast.error("WebSocket не подключён");
+      toast.error(t("tasks.common.websocket_error"));
       setDailyComboRound((prev) => ({
         ...prev,
         isLoading: false,
@@ -473,7 +477,7 @@ function Tasks() {
     const serverIndex = indexInList + 1; // Сервер ожидает индексы с 1
 
     if (dailyComboRound.selectedIndices.includes(serverIndex)) {
-      toast.info("Вы уже выбирали эту пиццу");
+      toast.info(t("tasks.daily_combo.already_picked"));
       return;
     }
 
@@ -497,7 +501,7 @@ function Tasks() {
 
     const ok = store.send(rq);
     if (!ok) {
-      toast.error("WebSocket не подключён");
+      toast.error(t("tasks.common.websocket_error"));
       setDailyComboRound((prev) => ({
         ...prev,
         isLoading: false,
@@ -562,7 +566,11 @@ function Tasks() {
       // Если уже есть выигрыш, показываем уведомление
       if (comboData.isWin && comboData.winAmount) {
         setTimeout(() => {
-          showRewardNotification(`${comboData.winAmount} pizza`);
+          showRewardNotification(
+            t("tasks.daily_combo.win_notification", {
+              amount: comboData.winAmount,
+            })
+          );
         }, 500);
       }
     };
@@ -624,7 +632,9 @@ function Tasks() {
             winAmount: pickData.winAmount || prev.winAmount,
           }));
 
-          toast.success(`✅ Угадана пицца! +250 pizza`);
+          toast.success(
+            t("tasks.daily_combo.guess_success", { amount: 250 })
+          );
         }
       } else {
         // Неправильная попытка
@@ -650,7 +660,7 @@ function Tasks() {
           }));
         }, 1000);
 
-        toast.error(`❌ Пицца не входит в сегодняшний список`);
+        toast.error(t("tasks.daily_combo.guess_fail"));
       }
 
       // Если попытки закончились и есть выигрыш
@@ -661,7 +671,11 @@ function Tasks() {
         !dailyComboRound.isWin
       ) {
         setTimeout(() => {
-          showRewardNotification(`${pickData.winAmount} pizza`);
+          showRewardNotification(
+            t("tasks.daily_combo.win_notification", {
+              amount: pickData.winAmount,
+            })
+          );
         }, 1000);
       }
 
@@ -681,7 +695,9 @@ function Tasks() {
 
       // Показываем уведомление о выигрыше
       if (winData.amount) {
-        showRewardNotification(`${winData.amount} pizza`);
+        showRewardNotification(
+          t("tasks.daily_combo.win_notification", { amount: winData.amount })
+        );
       }
     };
 
@@ -697,7 +713,7 @@ function Tasks() {
         handleComboWinNotification
       );
     };
-  }, [dailyComboRound]);
+  }, [dailyComboRound, t]);
 
   // Рендерим adsgram-task только если он загружен и не скрыт
   const shouldRenderAdsgram = isAdsgramLoaded && showAdsgramBlock;
@@ -717,13 +733,16 @@ function Tasks() {
         <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-[600px] sm:max-w-[800px] md:max-w-[1000px] lg:max-w-[2000px] xl:max-w-[1550px]">
           <img
             src={`${store.imgUrl}testo.png`}
-            alt="Testo"
+            alt={t("tasks.alts.testo")}
             className="w-full max-w-full h-auto object-cover"
           />
         </div>
 
         <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-20">
-          <img src={`${store.imgUrl}img_task_list.png`} alt="tasks" />
+          <img
+            src={`${store.imgUrl}img_task_list.png`}
+            alt={t("tasks.alts.tasks")}
+          />
         </div>
 
         {/* Уведомление о награде */}
@@ -733,7 +752,7 @@ function Tasks() {
               <div className="flex-shrink-0">
                 <img
                   src={`${store.imgUrl}img_chif_talk.png`}
-                  alt="Повар"
+                  alt={t("tasks.alts.chef")}
                   className="w-36 sm:w-48 object-contain"
                 />
               </div>
@@ -741,11 +760,13 @@ function Tasks() {
               {/* Окно сообщения */}
               <div className="relative bg-[#FFF3E0] border-4 border-amber-800 rounded-2xl shadow-2xl p-4 sm:p-6 flex-1 max-w-2xl">
                 <p className="text-green-600 shantell font-bold text-base sm:text-lg leading-relaxed whitespace-pre-wrap">
-                  Ваш выигрыш {taskRewardNotification.message}
+                  {t("tasks.reward_notification.message", {
+                    message: taskRewardNotification.message,
+                  })}
                   {taskRewardNotification.message.includes("") && (
                     <img
                       src={`${store.imgUrl}icon_pizza.png`}
-                      alt="pizza"
+                      alt={t("common.labels.pizza")}
                       className="w-6 h-6 ml-2 inline-block"
                     />
                   )}
@@ -755,7 +776,7 @@ function Tasks() {
                   onClick={closeRewardNotification}
                   className="mt-4 bg-amber-500 hover:bg-amber-600 text-white px-8 py-2 rounded-full font-bold shantell text-base tracking-wide transition transform hover:scale-105"
                 >
-                  Понятно
+                  {t("common.buttons.ok")}
                 </button>
               </div>
             </div>
@@ -775,15 +796,15 @@ function Tasks() {
                   <div className="relative">
                     <img
                       src={`${store.imgUrl}img_block.png`}
-                      alt="All tasks completed"
+                      alt={t("tasks.all_completed.title")}
                       className="w-full h-auto object-contain"
                     />
                     <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
                       <div className="text-xl font-bold text-amber-800 shantell mb-2">
-                        Все задания выполнены!
+                        {t("tasks.all_completed.title")}
                       </div>
                       <div className="text-md text-amber-700 shantell">
-                        Возвращайтесь позже за новыми заданиями
+                        {t("tasks.all_completed.subtitle")}
                       </div>
                     </div>
                   </div>
@@ -795,7 +816,7 @@ function Tasks() {
                     <div className="relative">
                       <img
                         src={`${store.imgUrl}img_block.png`}
-                        alt="Task block"
+                        alt={t("tasks.alts.task_block")}
                         className={`w-full h-auto object-contain ${
                           block.id === 1 ? "scale-y-110" : ""
                         }`}
@@ -813,7 +834,7 @@ function Tasks() {
                                 </span>
                                 <img
                                   src={`${store.imgUrl}icon_pizza.png`}
-                                  alt="Pizza"
+                                  alt={t("common.labels.pizza")}
                                   className="w-5 sm:w-6"
                                 />
                               </div>
@@ -824,7 +845,7 @@ function Tasks() {
                                   </span>
                                   <img
                                     src={`${store.imgUrl}icon_dollar_coin.png`}
-                                    alt="Coin"
+                                    alt={t("tasks.alts.coin")}
                                     className="w-5 sm:w-6"
                                   />
                                 </div>
@@ -856,7 +877,7 @@ function Tasks() {
                                 >
                                   <img
                                     src={`${store.imgUrl}${block.buttonBg}`}
-                                    alt="Выполнить задачу"
+                                    alt={t("tasks.alts.execute_task")}
                                     className="w-full h-auto"
                                   />
                                   <div className="absolute inset-0 flex items-center justify-center">
@@ -879,7 +900,7 @@ function Tasks() {
                             >
                               <img
                                 src={`${store.imgUrl}${block.buttonBg}`}
-                                alt="Выполнить задачу"
+                                alt={t("tasks.alts.execute_task")}
                                 className="w-full h-auto"
                               />
                               <div className="absolute inset-0 flex items-center justify-center">
@@ -912,7 +933,7 @@ function Tasks() {
                       {" "}
                       <img
                         src={`${store.imgUrl}icon_pizza.png`}
-                        alt="dollar"
+                        alt={t("tasks.alts.dollar")}
                         className="inline-block w-6 h-auto sm:w-9"
                       />
                     </span>{" "}
@@ -921,29 +942,29 @@ function Tasks() {
                     slot="button"
                     className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-800 rounded-lg"
                   >
-                    Вперед
+                    {t("tasks.adsgram.button_forward")}
                   </div>
                   <div
                     slot="claim"
                     className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-800 rounded-lg"
                   >
-                    Получить
+                    {t("tasks.adsgram.button_claim")}
                   </div>
                   <div
                     slot="done"
                     className="text-amber-800 text-sm shantell flex justify-center items-center w-15 h-14 bg-amber-100 border-2 border-amber-700 rounded-lg"
                   >
-                    Готово
+                    {t("tasks.adsgram.button_done")}
                   </div>
                 </adsgram-task>
               ) : showAdsgramBlock ? (
                 // Заглушка, если adsgram-task не загружен
                 <div className="w-11/12 max-w-md text-center p-4 bg-amber-100 rounded-lg border-2 border-amber-800">
                   <div className="text-lg font-bold text-amber-800 shantell mb-2">
-                    ⏳ Рекламное задание
+                    {t("tasks.adsgram.loading")}
                   </div>
                   <div className="text-amber-700 shantell">
-                    Сейчас нет заданий от наших партнеров, зайдите позже
+                    {t("tasks.adsgram.no_tasks")}
                   </div>
                 </div>
               ) : null}
@@ -955,7 +976,7 @@ function Tasks() {
               >
                 <img
                   src={`${store.imgUrl}b_daily_combo.png`}
-                  alt="combo"
+                  alt={t("tasks.alts.combo")}
                   className="w-1/2 h-auto"
                 />
               </button>
@@ -968,11 +989,11 @@ function Tasks() {
                     <div className="text-center mb-4">
                       {dailyComboRound.attempts >= 4 ? (
                         <div className="text-xl font-bold text-amber-300 shantell mb-2">
-                          Угадай 4 сегодняшние пиццы!
+                          {t("tasks.daily_combo.title")}
                         </div>
                       ) : (
                         <div className="text-xl font-bold text-amber-200 shantell mb-2">
-                          Угадай 4 сегодняшние пиццы!
+                          {t("tasks.daily_combo.title")}
                         </div>
                       )}
                     </div>
@@ -981,7 +1002,7 @@ function Tasks() {
                     {dailyComboRound.isLoading && (
                       <div className="text-center mb-4">
                         <div className="text-amber-300 shantell">
-                          Загрузка игры...
+                          {t("tasks.daily_combo.loading")}
                         </div>
                       </div>
                     )}
@@ -1007,7 +1028,7 @@ function Tasks() {
                           <div className="relative w-full h-full">
                             <img
                               src={`${store.imgUrl}img_block_pizza.png`}
-                              alt="Pizza slot"
+                              alt={t("tasks.alts.pizza_slot")}
                               className="w-full h-full object-contain"
                             />
 
@@ -1073,7 +1094,7 @@ function Tasks() {
                             <div className="relative aspect-square w-full">
                               <img
                                 src={`${store.imgUrl}img_block_pizza.png`}
-                                alt="Pizza background"
+                                alt={t("tasks.alts.pizza_bg")}
                                 className="w-full h-full object-contain"
                               />
                               <div className="absolute inset-0 flex items-center justify-center p-2">
@@ -1099,10 +1120,12 @@ function Tasks() {
 
                     {/* Счетчик попыток */}
                     <div className="text-center mt-4 text-amber-300 shantell">
-                      Попыток: {dailyComboRound.attempts}/4
+                      {t("tasks.daily_combo.attempts", {
+                        attempts: dailyComboRound.attempts,
+                      })}
                       {dailyComboRound.attempts >= 4 && (
                         <div className="text-green-600 font-bold mt-2">
-                          Раунд завершен! Следующая попытка завтра.
+                          {t("tasks.daily_combo.round_over")}
                         </div>
                       )}
                     </div>
@@ -1110,7 +1133,7 @@ function Tasks() {
                   <div className="relative mt-auto">
                     <img
                       src={`${store.imgUrl}img_block.png`}
-                      alt="Additional block"
+                      alt={t("tasks.alts.additional_block")}
                       className="w-full h-auto object-contain"
                     />
                     <div className="absolute inset-0 flex flex-col p-4 sm:p-6 md:p-8">
@@ -1118,18 +1141,18 @@ function Tasks() {
                         <div className="flex items-center justify-between">
                           <img
                             src={`${store.imgUrl}img_daily_combo.png`}
-                            alt="combo"
+                            alt={t("tasks.alts.combo")}
                             className="w-1/3 h-auto"
                           />
                           <div className="flex flex-col gap-1 sm:gap-2 mx-2 sm:mx-4">
                             <div className="text-right leading-4 text-md sm:text-lg text-amber-800 shantell">
-                              MAX награда
+                              {t("tasks.daily_combo.max_reward")}
                             </div>
                             <span className="font-bold text-2xl sm:text-3xl text-amber-800 shantell">
                               1000
                               <img
                                 src={`${store.imgUrl}icon_pizza.png`}
-                                alt="dollar"
+                                alt={t("tasks.alts.dollar")}
                                 className="ml-2 inline-block w-12 h-auto sm:w-18"
                               />
                             </span>

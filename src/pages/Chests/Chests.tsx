@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 import Footer from "../../components/Footer";
 import WebSocketComponent from "../../components/websocket";
 import store from "../../store/store";
@@ -10,7 +11,6 @@ import {
   type ChestType,
   rarityList,
   chestTypeList,
-  CHEST_NAMES,
   type Reward,
 } from "../../types/chests";
 import styles from "./Chests.module.css";
@@ -21,6 +21,7 @@ interface ModalData {
 }
 
 const ChestsPage = observer(() => {
+  const { t } = useTranslation();
   const [selectedRarity, setSelectedRarity] = useState<Rarity | null>(null);
   const [craftingSlots, setCraftingSlots] = useState<Array<Rarity | null>>([]);
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
@@ -36,30 +37,37 @@ const ChestsPage = observer(() => {
   useEffect(() => {
     if (lastRewards && lastRewards.length > 0) {
       const rewardsMessage = lastRewards
-        .map(
-          (r: Reward) =>
-            `${r.amount}x ${r.rarity || ""} ${r.type.replace("_", " ")}`
+        .map((r: Reward) =>
+          t("chests.reward_format", {
+            amount: r.amount,
+            rarity: r.rarity ? t(`chests.rarities.${r.rarity}`) : "",
+            type: t(`chests.types.${r.type}`),
+          })
         )
         .join(", ");
 
       setModalData({
-        title: "Сундук открыт!",
-        message: `Вы получили: ${rewardsMessage}`,
+        title: t("chests.modal.chest_opened_title"),
+        message: t("chests.modal.chest_opened_message", {
+          rewardsMessage,
+        }),
       });
       store.clearLastRewards();
     }
-  }, [lastRewards]);
+  }, [lastRewards, t]);
 
   /** --- Реакция на успешный крафт --- */
   useEffect(() => {
     if (lastCraftResult) {
       setModalData({
-        title: "Успешный крафт!",
-        message: `Вы создали NFT-бокс редкости: ${lastCraftResult.rarity}.`,
+        title: t("chests.modal.craft_success_title"),
+        message: t("chests.modal.craft_success_message", {
+          rarity: t(`chests.rarities.${lastCraftResult.rarity}`),
+        }),
       });
       store.clearLastCraftResult();
     }
-  }, [lastCraftResult]);
+  }, [lastCraftResult, t]);
 
   const closeModal = () => {
     setModalData(null);
@@ -71,7 +79,7 @@ const ChestsPage = observer(() => {
    */
   const handleOpenChest = (chestType: ChestType) => {
     if (keys[chestType] < 1) {
-      toast.warn("Недостаточно ключей!");
+      toast.warn(t("chests.notifications.no_keys"));
       return;
     }
     if (isLoading[chestType]) return;
@@ -90,11 +98,11 @@ const ChestsPage = observer(() => {
    */
   const handleCraft = () => {
     if (!selectedRarity) {
-      toast.info("Выберите редкость для крафта.");
+      toast.info(t("chests.notifications.select_rarity"));
       return;
     }
     if ((pieces[selectedRarity] || 0) < 9) {
-      toast.warn("Недостаточно кусочков для крафта!");
+      toast.warn(t("chests.notifications.not_enough_pieces"));
       return;
     }
     if (isLoading.craft) return;
@@ -142,7 +150,7 @@ const ChestsPage = observer(() => {
         <div className={styles.testoImageWrapper}>
           <img
             src={`${store.imgUrl}testo.png`}
-            alt="Testo"
+            alt={t("chests.alts.testo")}
             className={styles.testoImage}
           />
         </div>
@@ -150,7 +158,7 @@ const ChestsPage = observer(() => {
         <div className={styles.headerImageWrapper}>
           <img
             src={`${store.imgUrl}img_task_list.png`}
-            alt="Chests header image"
+            alt={t("chests.alts.header")}
             className={styles.headerImage}
           />
         </div>
@@ -167,7 +175,7 @@ const ChestsPage = observer(() => {
                       {craftingSlots[index] && (
                         <img
                           src={`${store.imgUrl}icon_pizza.png`}
-                          alt="pizza slice"
+                          alt={t("chests.alts.pizza_slice")}
                           className={styles.craftCellImage}
                         />
                       )}
@@ -181,7 +189,9 @@ const ChestsPage = observer(() => {
                     onClick={handleCraft}
                     disabled={!canCraft || isLoading.craft}
                   >
-                    {isLoading.craft ? "Создание..." : "Создать"}
+                    {isLoading.craft
+                      ? t("chests.craft.button_creating")
+                      : t("chests.craft.button_create")}
                   </button>
                 </div>
               </div>
@@ -199,19 +209,20 @@ const ChestsPage = observer(() => {
                         <div className={styles.pieceForegroundWrapper}>
                           <img
                             src={`${store.imgUrl}icon_pizza.png`}
-                            alt={rarity}
+                            alt={t(`chests.rarities.${rarity}`)}
                             className={styles.pieceForegroundImage}
                           />
                         </div>
                         <div className={styles.pieceCountBadge}>
                           <span className={styles.pieceCountText}>
-                            {pieces[rarity] || 0} шт.
+                            {pieces[rarity] || 0}{" "}
+                            {t("chests.inventory.piece_unit")}
                           </span>
                         </div>
                       </div>
                       <div className={styles.pieceNameContainer}>
                         <span className={`${styles.pieceNameText} shantell`}>
-                          {rarity}
+                          {t(`chests.rarities.${rarity}`)}
                         </span>
                       </div>
                     </div>
@@ -233,11 +244,15 @@ const ChestsPage = observer(() => {
                     >
                       <img
                         src={`${store.imgUrl}img_chest_${chestType}.png`}
-                        alt={`${CHEST_NAMES[chestType]} chest`}
+                        alt={t("chests.chest_section.alt", {
+                          name: t(`chests.names.${chestType}`),
+                        })}
                         className={styles.chestImage}
                       />
                       <div className={styles.keyCount}>
-                        Ключей: {keys[chestType]}
+                        {t("chests.chest_section.keys_count", {
+                          count: keys[chestType],
+                        })}
                       </div>
                       <button
                         className={styles.openButtonMini}
@@ -247,7 +262,9 @@ const ChestsPage = observer(() => {
                         }}
                         disabled={keys[chestType] < 1 || isLoading[chestType]}
                       >
-                        {isLoading[chestType] ? "Открытие..." : "Открыть"}
+                        {isLoading[chestType]
+                          ? t("chests.chest_section.open_button_opening")
+                          : t("chests.chest_section.open_button_open")}
                       </button>
                     </div>
                   ))}
@@ -268,7 +285,9 @@ const ChestsPage = observer(() => {
         >
           <p>{modalData.message}</p>
           <button onClick={closeModal}>
-            {modalData.title === "Успешный крафт!" ? "Отлично!" : "Закрыть"}
+            {modalData.title === t("chests.modal.craft_success_title")
+              ? t("chests.modal.great_button")
+              : t("common.buttons.close")}
           </button>
         </ChestModal>
       )}

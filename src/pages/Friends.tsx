@@ -3,14 +3,12 @@ import { observer } from "mobx-react-lite";
 import store from "../store/store";
 import Footer from "../components/Footer";
 import WebSocketComponent from "../components/websocket";
-import LanguageSwitcher from "../components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
 
 const Friends = observer(() => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [copied, setCopied] = useState(false);
-
-  // Получаем текущие переводы
-  const t = store.currentTranslations;
+  const { t } = useTranslation();
 
   // -------------------- запросим статистику при загрузке --------------------
   useEffect(() => {
@@ -74,8 +72,6 @@ const Friends = observer(() => {
   return (
     <>
       <div className="relative min-h-screen w-full overflow-hidden">
-        {/* Переключатель языков */}
-        <LanguageSwitcher />
 
         {/* фон */}
         <div className="absolute inset-0 bg-[#FFBC6B]">
@@ -111,18 +107,18 @@ const Friends = observer(() => {
             <div className="absolute inset-0 flex flex-col p-4 sm:p-5">
               {/* заголовок */}
               <div className="text-center text-lg sm:text-2xl mb-2 text-amber-800 shantell font-bold">
-                {t.friends.title}
+                {t('friends.title')}
               </div>
 
               {/* ссылка */}
               <input
                 ref={inputRef}
                 type="text"
-                value={link || t.common.loading}
+                value={link || t('common.notifications.loading')}
                 readOnly
                 onFocus={(e) => e.currentTarget.select()}
                 className="bg-white rounded-xl px-4 py-3 mb-4 border-2 border-amber-800 shadow-inner text-center font-bold text-base sm:text-lg text-amber-800 shantell truncate"
-                placeholder={t.friends.referralLink}
+                placeholder={t('friends.referral_link')}
               />
 
               {/* кнопка копировать */}
@@ -140,20 +136,20 @@ const Friends = observer(() => {
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="text-amber-800 text-lg sm:text-xl shantell">
-                    {t.friends.copyButton}
+                    {t('friends.copy_button')}
                   </span>
                 </div>
               </button>
 
               {/* описание */}
               <div className="text-center mb-5 text-amber-800 font-bold text-base sm:text-lg shantell leading-tight">
-                {t.friends.description}
+                {t('friends.description')}
                 <img
                   src={`${store.imgUrl}icon_dollar_coin.png`}
                   alt="coin"
                   className="w-6 sm:w-8 inline-block mx-1"
                 />
-                {t.friends.statistics.pdollar}
+                {t('common.labels.pdollar')}
                 <img
                   src={`${store.imgUrl}icon_dollar.png`}
                   alt="dollar"
@@ -163,25 +159,25 @@ const Friends = observer(() => {
 
               {/* заголовок статистики */}
               <div className="text-center font-bold text-lg sm:text-2xl mb-5 text-amber-800 shantell">
-                {t.friends.subtitle}
+                {t('friends.subtitle')}
               </div>
 
               {/* три блока статистики */}
               <div className="flex justify-between gap-3">
                 <StatBlock
                   icon={`${store.imgUrl}icon_dollar.png`}
-                  value={`+${earnedPdollar.toLocaleString()}`}
-                  label={t.friends.statistics.pdollar}
+                  value={`+${(earnedPdollar ?? 0).toLocaleString()}`}
+                  label={t('common.labels.pdollar')}
                 />
                 <StatBlock
                   icon={`${store.imgUrl}icon_dollar_coin.png`}
-                  value={`+${earnedPcoin.toLocaleString()}`}
-                  label={t.friends.statistics.pcoin}
+                  value={`+${(earnedPcoin ?? 0).toLocaleString()}`}
+                  label={t('common.labels.pcoin')}
                 />
                 <StatBlock
                   icon={`${store.imgUrl}icon_friends.png`}
-                  value={`+${totalReferrals}`}
-                  label={t.friends.statistics.friends}
+                  value={`+${totalReferrals ?? 0}`}
+                  label={t('friends.statistics.friends')}
                 />
               </div>
             </div>

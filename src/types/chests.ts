@@ -17,15 +17,6 @@ export type ChestType = (typeof CHEST_TYPES)[keyof typeof CHEST_TYPES];
 export const chestTypeList = Object.values(CHEST_TYPES);
 
 /**
- * Названия сундуков для отображения в UI.
- */
-export const CHEST_NAMES: Record<ChestType, string> = {
-  [CHEST_TYPES.TASK]: "Активности",
-  [CHEST_TYPES.REFERRAL]: "Рефералы",
-  [CHEST_TYPES.DEPOSIT]: "Депозиты",
-};
-
-/**
  * Редкость кусочков пиццы и NFT-боксов.
  * common - обычный.
  * uncommon - необычный.

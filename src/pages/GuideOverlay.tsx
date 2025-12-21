@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Step {
   id: string;
@@ -14,6 +15,7 @@ export default function GuideOverlay({
   steps: Step[];
   onFinish: () => void;
 }) {
+  const { t } = useTranslation();
   const [index, setIndex] = useState(0);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
@@ -73,14 +75,14 @@ export default function GuideOverlay({
         style={!step.center ? { top: pos.top, left: pos.left } : undefined}
       >
         <p className="text-amber-800 shantell font-bold text-base mb-3 leading-snug whitespace-pre-wrap">
-          {step.text}
+          {t(step.text)}
         </p>
         <button
           onClick={next}
           className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-1.5 rounded-full
                      font-bold shantell text-sm tracking-wide transition"
         >
-          {index < steps.length - 1 ? "Далее →" : "Готово"}
+          {index < steps.length - 1 ? t('common.buttons.next') : t('common.buttons.done')}
         </button>
       </div>
     </div>
