@@ -499,7 +499,16 @@ const WebSocketComponent = observer(() => {
           case "TASKS_COMPLETE": {
             const data = parsed.data as TaskCompleteResponse | undefined;
             console.log("TASKS_COMPLETE raw:", parsed);
-
+            if (store.sessionId && store.user?.telegramId) {
+              ws.send(
+                JSON.stringify({
+                  type: "TASKS_GET",
+                  requestId: generateRequestId(),
+                  session: store.sessionId,
+                  taskRq: { telegramId: store.user.telegramId, code: "" },
+                })
+              );
+            }
             if (!data) {
               toast.error(parsed.message || "Ошибка при получении награды");
               break;
@@ -697,6 +706,7 @@ const WebSocketComponent = observer(() => {
             }
             break;
           }
+
           /** ---------------- DEFAULT ---------------- */
           default:
             // другие типы можно обрабатывать позже

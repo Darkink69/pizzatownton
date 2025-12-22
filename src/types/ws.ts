@@ -1,4 +1,3 @@
- 
 import type {
   ChestKeys,
   ChestType,
@@ -128,18 +127,27 @@ export interface TaskRq {
   code: string; // "SUBSCRIBE_MAIN_CHANNEL" | "INVITE_3_FRIENDS" | ...
 }
 
+export interface TaskWithProgress {
+  code: string;
+  title: string | null;
+  description: string | null;
+  current: number | null;
+  target: number | null;
+  completed: boolean | null;
+}
+
 export interface TaskVerifyResponse {
   code: string;
-  status: string; // "verified" | "not_enough_referrals" | "error" и т.п.
-  message: string;
+  status: string;
+  message?: string | null;
 }
 
 export interface TaskCompleteResponse {
   code: string;
-  rewardPcoin: string | number;
-  rewardPizza: string | number;
-  rewardPdollar: string | number;
-  message: string;
+  rewardPcoin?: string | number | null;
+  rewardPizza?: string | number | null;
+  rewardPdollar?: string | number | null;
+  message?: string | null;
 }
 
 export interface ComboTodayRq {
@@ -154,7 +162,7 @@ export interface ComboPickRq {
 export interface ComboGameData {
   picksUsed: number;
   hits: number;
-  selected: number[];
+  selected?: Array<number | null>;
   isAvailable: boolean;
   isWin: boolean;
   winAmount: number | null;
