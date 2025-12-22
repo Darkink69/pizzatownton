@@ -5,7 +5,6 @@ import BankOrderModal from "./BankOrderModal";
 import { observer } from "mobx-react-lite";
 import store from "../store/store";
 import Footer from "../components/Footer";
-
 import { useTranslation } from "react-i18next";
 
 const ExchangeModal = observer(
@@ -19,18 +18,8 @@ const ExchangeModal = observer(
     initialAmount: string;
   }) => {
     const { t } = useTranslation();
-    //const [walletAddress, setWalletAddress] = useState("");
     const [exchangeAmount, setExchangeAmount] = useState(initialAmount);
     const [showHistory, setShowHistory] = useState(false);
-    const [withdrawalHistory, setWithdrawalHistory] = useState<
-      Array<{
-        id: number;
-        date: string;
-        amount: number;
-        status: string;
-      }>
-    >([]);
-    const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
     const userPdollarBalance = Number(store.pdollar) || 0;
     const hasSufficientBalance = userPdollarBalance >= 25000;
@@ -39,42 +28,67 @@ const ExchangeModal = observer(
       Number(exchangeAmount) >= 25000 &&
       Number(exchangeAmount) <= userPdollarBalance;
 
-    // Функция для загрузки истории выводов
-    const loadWithdrawalHistory = async () => {
-      setIsLoadingHistory(true);
-      try {
-        // Здесь нужно реализовать запрос к серверу для получения истории выводов
-        // Пример запроса:
-        // const response = await store.getWithdrawalHistory();
-        // setWithdrawalHistory(response.data);
+    // Используем состояние загрузки из store
+    const isLoadingHistory = store.isManualWithdrawHistoryLoading;
 
-        // Временные данные для демонстрации
-        const mockData = [
-          { id: 1, date: "2024-12-18 17:59", amount: 1000, status: "Успешно" },
-          { id: 2, date: "2024-12-17 14:30", amount: 500, status: "Успешно" },
-          {
-            id: 3,
-            date: "2024-12-16 10:15",
-            amount: 1500,
-            status: "В обработке",
-          },
-          { id: 4, date: "2024-12-15 16:45", amount: 2000, status: "Успешно" },
-          { id: 5, date: "2024-12-14 11:20", amount: 750, status: "Отклонено" },
-        ];
-        setWithdrawalHistory(mockData);
-      } catch (error) {
-        console.error("Ошибка загрузки истории выводов:", error);
-      } finally {
-        setIsLoadingHistory(false);
+    // Функция для показа истории выводов
+    const handleShowHistory = () => {
+      setShowHistory(true);
+      // Запрашиваем данные у сервера
+      store.requestManualWithdrawHistory();
+    };
+
+    // Функция для форматирования даты
+    const formatDateTime = (dateString: string) => {
+      try {
+        const date = new Date(dateString);
+        return date
+          .toLocaleString("ru-RU", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          })
+          .replace(",", "");
+      } catch (e) {
+        return dateString;
       }
     };
 
-    // При открытии истории загружаем данные
-    useEffect(() => {
-      if (showHistory) {
-        loadWithdrawalHistory();
+    // Функция для форматирования суммы TON
+    const formatTonAmount = (amount: number) => {
+      return amount.toFixed(8).replace(/\.?0+$/, "");
+    };
+
+    // Функция для перевода статуса
+    const translateStatus = (status: string) => {
+      switch (status) {
+        case "COMPLETED":
+          return "Успешно";
+        case "PENDING":
+          return "В обработке";
+        case "FAILED":
+          return "Отклонено";
+        default:
+          return status;
       }
-    }, [showHistory]);
+    };
+
+    // Функция для определения цвета статуса
+    const getStatusColor = (status: string) => {
+      switch (status) {
+        case "COMPLETED":
+          return "bg-green-100 text-green-800";
+        case "PENDING":
+          return "bg-yellow-100 text-yellow-800";
+        case "FAILED":
+          return "bg-red-100 text-red-800";
+        default:
+          return "bg-gray-100 text-gray-800";
+      }
+    };
 
     const handleSubmit = async () => {
       const amount = Number(exchangeAmount);
@@ -90,7 +104,6 @@ const ExchangeModal = observer(
       try {
         await bankStore.createManualWithdraw(amount);
         alert(t("bank.withdraw_modal.request_accepted_alert"));
-        // Статус вашей заявки вы можете посмотреть в Истории транзакций.
         setExchangeAmount("");
         onClose();
       } catch (e) {
@@ -99,35 +112,57 @@ const ExchangeModal = observer(
       }
     };
 
-    const handleShowHistory = () => {
-      setShowHistory(true);
-    };
-
-    const handleBackToWithdrawal = () => {
-      setShowHistory(false);
+    const handleRefreshHistory = () => {
+      store.requestManualWithdrawHistory();
     };
 
     if (!isOpen) return null;
 
-    // Если показываем историю выводов - УПРОЩЕННАЯ ВЕРСИЯ БЕЗ МУЛЬТИЯЗЫЧНОСТИ
+    // Если показываем историю выводов
     if (showHistory) {
+      const historyItems = store.manualWithdrawHistory || [];
+
       return (
         <div className="fixed inset-0 z-[60] bg-black bg-opacity-70 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full text-center shadow-lg border-2 border-amber-800 shantell text-amber-800 relative">
-            <h2 className="text-xl mb-6 font-bold">История выводов</h2>
+          <div className="bg-white rounded-lg p-6 max-w-3xl w-full text-center shadow-lg border-2 border-amber-800 shantell text-amber-800 relative max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">История выводов</h2>
+              <button
+                onClick={handleRefreshHistory}
+                disabled={isLoadingHistory}
+                className="flex items-center gap-2 text-sm text-amber-600 hover:text-amber-800 disabled:text-gray-400"
+              >
+                <svg
+                  className={`w-4 h-4 ${
+                    isLoadingHistory ? "animate-spin" : ""
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                Обновить
+              </button>
+            </div>
 
             {/* Таблица истории выводов */}
-            <div className="overflow-x-auto mb-6">
+            <div className="overflow-x-auto mb-4 flex-1">
               <table className="w-full border-collapse border border-amber-300">
                 <thead>
                   <tr className="bg-amber-100">
-                    <th className="border border-amber-300 px-3 py-2 text-left text-sm">
+                    <th className="border border-amber-300 px-3 py-2 text-left text-sm sticky top-0 bg-amber-100">
                       Дата/время
                     </th>
-                    <th className="border border-amber-300 px-3 py-2 text-left text-sm">
-                      Сумма
+                    <th className="border border-amber-300 px-3 py-2 text-left text-sm sticky top-0 bg-amber-100">
+                      Сумма (TON)
                     </th>
-                    <th className="border border-amber-300 px-3 py-2 text-left text-sm">
+                    <th className="border border-amber-300 px-3 py-2 text-left text-sm sticky top-0 bg-amber-100">
                       Статус
                     </th>
                   </tr>
@@ -137,44 +172,48 @@ const ExchangeModal = observer(
                     <tr>
                       <td
                         colSpan={3}
-                        className="border border-amber-300 px-3 py-4 text-center"
+                        className="border border-amber-300 px-3 py-8 text-center"
                       >
-                        <div className="flex justify-center items-center">
-                          <span className="text-amber-600">Загрузка...</span>
+                        <div className="flex flex-col items-center justify-center">
+                          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-600 mb-2"></div>
+                          <span className="text-amber-600">
+                            Загрузка истории выводов...
+                          </span>
                         </div>
                       </td>
                     </tr>
-                  ) : withdrawalHistory.length === 0 ? (
+                  ) : historyItems.length === 0 ? (
                     <tr>
                       <td
                         colSpan={3}
-                        className="border border-amber-300 px-3 py-4 text-center"
+                        className="border border-amber-300 px-3 py-8 text-center"
                       >
                         <span className="text-gray-500">
-                          Нет данных для отображения
+                          История выводов пуста
                         </span>
                       </td>
                     </tr>
                   ) : (
-                    withdrawalHistory.map((item) => (
-                      <tr key={item.id} className="hover:bg-amber-50">
+                    historyItems.map((item, index) => (
+                      <tr
+                        key={index}
+                        className={`hover:bg-amber-50 ${
+                          index % 2 === 0 ? "bg-white" : "bg-amber-50"
+                        }`}
+                      >
                         <td className="border border-amber-300 px-3 py-2 text-sm">
-                          {item.date}
+                          {formatDateTime(item.createdAt)}
                         </td>
-                        <td className="border border-amber-300 px-3 py-2 text-sm">
-                          {item.amount.toLocaleString()} TON
+                        <td className="border border-amber-300 px-3 py-2 text-sm font-mono">
+                          {formatTonAmount(item.tonAmount)}
                         </td>
                         <td className="border border-amber-300 px-3 py-2 text-sm">
                           <span
-                            className={`px-2 py-1 rounded text-xs font-bold ${
-                              item.status === "Успешно"
-                                ? "bg-green-100 text-green-800"
-                                : item.status === "Отклонено"
-                                ? "bg-red-100 text-red-800"
-                                : "bg-yellow-100 text-yellow-800"
-                            }`}
+                            className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(
+                              item.status
+                            )}`}
                           >
-                            {item.status}
+                            {translateStatus(item.status)}
                           </span>
                         </td>
                       </tr>
@@ -184,13 +223,22 @@ const ExchangeModal = observer(
               </table>
             </div>
 
+            {/* Информация о количестве записей */}
+            {!isLoadingHistory && historyItems.length > 0 && (
+              <div className="text-sm text-gray-600 mb-4 text-left">
+                Всего записей: {historyItems.length}
+              </div>
+            )}
+
             {/* Кнопка возврата */}
-            <div className="flex justify-center">
+            <div className="flex justify-center mt-2">
               <button
-                onClick={handleBackToWithdrawal}
-                className="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-6 rounded-lg transition"
+                onClick={() => {
+                  setShowHistory(false);
+                }}
+                className="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-8 rounded-lg transition shadow-md hover:shadow-lg"
               >
-                Назад
+                Назад к выводу
               </button>
             </div>
 
@@ -293,16 +341,6 @@ const ExchangeModal = observer(
           >
             История выводов →
           </button>
-          <div className="text-left text-sm font-medium text-amber-800 mt-4">
-            {t("bank.withdraw_modal.last_withdraw_label")}
-          </div>
-          <div className="text-left text-xs text-gray-600">
-            ё 12/18/2025 17:59
-          </div>
-          <div className="text-left text-xs text-gray-600">1000 TON</div>
-          <div className="text-left text-xs text-green-600">
-            {t("bank.withdraw_modal.successful_status")}
-          </div>
 
           <button
             onClick={onClose}
@@ -326,6 +364,7 @@ const ExchangeModal = observer(
 const AdminModal = observer(
   ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     const { t } = useTranslation();
+    const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
     useEffect(() => {
       if (isOpen) {
@@ -334,6 +373,46 @@ const AdminModal = observer(
     }, [isOpen]);
 
     if (!isOpen) return null;
+
+    // Функции для копирования текста
+    function tryExecCommandCopy(text: string): boolean {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.readOnly = true;
+        ta.style.position = "fixed";
+        ta.style.top = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      } catch {
+        return false;
+      }
+    }
+
+    async function tryClipboardCopy(text: string): Promise<boolean> {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch {
+        /* ignore */
+      }
+      return false;
+    }
+
+    const handleCopyAddress = async (address: string) => {
+      let ok = tryExecCommandCopy(address);
+      if (!ok) ok = await tryClipboardCopy(address);
+
+      if (ok) {
+        setCopiedAddress(address);
+        setTimeout(() => setCopiedAddress(null), 600);
+      }
+    };
 
     const formatWalletAddress = (address: string) => {
       if (address.length <= 12) return address;
@@ -344,9 +423,9 @@ const AdminModal = observer(
     const translateStatus = (status: string) => {
       switch (status) {
         case "CONFIRMED":
-          return t("bank.admin_modal.approved")
+          return t("bank.admin_modal.approved");
         case "PENDING":
-          return t("bank.admin_modal.pending")
+          return t("bank.admin_modal.pending");
         default:
           return status;
       }
@@ -366,7 +445,9 @@ const AdminModal = observer(
         </button>
         <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-lg border-2 border-amber-800 shantell text-amber-800 relative">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">{t("bank.admin_modal.title")}</h2>
+            <h2 className="text-2xl font-bold">
+              {t("bank.admin_modal.title")}
+            </h2>
           </div>
           {/* Таблица */}
           <div className="overflow-x-auto">
@@ -388,32 +469,73 @@ const AdminModal = observer(
                 </tr>
               </thead>
               <tbody>
-                {store.adminData.map((item) => (
-                  <tr key={item.id} className="hover:bg-amber-50">
-                    <td className="border border-amber-300 px-3 py-2">
-                      {item.telegramId}
-                    </td>
-                    <td className="border border-amber-300 px-3 py-2 font-mono text-sm">
-                      {formatWalletAddress(item.walletAdd)}
-                    </td>
-                    <td className="border border-amber-300 px-3 py-2">
-                      {Number(item.amountTon ?? 0).toFixed(2)}
-                    </td>
-                    <td className="border border-amber-300 px-3 py-2">
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-bold ${
-                          item.status === "CONFIRMED"
-                            ? "bg-green-100 text-green-800"
-                            : item.status === "PENDING"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {translateStatus(item.status)}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {store.adminData.map((item) => {
+                  const walletAddress = item.walletAdd || "";
+                  const isCopied = copiedAddress === walletAddress;
+
+                  return (
+                    <tr key={item.id} className="hover:bg-amber-50">
+                      <td className="border border-amber-300 px-3 py-2">
+                        {item.telegramId}
+                      </td>
+                      <td className="border border-amber-300 px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-sm">
+                            {formatWalletAddress(walletAddress)}
+                          </span>
+                          <button
+                            onClick={() => handleCopyAddress(walletAddress)}
+                            className={`p-1 rounded ${
+                              isCopied
+                                ? "text-green-600"
+                                : "text-gray-400 hover:text-amber-600"
+                            }`}
+                            title="Копировать адрес"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              {isCopied ? (
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M5 13l4 4L19 7"
+                                />
+                              ) : (
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                />
+                              )}
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                      <td className="border border-amber-300 px-3 py-2">
+                        {Number(item.amountTon ?? 0).toFixed(2)}
+                      </td>
+                      <td className="border border-amber-300 px-3 py-2">
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-bold ${
+                            item.status === "CONFIRMED"
+                              ? "bg-green-100 text-green-800"
+                              : item.status === "PENDING"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {translateStatus(item.status)}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {store.adminData.length === 0 && (
                   <tr>
                     <td
@@ -512,15 +634,15 @@ const Bank = observer(() => {
   const { pizza, pdollar, pcoin } = store;
 
   return (
-      <>
-        <div className="relative min-h-screen w-full overflow-hidden">
-          {/* Фон */}
-          <div className="absolute inset-0 bg-[#FFBC6B]">
-            <div
-                className="w-full h-full bg-cover bg-center bg-no-repeat"
-                style={{ backgroundImage: `url('${store.imgUrl}bg_pizza.png')` }}
-            />
-          </div>
+    <>
+      <div className="relative min-h-screen w-full overflow-hidden">
+        {/* Фон */}
+        <div className="absolute inset-0 bg-[#FFBC6B]">
+          <div
+            className="w-full h-full bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: `url('${store.imgUrl}bg_pizza.png')` }}
+          />
+        </div>
 
         {/* 💰 Панель валют */}
         <div className="absolute top-22 md:top-24 left-1/2 -translate-x-1/2 z-40 w-10/12 max-w-md flex justify-between gap-2 sm:gap-3">
@@ -566,67 +688,67 @@ const Bank = observer(() => {
                 className="w-16 h-10"
               />
 
-                <div className="absolute inset-0 flex items-center justify-center gap-1 px-2">
-                  <img
-                    src={`${store.imgUrl}icon_ton.png`}
-                    alt={t("bank.ton_alt")}
-                    className="w-4"
-                  />
-                  <span className="text-amber-800 text-sm shantell font-bold">
+              <div className="absolute inset-0 flex items-center justify-center gap-1 px-2">
+                <img
+                  src={`${store.imgUrl}icon_ton.png`}
+                  alt={t("bank.ton_alt")}
+                  className="w-4"
+                />
+                <span className="text-amber-800 text-sm shantell font-bold">
                   {Number(store.tonBalance).toLocaleString()}
                 </span>
-                </div>
               </div>
             </div>
-          </Link>
+          </div>
+        </Link>
 
-          {/* Контейнер для содержимого */}
-          <div className="relative z-30 h-screen flex flex-col pt-36 sm:pt-44 pb-20">
-            <div className="flex-1 overflow-y-auto">
-              <div className="flex flex-col items-center gap-8 sm:gap-10 py-4">
-
-                {/*
+        {/* Контейнер для содержимого */}
+        <div className="relative z-30 h-screen flex flex-col pt-36 sm:pt-44 pb-20">
+          <div className="flex-1 overflow-y-auto">
+            <div className="flex flex-col items-center gap-8 sm:gap-10 py-4">
+              {/*
                  ✅ ИСПРАВЛЕНИЕ 1: Блок "Покупка PCoin"
                  Картинка теперь фон (absolute), а контент (relative) задает высоту.
               */}
-                <div className="w-11/12 max-w-md">
-                  <div className="relative flex flex-col p-5"> {/* Убрали зависимость от img */}
-                    <img
-                        src={`${store.imgUrl}img_window2.png`}
-                        alt={t("bank.buy_pcoin.background_alt")}
-                        className="absolute inset-0 w-full h-full object-fill -z-10" /* Сделали фоном */
+              <div className="w-11/12 max-w-md">
+                <div className="relative flex flex-col p-5">
+                  {" "}
+                  {/* Убрали зависимость от img */}
+                  <img
+                    src={`${store.imgUrl}img_window2.png`}
+                    alt={t("bank.buy_pcoin.background_alt")}
+                    className="absolute inset-0 w-full h-full object-fill -z-10" /* Сделали фоном */
+                  />
+                  {/* Контент теперь имеет вес и высоту */}
+                  <div className="relative z-10 flex flex-col">
+                    <div className="text-base text-center sm:text-lg text-amber-800 shantell mb-2 font-bold">
+                      {t("bank.buy_pcoin.title")}
+                    </div>
+
+                    {/* Поле PCoin */}
+                    <CurrencyInput
+                      icon={`${store.imgUrl}icon_dollar_coin.png`}
+                      label={t("bank.buy_pcoin.pcoin_label")}
+                      balance={store.pcoin ?? 0}
+                      value={pcoinAmount}
+                      onChange={(v) => {
+                        setPcoinAmount(v);
+                        setTonAmount(Number(v) / 1000);
+                      }}
+                      placeholder={t("bank.buy_pcoin.pcoin_placeholder")}
+                      min={100}
                     />
 
-                    {/* Контент теперь имеет вес и высоту */}
-                    <div className="relative z-10 flex flex-col">
-                      <div className="text-base text-center sm:text-lg text-amber-800 shantell mb-2 font-bold">
-                        {t("bank.buy_pcoin.title")}
-                      </div>
+                    <ArrowDown />
 
-                      {/* Поле PCoin */}
-                      <CurrencyInput
-                        icon={`${store.imgUrl}icon_dollar_coin.png`}
-                        label={t("bank.buy_pcoin.pcoin_label")}
-                        balance={store.pcoin ?? 0}
-                        value={pcoinAmount}
-                        onChange={(v) => {
-                          setPcoinAmount(v);
-                          setTonAmount(Number(v) / 1000);
-                        }}
-                        placeholder={t("bank.buy_pcoin.pcoin_placeholder")}
-                        min={100}
-                        />
-
-                      <ArrowDown />
-
-                      {/* Поле TON */}
-                      <CurrencyInput
-                        icon={`${store.imgUrl}icon_ton.png`}
-                        label={t("bank.buy_pcoin.ton_label")}
-                        balance={0}
-                        value={String(tonAmount)}
-                        onChange={(v) => setTonAmount(Number(v))}
-                      />
+                    {/* Поле TON */}
+                    <CurrencyInput
+                      icon={`${store.imgUrl}icon_ton.png`}
+                      label={t("bank.buy_pcoin.ton_label")}
+                      balance={0}
+                      value={String(tonAmount)}
+                      onChange={(v) => setTonAmount(Number(v))}
+                    />
 
                     <div className="text-center mb-4 sm:mb-6 font-bold text-base sm:text-lg text-amber-800 shantell flex items-center justify-center">
                       {t("bank.buy_pcoin.rate")}
@@ -662,16 +784,16 @@ const Bank = observer(() => {
                 <div className="w-11/12 max-w-md mt-4 mx-auto">
                   <div className="relative flex flex-col p-5">
                     <img
-                        src={`${store.imgUrl}img_window2.png`}
-                        alt={t("bank.exchange.alt")}
-                        className="absolute inset-0 w-full h-full object-fill -z-10"
+                      src={`${store.imgUrl}img_window2.png`}
+                      alt={t("bank.exchange.alt")}
+                      className="absolute inset-0 w-full h-full object-fill -z-10"
                     />
                     <div className="relative z-10 flex flex-col">
                       <div className="text-center text-lg sm:text-2xl mb-3 text-amber-800 shantell font-bold">
-                      {t("bank.exchange.title")}
-                    </div>
+                        {t("bank.exchange.title")}
+                      </div>
 
-                    {/* Поле ввода PDollar */}
+                      {/* Поле ввода PDollar */}
                       <CurrencyInput
                         icon={`${store.imgUrl}icon_dollar.png`}
                         label={t("bank.exchange.pdollar_label")}
@@ -721,33 +843,31 @@ const Bank = observer(() => {
                   </div>
                 </div>
               </div>
-              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {isOrderModalOpen && (
-            <BankOrderModal onClose={() => setIsOrderModalOpen(false)} />
-        )}
+      {isOrderModalOpen && (
+        <BankOrderModal onClose={() => setIsOrderModalOpen(false)} />
+      )}
 
-        {isExchangeModalOpen && (
-            <ExchangeModal
-                isOpen={isExchangeModalOpen}
-                onClose={() => setIsExchangeModalOpen(false)}
-                initialAmount={pdollarAmount}
-            />
-        )}
-
-        <AdminModal
-            isOpen={isAdminModalOpen}
-            onClose={() => setIsAdminModalOpen(false)}
+      {isExchangeModalOpen && (
+        <ExchangeModal
+          isOpen={isExchangeModalOpen}
+          onClose={() => setIsExchangeModalOpen(false)}
+          initialAmount={pdollarAmount}
         />
+      )}
 
-        <Footer />
+      <AdminModal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
+      />
 
-      </>
+      <Footer />
+    </>
   );
-
 });
 
 /* ====== Подкомпоненты ====== */
@@ -847,34 +967,34 @@ function ActionButton({
   textColor?: string;
 }) {
   return (
-      <button
-          onClick={onClick}
-          disabled={disabled}
-          className={`relative w-full flex flex-col items-center justify-center transition-opacity ${
-              disabled
-                  ? "cursor-not-allowed opacity-70"
-                  : "hover:opacity-90 cursor-pointer"
-          }`}
-      >
-        {/*
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`relative w-full flex flex-col items-center justify-center transition-opacity ${
+        disabled
+          ? "cursor-not-allowed opacity-70"
+          : "hover:opacity-90 cursor-pointer"
+      }`}
+    >
+      {/*
          Создаем фиксированный контейнер для картинки.
          Это гарантирует, что кнопка всегда будет занимать место по высоте (h-14).
       */}
-        <div className="relative w-1/2 h-14">
-          <img src={img} alt={label} className="w-full h-full object-fill z-50" />
+      <div className="relative w-1/2 h-14">
+        <img src={img} alt={label} className="w-full h-full object-fill z-50" />
 
-          {/* надпись */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center z-50">
-            <span
-                className={`${
-                    textColor || "text-amber-800"
-                } text-md sm:text-lg shantell font-bold`}
-            >
-              {label}
-            </span>
-          </div>
+        {/* надпись */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-50">
+          <span
+            className={`${
+              textColor || "text-amber-800"
+            } text-md sm:text-lg shantell font-bold`}
+          >
+            {label}
+          </span>
         </div>
-      </button>
+      </div>
+    </button>
   );
 }
 

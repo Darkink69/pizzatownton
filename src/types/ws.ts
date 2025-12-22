@@ -33,6 +33,7 @@ export type OperationType =
   | "CHEST_GET_STATE"
   | "CHEST_OPEN"
   | "PIZZA_CRAFT_BOX"
+  | "BANK_MANUAL_WITHDRAW_HISTORY"
   | (string & {}); // резерв на будущее
 
 // -------------------- База запроса --------------------
@@ -414,6 +415,24 @@ export interface BankOrderViewData {
   createdAt?: string;
   updatedAt?: string;
   telegramId?: number;
+}
+
+// Интерфейс для запроса истории выводов 
+export interface ManualWithdrawHistoryRq {
+  telegramId: number;
+}
+
+// Интерфейс для элемента истории выводов 
+export interface ManualWithdrawHistoryItem {
+  createdAt: string; // "2025-12-20T18:50:38.571066Z"
+  tonAmount: number; // 0.458200000
+  status: "COMPLETED" | "PENDING" | "FAILED" | (string & {});
+}
+
+// Интерфейс для ответа с историей выводов
+export interface ManualWithdrawHistoryData {
+  telegramId: number;
+  items: ManualWithdrawHistoryItem[];
 }
 
 // -------------------- Персонал (Staff) --------------------

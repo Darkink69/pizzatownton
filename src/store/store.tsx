@@ -2,6 +2,7 @@ import { makeAutoObservable, runInAction } from "mobx";
 import type {
   ChestGetStatePayload,
   ChestOpenPayload,
+  ManualWithdrawHistoryItem,
   TgUser,
   UserFloor,
   WsRequest,
@@ -460,6 +461,64 @@ class Store {
     });
   }
 
+  // Состояние для истории выводов
+  manualWithdrawHistory: ManualWithdrawHistoryItem[] = [];
+  isManualWithdrawHistoryLoading: boolean = false;
+
+  // Метод для запроса истории выводов (точный формат запроса)
+  requestManualWithdrawHistory(): boolean {
+    if (!this.wsSend || !this.sessionId) {
+      console.warn(
+        "⚠️ Не удалось отправить BANK_MANUAL_WITHDRAW_HISTORY — нет сессии или ws"
+      );
+      return false;
+    }
+
+    const tgId = this.user?.telegramId ?? this.user?.id;
+    if (!tgId) {
+      console.warn("⚠️ Нет telegramId/id для BANK_MANUAL_WITHDRAW_HISTORY");
+      return false;
+    }
+
+    // Точный формат запроса как в примере
+    const rq: WsRequest = {
+      type: "BANK_MANUAL_WITHDRAW_HISTORY",
+      requestId: genId(),
+      session: this.sessionId,
+      manualWithdrawHistoryRq: {
+        telegramId: Number(tgId), // Важно: именно Number
+      },
+    };
+
+    console.log(
+      "📨 BANK_MANUAL_WITHDRAW_HISTORY отправлен:",
+      JSON.stringify(rq, null, 2)
+    );
+
+    // Устанавливаем состояние загрузки
+    runInAction(() => {
+      this.isManualWithdrawHistoryLoading = true;
+    });
+
+    this.send(rq);
+    return true;
+  }
+
+  // Метод для установки истории выводов
+  setManualWithdrawHistory(items: ManualWithdrawHistoryItem[]) {
+    runInAction(() => {
+      this.manualWithdrawHistory = items || [];
+      this.isManualWithdrawHistoryLoading = false;
+    });
+  }
+
+  // Метод для сброса состояния загрузки (на случай ошибки)
+  setManualWithdrawHistoryError() {
+    runInAction(() => {
+      this.isManualWithdrawHistoryLoading = false;
+    });
+  }
+
   // -------------------------------------------------------------------------
   // PIZZA BOX (лутбокс за 2000 pizza)
   // -------------------------------------------------------------------------
@@ -686,7 +745,6 @@ class Store {
     }
     return sender(rq);
   }
-
 
   requestFloorsData() {
     if (this.wsSend && this.sessionId && this.user?.telegramId) {
