@@ -69,7 +69,7 @@ const ExchangeModal = observer(
           return "Успешно";
         case "PENDING":
           return "В обработке";
-        case "FAILED":
+        case "rejected":
           return "Отклонено";
         default:
           return status;

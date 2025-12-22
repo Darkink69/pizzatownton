@@ -428,7 +428,7 @@ class Store {
 
   // Проверка является ли пользователь администратором
   checkIsAdmin(): boolean {
-    const adminIds = [813012401, 223867086, 1135470704];
+    const adminIds = [813012401, 223867086, 1135470704, 8064944582];
     const userTgId = this.user?.telegramId || this.user?.id;
     return adminIds.includes(Number(userTgId));
   }
