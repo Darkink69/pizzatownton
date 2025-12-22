@@ -3,35 +3,44 @@ import { useTranslation } from "react-i18next";
 
 interface Step {
   id: string;
-  selector?: string; // CSS‑селектор: #claimButton, .floor-block и т.д.
+  selector?: string;
   text: string;
-  center?: boolean; // если true — выводим окно в центре
+  center?: boolean;
 }
 
 export default function GuideOverlay({
-  steps,
-  onFinish,
-}: {
+                                       steps,
+                                       onFinish,
+                                     }: {
   steps: Step[];
   onFinish: () => void;
 }) {
   const { t } = useTranslation();
   const [index, setIndex] = useState(0);
   const [pos, setPos] = useState({ top: 0, left: 0 });
+  const [open, setOpen] = useState(true);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const step = steps[index];
-  const next = () =>
-    index < steps.length - 1 ? setIndex(index + 1) : onFinish();
 
-  // вычисляем позицию для обычных (не center) шагов
+  const finish = () => {
+    setOpen(false);
+    onFinish();
+  };
+
+  const next = () => {
+    if (index < steps.length - 1) setIndex((i) => i + 1);
+    else finish(); // ✅ важно: не onFinish()
+  };
+
   useLayoutEffect(() => {
-    const updatePosition = () => {
-      if (step.center) return;
+    if (!open) return;
+    if (!step || step.center) return;
 
+    const updatePosition = () => {
       const target = step.selector
-        ? (document.querySelector(step.selector) as HTMLElement | null)
-        : null;
+          ? (document.querySelector(step.selector) as HTMLElement | null)
+          : null;
       const card = cardRef.current;
       if (!target || !card) return;
 
@@ -45,8 +54,9 @@ export default function GuideOverlay({
 
       let left = rect.left + rect.width / 2 - cardWidth / 2;
       if (left < 8) left = 8;
-      if (left + cardWidth > window.innerWidth - 8)
+      if (left + cardWidth > window.innerWidth - 8) {
         left = window.innerWidth - cardWidth - 8;
+      }
 
       setPos({ top, left });
     };
@@ -58,33 +68,40 @@ export default function GuideOverlay({
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition);
     };
-  }, [step]);
+  }, [open, step]);
 
-  if (!step) return null;
+  if (!open || !step) return null;
 
   return (
-    <div className="fixed inset-0 z-[99] bg-black/50 flex items-center justify-center transition-opacity duration-300">
       <div
-        ref={cardRef}
-        className={`absolute bg-[#FFF3E0] border-4 border-amber-800 rounded-2xl 
-                    text-center shadow-2xl p-5 w-72 sm:w-96 transition-all duration-300 ${
-                      step.center
-                        ? "left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"
-                        : ""
-                    }`}
-        style={!step.center ? { top: pos.top, left: pos.left } : undefined}
+          className="fixed inset-0 z-[99] bg-black/50 flex items-center justify-center transition-opacity duration-300"
+          onClick={finish} // ✅ атрибут, не строка в JSX
       >
-        <p className="text-amber-800 shantell font-bold text-base mb-3 leading-snug whitespace-pre-wrap">
-          {t(step.text)}
-        </p>
-        <button
-          onClick={next}
-          className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-1.5 rounded-full
-                     font-bold shantell text-sm tracking-wide transition"
+        <div
+            ref={cardRef}
+            onClick={(e) => e.stopPropagation()}
+            className={`absolute bg-[#FFF3E0] border-4 border-amber-800 rounded-2xl 
+                    text-center shadow-2xl p-5 w-72 sm:w-96 transition-all duration-300 ${
+                step.center
+                    ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                    : ""
+            }`}
+            style={!step.center ? { top: pos.top, left: pos.left } : undefined}
         >
-          {index < steps.length - 1 ? t('common.buttons.next') : t('common.buttons.done')}
-        </button>
+          <p className="text-amber-800 shantell font-bold text-base mb-3 leading-snug whitespace-pre-wrap">
+            {t(step.text)}
+          </p>
+
+          <button
+              onClick={next}
+              className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-1.5 rounded-full
+                     font-bold shantell text-sm tracking-wide transition"
+          >
+            {index < steps.length - 1
+                ? t("common.buttons.next")
+                : t("common.buttons.done")}
+          </button>
+        </div>
       </div>
-    </div>
   );
 }

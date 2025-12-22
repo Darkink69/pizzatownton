@@ -111,8 +111,8 @@ export interface AdminWithdrawalData {
   telegramId: number;
   walletAdd: string;
   amountPdollar: number;
-  amountTon: number;
-  status: string;
+  amountTon: string | number;
+  status: "PENDING" | "CONFIRMED" | "REJECTED" | "COMPLETE" | (string & {});
 }
 
 // -------------------- Запрос на привязку кошелька --------------------

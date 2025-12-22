@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import Footer from "../../components/Footer";
-import WebSocketComponent from "../../components/websocket";
+
 import store from "../../store/store";
 import ChestModal from "./ChestModal";
 import {
@@ -292,7 +292,7 @@ const ChestsPage = observer(() => {
         </ChestModal>
       )}
 
-      <WebSocketComponent />
+
       <Footer />
     </>
   );

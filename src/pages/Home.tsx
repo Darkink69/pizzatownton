@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import store from "../store/store";
 // import Footer from "../components/Footer";
-import WebSocketComponent from "../components/websocket";
+
 import { Link } from "react-router-dom";
 import FooterHome from "../components/FooterHome";
 import GuideOverlay from "../pages/GuideOverlay";
@@ -2208,7 +2208,7 @@ const Home = observer(() => {
       )}
 
       <FooterHome />
-      <WebSocketComponent />
+
     </>
   );
 });

@@ -7,6 +7,7 @@ import type {
   WsRequest,
   UserState,
 } from "../types/ws";
+import type { AdminWithdrawalData } from "../types/ws";
 import { bankStore } from "./BankStore";
 import type { Rarity } from "../types/chests";
 
@@ -17,7 +18,7 @@ class Store {
   initDataRaw = "";
   referrerId: string | null = null;
   startParam: string | null = null;
-  private wsSend: ((rq: WsRequest) => void) | null = null;
+  private wsSend: ((rq: WsRequest) => boolean) | null = null;
   sessionId: string | null = null;
   isAuthenticating = false;
   authError: string | null = null;
@@ -25,7 +26,7 @@ class Store {
   user: TgUser = {};
   userState: UserState = {};
 
-  adminData: any[] = [];
+  adminData: AdminWithdrawalData[] = [];
   isAdmin = false;
 
   tonBalance: string = "0";
@@ -127,7 +128,7 @@ class Store {
       session: this.sessionId,
       chestGetStateRq: { telegramId: this.user.telegramId },
     };
-    this.wsSend(rq);
+    this.send(rq);
     console.log("✅ CHEST_GET_STATE отправлен:", rq);
     return true;
   };
@@ -149,7 +150,7 @@ class Store {
         chestType,
       },
     };
-    this.wsSend(rq);
+    this.send(rq);
     console.log("✅ CHEST_OPEN отправлен:", rq);
     return true;
   };
@@ -173,7 +174,7 @@ class Store {
         rarity,
       },
     };
-    this.wsSend(rq);
+    this.send(rq);
     console.log("✅ PIZZA_CRAFT_BOX отправлен:", rq);
     return true;
   };
@@ -224,7 +225,7 @@ class Store {
         floorId,
       },
     };
-    this.wsSend(rq);
+    this.send(rq);
     console.log("✅ PERSON_BUY отправлен:", JSON.stringify(rq, null, 2));
     return true;
   }
@@ -283,7 +284,7 @@ class Store {
         session: this.sessionId,
         referralGetRq: { telegramId: this.user.telegramId },
       };
-      this.wsSend(rq);
+      this.send(rq);
       console.log("📨 REFERRAL_GET запрос отправлен:", rq);
       return true;
     }
@@ -420,7 +421,7 @@ class Store {
     };
 
     console.log("📨 BANK_LINK_WALLET отправлен:", rq);
-    this.wsSend(rq);
+    this.send(rq);
     return true;
   }
 
@@ -448,15 +449,14 @@ class Store {
     };
 
     console.log("📨 ADMIN_ALL отправлен:", rq);
-    this.wsSend(rq);
+    this.send(rq);
     return true;
   }
 
   // Установка административных данных
-  setAdminData(data: any[]) {
+  setAdminData(data: AdminWithdrawalData[]) {
     runInAction(() => {
       this.adminData = data;
-      console.log("📊 Админ данные получены:", data);
     });
   }
 
@@ -491,7 +491,7 @@ class Store {
     };
 
     console.log("📨 PIZZA_BOX_OPEN:", rq);
-    this.wsSend(rq);
+    this.send(rq);
     return true;
   }
 
@@ -628,8 +628,8 @@ class Store {
   // -------------------------------------------------------------------------
   // WEBSOCKET / AUTH
   // -------------------------------------------------------------------------
-  setWsSend(fn: (rq: WsRequest) => void) {
-    this.wsSend = fn;
+  setWsSend(fn?: (rq: WsRequest) => boolean) {
+    this.wsSend = fn ?? null;
   }
 
   setInitDataRaw(data: string) {
@@ -679,13 +679,14 @@ class Store {
   // SEND REQUESTS
   // -------------------------------------------------------------------------
   send(rq: WsRequest): boolean {
-    if (!this.wsSend) {
+    const sender = this.wsSend;
+    if (!sender) {
       console.warn("WS not connected — send aborted:", rq?.type);
       return false;
     }
-    this.wsSend(rq);
-    return true;
+    return sender(rq);
   }
+
 
   requestFloorsData() {
     if (this.wsSend && this.sessionId && this.user?.telegramId) {
@@ -744,7 +745,7 @@ class Store {
     };
 
     console.log("📨 TASKS_VERIFY INVITE_3_FRIENDS:", rq);
-    this.wsSend(rq);
+    this.send(rq);
   }
 
   completeInvite3Task() {
@@ -771,7 +772,7 @@ class Store {
     };
 
     console.log("📨 TASKS_COMPLETE INVITE_3_FRIENDS:", rq);
-    this.wsSend(rq);
+    this.send(rq);
   }
 
   resetInvite3TaskState() {
@@ -800,7 +801,7 @@ class Store {
     };
 
     console.log("📨 COMBO_TODAY отправлен:", rq);
-    this.wsSend(rq);
+    this.send(rq);
     return true;
   }
 
@@ -821,7 +822,7 @@ class Store {
     };
 
     console.log("📨 COMBO_PICK отправлен:", rq);
-    this.wsSend(rq);
+    this.send(rq);
     return true;
   }
 

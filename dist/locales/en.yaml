@@ -274,7 +274,7 @@ bank:
     status: "Status"
     no_data: "No data to display"
     total_records: "Total records: {{count}}"
-    approved: "APPROVED"
+    approved: "CONFIRMED"
     pending: "PENDING"
   order_modal:
     title: "TON Payment"

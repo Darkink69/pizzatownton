@@ -9,7 +9,7 @@ import {
 } from "@telegram-apps/sdk-react";
 import { AppRoot, Placeholder } from "@telegram-apps/telegram-ui";
 import { observer } from "mobx-react-lite";
-
+import WebSocketComponent from "../components/websocket";
 import { routes } from "../navigation/routes";
 import store from "../store/store";
 import Preloader from "./Preloader";
@@ -146,6 +146,12 @@ export const App = observer(() => {
         </div>
       )}
       <LanguageSwitcher/>
+
+      {typeof rawInitData === "string" && rawInitData.length > 0 && (
+          <WebSocketComponent />
+      )}
+
+
       {/* Маршруты. BrowserRouter оборачивает App в Root.tsx */}
       <Routes>
         {routes.map(({ path, Component }) => (

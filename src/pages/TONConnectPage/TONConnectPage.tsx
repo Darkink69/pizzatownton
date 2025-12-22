@@ -14,7 +14,7 @@ import store from "../../store/store";
 import { Page } from "../../components/Page";
 import { bem } from "../../css/bem";
 import Footer from "../../components/Footer";
-import WebSocketComponent from "../../components/websocket";
+
 
 const [, e] = bem("ton-connect-page");
 
@@ -274,7 +274,7 @@ export const TONConnectPage: FC = observer(() => {
         </div>
 
         <Footer />
-        <WebSocketComponent />
+
       </Page>
     );
   }
@@ -389,7 +389,7 @@ export const TONConnectPage: FC = observer(() => {
         </div>
       </div>
       <Footer />
-      <WebSocketComponent />
+
     </Page>
   );
 });

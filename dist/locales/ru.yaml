@@ -274,7 +274,7 @@ bank:
     status: "Status"
     no_data: "Нет данных для отображения"
     total_records: "Всего записей: {{count}}"
-    approved: "APPROVED"
+    approved: "CONFIRMED"
     pending: "PENDING"
   order_modal:
     title: "Оплата TON"

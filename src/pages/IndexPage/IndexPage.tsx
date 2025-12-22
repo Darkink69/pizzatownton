@@ -9,10 +9,6 @@ import {
 import { Page } from "../../components/Page";
 import Home from "../Home";
 
-function generateRequestId(): string {
-  return "auth_" + Math.random().toString(36).slice(2, 8);
-}
-
 export const IndexPage: FC = observer(() => {
   const initDataRaw = useSignal(_initDataRaw);
   const initDataState = useSignal(_initDataState);
@@ -26,12 +22,9 @@ export const IndexPage: FC = observer(() => {
     }
     window.Telegram.WebApp.ready();
     window.Telegram.WebApp.expand();
-
-    // debug info
-    console.log("Telegram WebApp detected:", window.Telegram.WebApp);
   }, []);
 
-  // Основной хук: инициализация и авторизация по WS
+  // Сохраняем initData/user в store (WS авторизация делается в WebSocketComponent)
   useEffect(() => {
     if (!initDataRaw) {
       console.warn("initDataRaw отсутствует");
@@ -39,26 +32,14 @@ export const IndexPage: FC = observer(() => {
       return;
     }
 
-    // Telegram user (вырезан из сигнатуры initDataState)
-    if (initDataState?.user) {
-      store.setUser(initDataState.user);
-      console.log("Пользователь установлен:", initDataState.user);
-    }
-
-    // Сохраняем raw initData в стор (может пригодиться потом)
+    // сохраняем raw initData
     store.setInitDataRaw(initDataRaw);
 
-    // Отправляем AUTH_INIT через WebSocket
-    store.send({
-      type: "AUTH_INIT",
-      requestId: generateRequestId(),
-      session: "",
-      authReq: {
-        initData: initDataRaw,
-        referralCode: store.referrerId ?? null,
-      },
-    });
-  }, [initDataRaw, initDataState]);
+    // сохраняем user (если есть)
+    if (initDataState?.user) {
+      store.setUser(initDataState.user);
+    }
+  }, [initDataRaw, initDataState?.user]);
 
   return (
       <Page back={false}>

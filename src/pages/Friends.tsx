@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import store from "../store/store";
 import Footer from "../components/Footer";
-import WebSocketComponent from "../components/websocket";
+
 import { useTranslation } from "react-i18next";
 
 const Friends = observer(() => {
@@ -186,7 +186,7 @@ const Friends = observer(() => {
       </div>
 
       <Footer />
-      <WebSocketComponent />
+
     </>
   );
 });
