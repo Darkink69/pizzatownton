@@ -27,6 +27,7 @@ export type OperationType =
   | "TASKS_COMPLETE"
   | "BANK_LINK_WALLET"
   | "ADMIN_ALL"
+  | "ADMIN_OPERATION"
   | "PIZZA_BOX_OPEN"
   | "COMBO_TODAY"
   | "COMBO_PICK"
@@ -93,6 +94,14 @@ export interface ManualWithdrawRq {
   pdollarAmount: number;
 }
 
+export type AdminWithdrawStatus =
+    | "PENDING"
+    | "CONFIRMED"
+    | "REJECTED"
+    | "COMPLETED"
+    | (string & {});
+
+
 export interface StaffUpgrade {
   staff_id: number;
   level: number;
@@ -106,14 +115,21 @@ export interface AdminAllRq {
   telegramId: number;
 }
 
+export interface AdminOperationRq {
+  id: number;                 // id заявки
+  telegramId: number;         // tg админа
+  operation: "CONFIRMED" | "REJECTED" | "COMPLETE" | "PENDING";
+}
+
 // -------------------- Тип для данных администратора --------------------
 export interface AdminWithdrawalData {
   id: number;
-  telegramId: number;
+  telegramId: number;          // tg пользователя, который выводит
   walletAdd: string;
   amountPdollar: number;
-  amountTon: string | number;
-  status: "PENDING" | "CONFIRMED" | "REJECTED" | "COMPLETE" | (string & {});
+  amountTon: string | number;  // важно
+  status: AdminWithdrawStatus;
+  isBlogger: boolean;
 }
 
 // -------------------- Запрос на привязку кошелька --------------------
@@ -290,6 +306,7 @@ export interface WsRequest extends WsBase {
 
   // административные запросы
   adminAllRq?: AdminAllRq;
+  adminOperationRq?: AdminOperationRq;
 
   // этажи
   getFloorRq?: GetFloorRq;
@@ -315,6 +332,7 @@ export interface WsRequest extends WsBase {
   createOrderRq?: CreateOrderRq; // BANK_BUY_PCOIN
   confirmOrderRq?: ConfirmOrderRq; // BANK_CONFIRM
   manualWithdrawRq?: ManualWithdrawRq;
+  manualWithdrawHistoryRq?: ManualWithdrawHistoryRq;
   pdollarExchangeRq?: PDollarExchangeRq; // BANK_EXCHANGE_PDOLLAR
 
   // задачи

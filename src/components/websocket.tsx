@@ -182,15 +182,31 @@ const WebSocketComponent = observer(() => {
           }
 
           case "ADMIN_ALL": {
-            if (parsed.success && Array.isArray(parsed.data)) {
+            if (Array.isArray(parsed.data)) {
               store.setAdminData(parsed.data);
-              console.log("✅ Админ данные загружены:", parsed.data);
+              console.log("✅ ADMIN_ALL loaded:", parsed.data);
             } else {
-              console.error("❌ Ошибка загрузки админ данных:", parsed.message);
-              toast.error(parsed.message || "Ошибка загрузки админ данных");
+              console.error("❌ ADMIN_ALL failed:", parsed.message, parsed);
+              toast.error(parsed.message || "ADMIN_ALL failed");
             }
             break;
           }
+
+          case "ADMIN_OPERATION": {
+            if (parsed.success) {
+              console.log("✅ ADMIN_OPERATION:", parsed.data);
+              toast.success(parsed.message || "OK");
+
+              // после апрува/реджекта перезагружаем таблицу
+              store.requestAdminData();
+            } else {
+              console.error("❌ ADMIN_OPERATION failed:", parsed.message, parsed);
+              toast.error(parsed.message || "ADMIN_OPERATION failed");
+            }
+            break;
+          }
+
+
 
           case "BANK_LINK_WALLET": {
             if (parsed.success) {

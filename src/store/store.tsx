@@ -27,6 +27,11 @@ class Store {
   user: TgUser = {};
   userState: UserState = {};
 
+  get myTgId(): number | null {
+    const tgId = this.user?.telegramId ?? this.user?.id;
+    return tgId ? Number(tgId) : null;
+  }
+
   adminData: AdminWithdrawalData[] = [];
   isAdmin = false;
 
@@ -428,15 +433,21 @@ class Store {
 
   // Проверка является ли пользователь администратором
   checkIsAdmin(): boolean {
-    const adminIds = [813012401, 223867086, 1135470704, 8064944582];
+    const adminIds = [813012401, 223867086, 8064944582, 1135470704];
     const userTgId = this.user?.telegramId || this.user?.id;
     return adminIds.includes(Number(userTgId));
   }
 
   // Запрос административных данных
   requestAdminData(): boolean {
-    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) {
+    if (!this.wsSend || !this.sessionId) {
       console.warn("⚠️ Не удалось отправить ADMIN_ALL — нет сессии или ws");
+      return false;
+    }
+
+    const adminTgId = this.myTgId;
+    if (!adminTgId) {
+      console.warn("⚠️ Не удалось отправить ADMIN_ALL — нет telegramId/id");
       return false;
     }
 
@@ -444,15 +455,56 @@ class Store {
       type: "ADMIN_ALL",
       requestId: `admin_${genId()}`,
       session: this.sessionId,
-      adminAllRq: {
-        telegramId: this.user.telegramId,
-      },
+      adminAllRq: { telegramId: adminTgId }, // tg админа
     };
 
     console.log("📨 ADMIN_ALL отправлен:", rq);
-    this.send(rq);
-    return true;
+    return this.send(rq); // важно вернуть результат
   }
+
+  adminApprove(withdrawId: number): boolean {
+    if (!this.wsSend || !this.sessionId) return false;
+
+    const adminTgId = this.myTgId;
+    if (!adminTgId) return false;
+
+    const rq: WsRequest = {
+      type: "ADMIN_OPERATION",
+      requestId: `adminop_${genId()}`,
+      session: this.sessionId,
+      adminOperationRq: {
+        id: withdrawId,
+        telegramId: adminTgId,     // tg админа
+        operation: "CONFIRMED",
+      },
+    };
+
+    console.log("📨 ADMIN_OPERATION CONFIRMED:", rq);
+    return this.send(rq);
+  }
+
+  adminReject(withdrawId: number): boolean {
+    if (!this.wsSend || !this.sessionId) return false;
+
+    const adminTgId = this.myTgId;
+    if (!adminTgId) return false;
+
+    const rq: WsRequest = {
+      type: "ADMIN_OPERATION",
+      requestId: `adminop_${genId()}`,
+      session: this.sessionId,
+      adminOperationRq: {
+        id: withdrawId,
+        telegramId: adminTgId,     // tg админа
+        operation: "REJECTED",
+      },
+    };
+
+    console.log("📨 ADMIN_OPERATION REJECTED:", rq);
+    return this.send(rq);
+  }
+
+
 
   // Установка административных данных
   setAdminData(data: AdminWithdrawalData[]) {
