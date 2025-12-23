@@ -1,4 +1,3 @@
- 
 import { useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import store from "../store/store";
@@ -701,7 +700,10 @@ const Home = observer(() => {
     playSound("staff.mp3");
     const floor = store.safeUserFloorList.find((f) => f.floorId === floorId);
     if (!floor) {
-      showNotification(t("home.notifications.staff_not_found", { floorId }), "error");
+      showNotification(
+        t("home.notifications.staff_not_found", { floorId }),
+        "error"
+      );
       return;
     }
 
@@ -871,9 +873,7 @@ const Home = observer(() => {
         <button
           onClick={toggleMusic}
           className="fixed scale-30 top-4 left-4 z-50 w-12 h-12 sm:w-14 sm:h-14 hover:scale-50 transition-transform"
-          aria-label={
-            isMusicPlaying ? t("home.sound_off") : t("home.sound_on")
-          }
+          aria-label={isMusicPlaying ? t("home.sound_off") : t("home.sound_on")}
         >
           {isMusicPlaying ? (
             <svg width="108" height="108" viewBox="0 0 108 108" fill="none">
@@ -1447,7 +1447,7 @@ const Home = observer(() => {
                     />
                   </span>
                 </Link>
-                <span className="absolute top-8 text-xs text-white 500 shantell whitespace-nowrap tracking-tight">
+                <span className="absolute top-8 text-xs text-amber-800 500 shantell whitespace-nowrap tracking-tight">
                   {t("home.income_per_hour", {
                     totalIncome: Number(totalIncome ?? 0).toLocaleString(),
                   })}
@@ -1693,13 +1693,16 @@ const Home = observer(() => {
                               "manager"
                             ) === 0
                               ? t("home.upgrade_modal.hire_button")
-                              : t("home.upgrade_modal.upgrade_to_level_button", {
-                                  level:
-                                    getStaffCurrentLevel(
-                                      selectedFloor.floorId,
-                                      "manager"
-                                    ) + 1,
-                                })}
+                              : t(
+                                  "home.upgrade_modal.upgrade_to_level_button",
+                                  {
+                                    level:
+                                      getStaffCurrentLevel(
+                                        selectedFloor.floorId,
+                                        "manager"
+                                      ) + 1,
+                                  }
+                                )}
                           </span>
                           <div className="flex items-center gap-1 relative z-10">
                             <img
@@ -1775,13 +1778,16 @@ const Home = observer(() => {
                               "guard"
                             ) === 0
                               ? t("home.upgrade_modal.hire_button")
-                              : t("home.upgrade_modal.upgrade_to_level_button", {
-                                  level:
-                                    getStaffCurrentLevel(
-                                      selectedFloor.floorId,
-                                      "guard"
-                                    ) + 1,
-                                })}
+                              : t(
+                                  "home.upgrade_modal.upgrade_to_level_button",
+                                  {
+                                    level:
+                                      getStaffCurrentLevel(
+                                        selectedFloor.floorId,
+                                        "guard"
+                                      ) + 1,
+                                  }
+                                )}
                           </span>
                           <div className="flex items-center gap-1 relative z-10">
                             <img
@@ -1897,9 +1903,12 @@ const Home = observer(() => {
                           >
                             <img
                               src={`${store.imgUrl}b_white.png`}
-                              alt={t("home.accountant_modal.subscription_days", {
-                                days: opt.duration ?? opt.durationDay,
-                              })}
+                              alt={t(
+                                "home.accountant_modal.subscription_days",
+                                {
+                                  days: opt.duration ?? opt.durationDay,
+                                }
+                              )}
                               className="w-full scale-y-110"
                             />
                             <span className="absolute inset-0 flex flex-col items-center justify-center text-amber-800 shantell text-sm">
@@ -2208,7 +2217,6 @@ const Home = observer(() => {
       )}
 
       <FooterHome />
-
     </>
   );
 });
