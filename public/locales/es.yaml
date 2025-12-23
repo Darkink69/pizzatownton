@@ -139,7 +139,7 @@ home:
     buy_error_request: "Fallo al enviar la solicitud de la caja de botín"
     buy_success: "¡Caja de Botín abierta! Recibiste: {{reward}} PCoin"
     prize_title: "¡Ganaste!"
-    prize_subtitle: "¡<1>{{pcoins}} pcoin</1> y otros premios!"
+    prize_subtitle: "{{pcoins}} pcoin</1> y otros premios!"
     prize_pcoin_label: "+{{pcoins}} PCoin"
     prize_pcoin_description: "Para compras en el juego"
     pizza_notification_alt: "Notificación de Pizza"

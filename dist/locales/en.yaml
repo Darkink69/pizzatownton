@@ -138,7 +138,7 @@ home:
     buy_error_request: "Failed to send request for lootbox"
     buy_success: "Lootbox opened! You received: {{reward}} PCoin"
     prize_title: "You won!"
-    prize_subtitle: "<1>{{pcoins}} pcoin</1> and other prizes!"
+    prize_subtitle: "{{pcoins}} pcoin</1> and other prizes!"
     prize_pcoin_label: "+{{pcoins}} PCoin"
     prize_pcoin_description: "For in-game purchases"
     pizza_notification_alt: "Pizza Notification"

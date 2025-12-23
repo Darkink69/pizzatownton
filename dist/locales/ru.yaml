@@ -138,7 +138,7 @@ home:
     buy_error_request: "Не удалось отправить запрос на лутбокс"
     buy_success: "Лутбокс открыт! Вы получили: {{reward}} PCoin"
     prize_title: "Вы выиграли!"
-    prize_subtitle: "<1>{{pcoins}} pcoin</1> и другие призы!"
+    prize_subtitle: "{{pcoins}} pcoin</1> и другие призы!"
     prize_pcoin_label: "+{{pcoins}} PCoin"
     prize_pcoin_description: "Для покупок в игре"
     pizza_notification_alt: "Pizza Notification"
