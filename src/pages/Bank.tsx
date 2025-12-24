@@ -19,6 +19,7 @@ const ExchangeModal = observer(
     onClose: () => void;
     initialAmount: string;
   }) => {
+
     const MIN_WITHDRAW_PD = 100000;
     const { t } = useTranslation();
     const [exchangeAmount, setExchangeAmount] = useState(initialAmount);
@@ -110,6 +111,7 @@ const ExchangeModal = observer(
 
       try {
         await bankStore.createManualWithdraw(amount);
+
         alert(t("bank.withdraw_modal.request_accepted_alert"));
         setExchangeAmount("");
         onClose();
@@ -638,7 +640,7 @@ const Bank = observer(() => {
   const { t } = useTranslation();
   const [tonAmount, setTonAmount] = useState(0.5);
   const [pdollarAmount, setPdollarAmount] = useState("100000");
-  const [tonExchangeAmount, setTonExchangeAmount] = useState("0.25");
+  const [tonExchangeAmount, setTonExchangeAmount] = useState("1");
   const [pcoinAmount, setPcoinAmount] = useState("500");
   const [buying, setBuying] = useState(false);
 

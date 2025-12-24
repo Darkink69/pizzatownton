@@ -23,7 +23,26 @@ function generateRequestId() {
 }
 
 const WebSocketComponent = observer(() => {
+
+  const lastClaimRefreshAtRef = useRef<number>(0);
   const wsRef = useRef<WebSocket | null>(null);
+
+  const sendClaimRefresh = () => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    if (!store.sessionId || !store.user?.telegramId) return;
+
+    const now = Date.now();
+    if (now - lastClaimRefreshAtRef.current < 3000) return;
+    lastClaimRefreshAtRef.current = now;
+
+    ws.send(JSON.stringify({
+      type: "CLAIM_REFRESH",
+      requestId: generateRequestId(),
+      session: store.sessionId,
+      claimRefreshRq: { telegramId: store.user.telegramId },
+    }));
+  };
   const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const claimRefreshIntervalRef = useRef<number | null>(null);
 
@@ -173,7 +192,7 @@ const WebSocketComponent = observer(() => {
                     session: store.sessionId,
                   })
                 );
-              }, 60000);
+              }, 90000);
             } else {
               store.setAuthError?.(parsed.message || "AUTH_INIT failed");
               toast.error(parsed.message || "Ошибка авторизации");
@@ -357,6 +376,9 @@ const WebSocketComponent = observer(() => {
             if (parsed.success) {
               toast.success("✅ Заявка на вывод PDollar сохранена");
               console.log("ManualWithdrawResponse:", parsed.data);
+
+              // ✅ обновить балансы сразу после заявки (троттлинг внутри)
+              sendClaimRefresh();
             } else {
               toast.error(
                 parsed.message || "Ошибка при создании заявки на вывод"
