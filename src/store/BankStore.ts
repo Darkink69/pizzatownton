@@ -111,6 +111,16 @@ class BankStore {
   async createManualWithdraw(pdollarAmount: number) {
     this.creating = true;
     this.error = null;
+    // ✅ tgId берём универсально
+    const tgId = store.user.telegramId ?? store.user.id;
+    if (!tgId) {
+      this.error = "Нет telegramId";
+      this.creating = false;
+      return;
+    }
+
+
+
     const requestId = `withdraw_${Math.random().toString(36).slice(2, 10)}`;
 
     const success = store.send({
@@ -118,7 +128,7 @@ class BankStore {
       requestId,
       session: store.sessionId!,
       manualWithdrawRq: {
-        telegramId: store.user.telegramId!,
+        telegramId: tgId,
         username: store.user.username ?? "",
         firstName: store.user.firstName ?? "",
         pdollarAmount

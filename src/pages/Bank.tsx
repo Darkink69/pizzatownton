@@ -6,8 +6,10 @@ import { observer } from "mobx-react-lite";
 import store from "../store/store";
 import Footer from "../components/Footer";
 import { useTranslation } from "react-i18next";
+const MIN_WITHDRAW_PD = 100000;
 
 const ExchangeModal = observer(
+
   ({
     isOpen,
     onClose,
@@ -17,16 +19,17 @@ const ExchangeModal = observer(
     onClose: () => void;
     initialAmount: string;
   }) => {
+    const MIN_WITHDRAW_PD = 100000;
     const { t } = useTranslation();
     const [exchangeAmount, setExchangeAmount] = useState(initialAmount);
     const [showHistory, setShowHistory] = useState(false);
 
     const userPdollarBalance = Number(store.pdollar) || 0;
-    const hasSufficientBalance = userPdollarBalance >= 25000;
+    const hasSufficientBalance = userPdollarBalance >= MIN_WITHDRAW_PD;
     const canSubmit =
-      exchangeAmount !== "" &&
-      Number(exchangeAmount) >= 25000 &&
-      Number(exchangeAmount) <= userPdollarBalance;
+        exchangeAmount !== "" &&
+        Number(exchangeAmount) >= MIN_WITHDRAW_PD &&
+        Number(exchangeAmount) <= userPdollarBalance;
 
     // Используем состояние загрузки из store
     const isLoadingHistory = store.isManualWithdrawHistoryLoading;
@@ -69,7 +72,9 @@ const ExchangeModal = observer(
           return "Успешно";
         case "PENDING":
           return "В обработке";
+        case "REJECTED":
         case "rejected":
+        case "FAILED":
           return "Отклонено";
         default:
           return status;
@@ -83,6 +88,8 @@ const ExchangeModal = observer(
           return "bg-green-100 text-green-800";
         case "PENDING":
           return "bg-yellow-100 text-yellow-800";
+        case "REJECTED":
+        case "rejected":
         case "FAILED":
           return "bg-red-100 text-red-800";
         default:
@@ -92,7 +99,7 @@ const ExchangeModal = observer(
 
     const handleSubmit = async () => {
       const amount = Number(exchangeAmount);
-      if (!amount || amount < 25000) {
+      if (!amount || amount < MIN_WITHDRAW_PD) {
         alert(t("bank.withdraw_modal.min_amount_alert"));
         return;
       }
@@ -329,7 +336,7 @@ const ExchangeModal = observer(
                 : "bg-gray-400 text-gray-200 cursor-not-allowed"
             }`}
           >
-            {Number(exchangeAmount) < 25000
+            {Number(exchangeAmount) < MIN_WITHDRAW_PD
               ? t("bank.withdraw_modal.min_amount_button")
               : t("bank.withdraw_modal.confirm_button")}
           </button>
@@ -630,7 +637,7 @@ const AdminModal = observer(
 const Bank = observer(() => {
   const { t } = useTranslation();
   const [tonAmount, setTonAmount] = useState(0.5);
-  const [pdollarAmount, setPdollarAmount] = useState("25000");
+  const [pdollarAmount, setPdollarAmount] = useState("100000");
   const [tonExchangeAmount, setTonExchangeAmount] = useState("0.25");
   const [pcoinAmount, setPcoinAmount] = useState("500");
   const [buying, setBuying] = useState(false);
@@ -682,8 +689,8 @@ const Bank = observer(() => {
   const handleExchange = () => {
     const amount = Number(pdollarAmount);
 
-    // Если введено число меньше 25000 или вообще не число - не открываем
-    if (!amount || amount < 25000) {
+    // Если введено число меньше 100000 или вообще не число - не открываем
+    if (!amount || amount < MIN_WITHDRAW_PD) {
       alert(t("bank.exchange.min_exchange_alert"));
       return;
     }
