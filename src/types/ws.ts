@@ -129,6 +129,7 @@ export interface AdminWithdrawalData {
   amountPdollar: number;
   amountTon: string | number;  // важно
   status: AdminWithdrawStatus;
+  attention: boolean;
   isBlogger: boolean;
 }
 

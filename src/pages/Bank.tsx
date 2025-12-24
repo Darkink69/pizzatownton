@@ -480,16 +480,21 @@ const AdminModal = observer(
                     <tr
                         key={item.id}
                         className={`hover:bg-amber-50 ${
-                            item.isBlogger ? "ring-2 ring-purple-400 ring-inset" : ""
-                        }`}
+                            item.attention ? "ring-2 ring-red-500 ring-inset" : ""
+                        } ${!item.attention && item.isBlogger ? "ring-2 ring-purple-400 ring-inset" : ""}`}
                     >
                       <td className="border border-amber-300 px-3 py-2">
                         <div className="flex items-center gap-2">
                           <span>{item.telegramId}</span>
                           {item.isBlogger && (
                               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-200 text-purple-900">
-              BLOGGER
-            </span>
+                                    BLOGGER
+                              </span>
+                          )}
+                          {item.attention && (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-200 text-red-900">
+                                    ATTENTION
+                          </span>
                           )}
                         </div>
                       </td>

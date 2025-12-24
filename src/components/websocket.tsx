@@ -173,7 +173,7 @@ const WebSocketComponent = observer(() => {
                     session: store.sessionId,
                   })
                 );
-              }, 300000);
+              }, 60000);
             } else {
               store.setAuthError?.(parsed.message || "AUTH_INIT failed");
               toast.error(parsed.message || "Ошибка авторизации");
