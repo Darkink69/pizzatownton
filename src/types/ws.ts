@@ -370,13 +370,7 @@ export interface ReferralGetRq {
   telegramId: number;
 }
 
-export interface ReferralInfoData {
-  totalReferrals: number;
-  earnedPcoin: number;
-  earnedPdollar: number;
-  link: string;
-  referralLink?: string;
-}
+
 
 // --- Сундуки (Chests) Payloads ---
 
@@ -406,6 +400,28 @@ export interface PizzaCraftBoxPayload {
   rarity: Rarity;
   piecesLeft: number;
   nftBoxId: number;
+}
+
+export interface ReferralLevelInfoData {
+  level: number;
+  countRef: number;
+  // бэк-формат:
+  earnedPcoin?: string | number;
+  earnedPdollar?: string | number;
+  // (опционально) старый формат/на будущее:
+  pcoin?: string | number;
+  pdollar?: string | number;
+}
+
+export interface ReferralInfoData {
+  totalReferrals: number;
+  earnedPcoin: number;
+  earnedPdollar: number;
+  link: string;
+  referralLink?: string;
+
+  levels?: ReferralLevelInfoData[]; // <-- NEW
+  // events?: any[]; // можно добавить позже, сейчас бэк шлёт пустой список
 }
 
 // -------------------- Банк --------------------

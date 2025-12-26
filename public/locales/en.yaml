@@ -211,10 +211,27 @@ friends:
   title: "YOUR LINK"
   subtitle: "PARTNER STATISTICS"
   copy_button: "Copy"
-  description: "Get 7% from your friends' PCoin purchases and 3% from your friends' PDollar profit"
+  description: |
+    Rewards for friends:
+    For PCoin purchase:
+    L1 — 1%, L2 — 1%, L3 — 1%
+
+    For PDollar income claim:
+    L1 — 1%, L2 — 1%, L3 — 2%, L4 — 2%, L5 — 0.5%, L6 — 0.3%, L7 — 0.2%
   referral_link: "Your link"
   statistics:
     friends: "Friends"
+
+  levels:
+    title: "Levels and rewards"
+    hint: "PCoin is credited up to 3 levels, PDollar — up to 7 levels."
+    cols:
+      level: "Lvl"
+      friends: "Friends"
+      pcoin: "PCoin"
+      pdollar: "PDollar"
+      percent: "%"
+
   alts:
     modal_background: "Modal background"
     copy_button_alt: "Copy button"
@@ -280,7 +297,7 @@ bank:
     title: "TON Payment"
     payment_amount: "Amount to pay:"
     credit_amount: "Amount to be credited:"
-    referral_fee_note: "*7% is deducted from the top-up amount for referral rewards."
+    referral_fee_note: "*3% is deducted from the top-up amount for referral rewards."
     pay_button: "Pay with wallet"
   other:
     testo_alt: "Dough"

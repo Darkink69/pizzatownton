@@ -88,7 +88,7 @@ const Home = observer(() => {
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [store.sessionId, store.user.telegramId, t]);
+  }, [store.sessionId, store.user?.telegramId, store.user?.id, t]);
 
   const introGuideSteps = [
     {
@@ -492,7 +492,7 @@ const Home = observer(() => {
     const ok = store.sendHireStaff(3, undefined, option ?? 7, 0);
 
     if (ok) {
-      store.pcoin -= cost;
+      // НЕ списываем локально: баланс обновится после ответа с сервера
       showNotification(t("home.accountant_modal.hired_success"), "success");
       handleCloseStaffModal();
     } else {

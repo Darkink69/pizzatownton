@@ -44,7 +44,7 @@ home:
   sound_on: "Включить звук"
   sound_off: "Выключить звук"
   chef_alt: "Повар"
-  open_new_floor: "Open new floor"
+  open_new_floor: "Открыть новый этаж"
   buy_floor_button: "ОТКРЫТЬ {{floorName}}"
   your_browser_no_video: "Your browser does not support the video tag."
   income_per_hour: "+{{totalIncome}}/час"
@@ -211,13 +211,34 @@ friends:
   title: "ВАША ССЫЛКА"
   subtitle: "ПАРТНЕРСКАЯ СТАТИСТИКА"
   copy_button: "Копировать"
-  description: "Получайте 7% от покупок PCoin ваших друзей и 3% от прибыли PDollar ваших друзей"
+
+  description: |
+    Награды за друзей:
+    При покупке PCoin:
+    1ур - 1%, 2ур - 1%, 3ур - 1%
+    
+    При сборе дохода PDollar:
+    1ур - 1%, 2ур - 1%, 3ур - 2%, 4ур - 2%, 5ур - 0.5%, 6ур - 0.3%, 7ур - 0.2%
+
   referral_link: "Ваша ссылка"
   statistics:
     friends: "Друзья"
+
+
+  levels:
+    title: "Уровни и начисления"
+    hint: "PCoin начисляется до 3 уровней, PDollar — до 7 уровней."
+    cols:
+      level: "Ур."
+      friends: "Друзья"
+      pcoin: "PCoin"
+      pdollar: "PDollar"
+      percent: "%"
+
   alts:
     modal_background: "Фон модального окна"
     copy_button_alt: "Кнопка копирования"
+
 
 bank:
   title: "Банк"
@@ -280,7 +301,7 @@ bank:
     title: "Оплата TON"
     payment_amount: "Сумма к оплате:"
     credit_amount: "Сумма к зачислению:"
-    referral_fee_note: "*Из суммы пополнения вычитается 7% на реферальное вознаграждение."
+    referral_fee_note: "*До 3% от суммы пополнения распределяется на реферальное вознаграждение."
     pay_button: "Оплатить через кошелёк"
   other:
     testo_alt: "Тесто"

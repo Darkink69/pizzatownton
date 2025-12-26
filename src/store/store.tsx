@@ -11,6 +11,7 @@ import type {
 import type { AdminWithdrawalData } from "../types/ws";
 import { bankStore } from "./BankStore";
 import type { Rarity } from "../types/chests";
+import type { ReferralLevelInfoData } from "../types/ws";
 
 class Store {
   imgUrl =
@@ -58,6 +59,7 @@ class Store {
     earnedPcoin: 0,
     earnedPdollar: 0,
     link: "",
+    levels: [] as ReferralLevelInfoData[],
   };
 
   //  РЕЗУЛЬТАТ КОРОБКИ ПИЦЦЫ
@@ -273,12 +275,14 @@ class Store {
     earnedPcoin?: number;
     earnedPdollar?: number;
     link?: string;
+    levels?: ReferralLevelInfoData[];
   }) {
     runInAction(() => {
       this.referral.totalReferrals = Number(data.totalReferrals ?? 0);
       this.referral.earnedPcoin = Number(data.earnedPcoin ?? 0);
       this.referral.earnedPdollar = Number(data.earnedPdollar ?? 0);
       this.referral.link = data.link ?? "";
+      this.referral.levels = Array.isArray(data.levels) ? data.levels : [];
     });
   }
 
@@ -964,8 +968,6 @@ class Store {
         buyFloorRq: { telegramId: tgId, floorId },
       });
 
-      this.deductCurrency(price, currency);
-
       // обновляем массив этажей
       runInAction(() => {
         this.userFloors.data.userFloorList = this.safeUserFloorList.map((f) =>
@@ -1002,7 +1004,7 @@ class Store {
         updateFloorRq: { telegramId: tgId, floorId },
       });
 
-      this.deductCurrency(cost, currency);
+
 
       runInAction(() => {
         this.userFloors.data.userFloorList = this.safeUserFloorList.map(
@@ -1202,6 +1204,7 @@ class Store {
         earnedPcoin: 0,
         earnedPdollar: 0,
         link: "",
+        levels: [],
       };
       this.taskInvite3Status = "idle";
       this.taskInvite3Error = null;

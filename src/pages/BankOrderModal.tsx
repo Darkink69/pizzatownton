@@ -11,7 +11,7 @@ function tonToNano(ton: number): string {
 
 const calculatePcoinAmount = (tonAmount: number): number => {
   const pcoinBeforeFee = tonAmount * 1000;
-  const referralFee = pcoinBeforeFee * 0.07;
+  const referralFee = pcoinBeforeFee * 0.03;
   return Math.floor(pcoinBeforeFee - referralFee);
 };
 
