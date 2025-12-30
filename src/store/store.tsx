@@ -7,11 +7,13 @@ import type {
   UserFloor,
   WsRequest,
   UserState,
+  JettonResponse,
 } from "../types/ws";
 import type { AdminWithdrawalData } from "../types/ws";
 import { bankStore } from "./BankStore";
 import type { Rarity } from "../types/chests";
 import type { ReferralLevelInfoData } from "../types/ws";
+import { normalizePizzaPieces } from "../types/chestsNormalize";
 
 class Store {
   imgUrl =
@@ -162,6 +164,67 @@ class Store {
     console.log("✅ CHEST_OPEN отправлен:", rq);
     return true;
   };
+
+  // =========================================================================
+  // GIFTS (Jetton Box ITEMS)
+  // =========================================================================
+
+  jettonLastResult: JettonResponse | null = null;
+
+  setJettonLastResult(res: JettonResponse | null) {
+    runInAction(() => {
+      this.jettonLastResult = res;
+    });
+  }
+
+  fixClickJetton(): boolean {
+    const tgId = this.user?.telegramId ?? this.user?.id;
+    if (!this.wsSend || !this.sessionId || !tgId) return false;
+
+    return this.send({
+      type: "FIX_CLICK_JETTON_LINK",
+      requestId: genId(),
+      session: this.sessionId,
+      jettonRq: { telegramId: Number(tgId) },
+    });
+  }
+
+  jettonCheckRequestId: string | null = null;
+
+  checkJettonPayment(): boolean {
+    const tgId = this.user?.telegramId ?? this.user?.id;
+    if (!this.wsSend || !this.sessionId || !tgId) return false;
+
+    const requestId = genId();
+    runInAction(() => {
+      this.jettonCheckRequestId = requestId;
+    });
+
+    return this.send({
+      type: "CHECK_JETTON_PAYMENT",
+      requestId,
+      session: this.sessionId,
+      jettonRq: { telegramId: Number(tgId) },
+    });
+  }
+
+  setPiecesFromAny(payload: unknown) {
+    runInAction(() => {
+      this.pieces = normalizePizzaPieces(payload);
+    });
+  }
+
+  applyJettonReward(res: JettonResponse) {
+    runInAction(() => {
+      this.pieces = {
+        ...this.pieces,
+        common: (this.pieces.common ?? 0) + Number(res.commonSlice ?? 0),
+        uncommon: (this.pieces.uncommon ?? 0) + Number(res.unCommonSlice ?? 0),
+        rare: (this.pieces.rare ?? 0) + Number(res.rareSlice ?? 0),
+        mystical: (this.pieces.mystical ?? 0) + Number(res.mystikalSlice ?? 0),
+      };
+    });
+  }
 
   /**
    * Отправляет запрос на крафт NFT-бокса.
@@ -478,7 +541,7 @@ class Store {
       session: this.sessionId,
       adminOperationRq: {
         id: withdrawId,
-        telegramId: adminTgId,     // tg админа
+        telegramId: adminTgId, // tg админа
         operation: "CONFIRMED",
       },
     };
@@ -499,7 +562,7 @@ class Store {
       session: this.sessionId,
       adminOperationRq: {
         id: withdrawId,
-        telegramId: adminTgId,     // tg админа
+        telegramId: adminTgId, // tg админа
         operation: "REJECTED",
       },
     };
@@ -507,8 +570,6 @@ class Store {
     console.log("📨 ADMIN_OPERATION REJECTED:", rq);
     return this.send(rq);
   }
-
-
 
   // Установка административных данных
   setAdminData(data: AdminWithdrawalData[]) {
@@ -1003,8 +1064,6 @@ class Store {
         session: this.sessionId!,
         updateFloorRq: { telegramId: tgId, floorId },
       });
-
-
 
       runInAction(() => {
         this.userFloors.data.userFloorList = this.safeUserFloorList.map(

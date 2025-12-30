@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import store from "../store/store";
 // import Footer from "../components/Footer";
-
 import { Link } from "react-router-dom";
 import FooterHome from "../components/FooterHome";
 import GuideOverlay from "../pages/GuideOverlay";
@@ -10,6 +9,13 @@ import { getFloorUpgradeData, getCurrentUpgradeCost } from "./floorUpgradeData";
 import { useTranslation } from "react-i18next";
 
 const Home = observer(() => {
+  const [jettonUiMessage, setJettonUiMessage] = useState<string | null>(null);
+  const [jettonUiType, setJettonUiType] = useState<"success" | "error" | null>(
+    null
+  );
+  const JETTON_DEPOSIT_URL =
+    "https://t.me/play_wheelclub_bot?start=cgGoyDUwtm9";
+
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedFloorId, setSelectedFloorId] = useState<number | null>(null);
@@ -44,6 +50,44 @@ const Home = observer(() => {
   );
   const [showChancesInfo, setShowChancesInfo] = useState(false);
   const audioNotificationRef = useRef<HTMLAudioElement | null>(null);
+
+  const [showNYBoxNotification, setShowNYBoxNotification] = useState(false);
+  const [showNYBoxModal, setShowNYBoxModal] = useState(false);
+  const [isJettonChecking, setIsJettonChecking] = useState(false);
+
+  useEffect(() => {
+    console.log("jettonLastResult changed:", store.jettonLastResult);
+    const r = store.jettonLastResult;
+    if (!r) return;
+
+    // ответ пришёл -> разблокируем кнопку
+    setIsJettonChecking(false);
+
+    if (!r.haveDepo) {
+      setJettonUiType("error");
+      setJettonUiMessage("Депозит > 10$ не найден. Попробуйте позже.");
+      return;
+    }
+
+    const currencyParts: string[] = [];
+    if (r.pcoin) currencyParts.push(`+${r.pcoin} PCoin`);
+    if (r.pizza) currencyParts.push(`+${r.pizza} Pizza`);
+    if (r.pdollar) currencyParts.push(`+${r.pdollar} PDollar`);
+
+    const sliceParts: string[] = [];
+    if (r.commonSlice) sliceParts.push(`Common +${r.commonSlice}`);
+    if (r.unCommonSlice) sliceParts.push(`Uncommon +${r.unCommonSlice}`);
+    if (r.rareSlice) sliceParts.push(`Rare +${r.rareSlice}`);
+    if (r.mystikalSlice) sliceParts.push(`Mystical +${r.mystikalSlice}`);
+
+    const msg =
+      `Депозит подтверждён!\n` +
+      (currencyParts.length ? `Награда: ${currencyParts.join(", ")}\n` : "") +
+      (sliceParts.length ? `Кусочки: ${sliceParts.join(", ")}` : "");
+
+    setJettonUiType("success");
+    setJettonUiMessage(msg);
+  }, [store.jettonLastResult]);
 
   // Запрос данных при монтировании
   useEffect(() => {
@@ -87,7 +131,15 @@ const Home = observer(() => {
       }
     }, delay);
 
-    return () => clearTimeout(timer);
+    const nyBoxDelay = delay + 3000; // Показываем через 3 секунды после пиццы
+    const nyBoxTimer = setTimeout(() => {
+      setShowNYBoxNotification(true);
+    }, nyBoxDelay);
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(nyBoxTimer);
+    };
   }, [store.sessionId, store.user?.telegramId, store.user?.id, t]);
 
   const introGuideSteps = [
@@ -1954,11 +2006,479 @@ const Home = observer(() => {
         />
       )}
 
+      {/* Уведомление NY_box */}
+      {showNYBoxNotification && (
+        <button
+          onClick={() => setShowNYBoxModal(true)}
+          className="fixed bottom-48 -right-68 z-40 animate-bounce hover:scale-105 transition-transform"
+          style={{ animationDuration: "2s" }}
+        >
+          <img
+            src={`${store.imgUrl}NY_box.png`}
+            alt="NY Box"
+            className="w-1/3 object-contain"
+          />
+        </button>
+      )}
+
+      {/* Модальное окно NY_box */}
+      {showNYBoxModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4">
+          <div
+            className="relative w-full max-w-md mx-auto bg-cover bg-center rounded-2xl"
+            style={{
+              backgroundImage: `url('${store.imgUrl}img_window_big.png')`,
+            }}
+          >
+            {/* Заголовок */}
+            <div className="relative -top-4 flex justify-center">
+              <div className="w-1/2 relative">
+                <img
+                  src={`${store.imgUrl}img_window_header.png`}
+                  alt="Header"
+                  className="w-full h-auto"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-amber-800 font-bold text-lg shantell">
+                    NY Box
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Кнопка закрытия */}
+            <button
+              onClick={() => {
+                setShowNYBoxModal(false);
+                setJettonUiMessage(null);
+                setJettonUiType(null);
+                setIsJettonChecking(false);
+              }}
+              className="absolute -top-8 -right-2 w-8 h-8 hover:scale-110 transition-transform z-10"
+            >
+              <img
+                src={`${store.imgUrl}b_close.png`}
+                alt="Закрыть"
+                className="w-full h-full"
+              />
+            </button>
+
+            {/* Контент */}
+            <div className="p-4 text-center">
+              <div className="mb-2 -mt-6">
+                <img
+                  src={`${store.imgUrl}NY_box_open.png`}
+                  alt="NY Box Open"
+                  className="w-48 mx-auto"
+                />
+              </div>
+
+              {/* Основной текст и кнопки - скрываем при положительном результате */}
+              {!jettonUiMessage || jettonUiType === "error" ? (
+                <>
+                  <p className="text-md text-amber-800 shantell mb-4">
+                    Для получения данного бокса необходимо сделать депозит от
+                    10$ у наших партнеров!
+                  </p>
+
+                  {/* Кнопки */}
+                  <div className="space-y-3 mb-6">
+                    <button
+                      onClick={() => {
+                        const ok = store.fixClickJetton();
+                        if (!ok) {
+                          showNotification(
+                            "Не удалось зафиксировать переход (нет WS/сессии)",
+                            "error"
+                          );
+                          return;
+                        }
+
+                        // открываем партнёра
+                        window.open(JETTON_DEPOSIT_URL, "_blank");
+                      }}
+                      className="relative w-full py-3 rounded-lg flex items-center justify-center hover:opacity-90 transition-opacity"
+                    >
+                      <img
+                        src={`${store.imgUrl}b_green.png`}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-contain"
+                      />
+                      <span className="relative z-10 text-white font-bold shantell text-lg">
+                        Сделать депозит
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        if (isJettonChecking) return;
+
+                        setJettonUiMessage(null);
+                        setJettonUiType(null);
+
+                        setIsJettonChecking(true);
+                        const ok = store.checkJettonPayment();
+
+                        if (!ok) {
+                          setIsJettonChecking(false);
+                          setJettonUiType("error");
+                          setJettonUiMessage(
+                            "Не удалось отправить проверку (нет WS/сессии)."
+                          );
+                        }
+                      }}
+                      className="relative w-full py-3 rounded-lg flex items-center justify-center hover:opacity-90 transition-opacity"
+                    >
+                      <img
+                        src={`${store.imgUrl}b_red_round.png`}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-contain"
+                      />
+                      <span className="relative z-10 text-white font-bold shantell text-lg">
+                        {isJettonChecking ? "Проверяем..." : "Проверить"}
+                      </span>
+                    </button>
+                  </div>
+                </>
+              ) : null}
+
+              {/* Результат проверки депозита - ОШИБКА */}
+              {jettonUiMessage && jettonUiType === "error" && (
+                <div className="mt-4 mb-6">
+                  <div className="bg-red-100/70 border-2 border-red-400 rounded-xl p-4 mb-4">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <img
+                        src={`${store.imgUrl}icon_warning.png`}
+                        alt="Ошибка"
+                        className="w-8 h-8"
+                      />
+                      <span className="text-red-800 font-bold shantell text-lg">
+                        Депозит не найден
+                      </span>
+                    </div>
+                    <p className="text-red-700 shantell text-sm whitespace-pre-wrap">
+                      {jettonUiMessage}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setJettonUiMessage(null);
+                      setJettonUiType(null);
+                    }}
+                    className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-lg font-bold shantell transition"
+                  >
+                    Попробовать снова
+                  </button>
+                </div>
+              )}
+
+              {/* Результат проверки депозита - УСПЕХ */}
+              {jettonUiMessage && jettonUiType === "success" && (
+                <div className="mt-4 mb-6">
+                  {/* Проигрываем звук win.mp3 при успехе */}
+                  {(() => {
+                    useEffect(() => {
+                      if (jettonUiType === "success") {
+                        const audio = new Audio(`${store.imgUrl}win.mp3`);
+                        audio
+                          .play()
+                          .catch((e) =>
+                            console.log("Ошибка воспроизведения звука:", e)
+                          );
+                      }
+                    }, [jettonUiType]);
+                    return null;
+                  })()}
+
+                  {/* Заголовок успеха */}
+                  <div className="bg-green-100/70 border-2 border-green-400 rounded-xl p-4 mb-4">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <img
+                        src={`${store.imgUrl}icon_success.png`}
+                        alt="Успех"
+                        className="w-8 h-8"
+                      />
+                      <span className="text-green-800 font-bold shantell text-xl">
+                        Успешно!
+                      </span>
+                    </div>
+                    <p className="text-green-700 shantell text-lg font-bold">
+                      Депозит подтверждён!
+                    </p>
+                  </div>
+
+                  {/* Сетка призов с картинками */}
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    {store.jettonLastResult?.pcoin && (
+                      <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 flex items-center gap-2">
+                        <img
+                          src={`${store.imgUrl}icon_dollar_coin.png`}
+                          alt="P-Coin"
+                          className="w-10 h-10"
+                        />
+                        <div className="text-left">
+                          <div className="text-amber-800 font-bold shantell">
+                            +{store.jettonLastResult.pcoin}
+                          </div>
+                          <div className="text-amber-600 text-sm shantell">
+                            P-Coin
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {store.jettonLastResult?.pizza && (
+                      <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 flex items-center gap-2">
+                        <img
+                          src={`${store.imgUrl}icon_pizza.png`}
+                          alt="Pizza"
+                          className="w-10 h-10"
+                        />
+                        <div className="text-left">
+                          <div className="text-amber-800 font-bold shantell">
+                            +{store.jettonLastResult.pizza}
+                          </div>
+                          <div className="text-amber-600 text-sm shantell">
+                            Pizza
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {store.jettonLastResult?.pdollar && (
+                      <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 flex items-center gap-2">
+                        <img
+                          src={`${store.imgUrl}icon_dollar.png`}
+                          alt="P-Dollar"
+                          className="w-10 h-10"
+                        />
+                        <div className="text-left">
+                          <div className="text-amber-800 font-bold shantell">
+                            +{store.jettonLastResult.pdollar}
+                          </div>
+                          <div className="text-amber-600 text-sm shantell">
+                            P-Dollar
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {store.jettonLastResult?.commonSlice && (
+                      <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 flex items-center gap-2">
+                        <img
+                          src={`${store.imgUrl}icon_pizza_common.png`}
+                          alt="Common"
+                          className="w-10 h-10"
+                        />
+                        <div className="text-left">
+                          <div className="text-amber-800 font-bold shantell">
+                            +{store.jettonLastResult.commonSlice}
+                          </div>
+                          <div className="text-amber-600 text-sm shantell">
+                            Common
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {store.jettonLastResult?.unCommonSlice && (
+                      <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 flex items-center gap-2">
+                        <img
+                          src={`${store.imgUrl}icon_pizza_uncommon.png`}
+                          alt="Uncommon"
+                          className="w-10 h-10"
+                        />
+                        <div className="text-left">
+                          <div className="text-amber-800 font-bold shantell">
+                            +{store.jettonLastResult.unCommonSlice}
+                          </div>
+                          <div className="text-amber-600 text-sm shantell">
+                            Uncommon
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {store.jettonLastResult?.rareSlice && (
+                      <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 flex items-center gap-2">
+                        <img
+                          src={`${store.imgUrl}icon_pizza_rare.png`}
+                          alt="Rare"
+                          className="w-10 h-10"
+                        />
+                        <div className="text-left">
+                          <div className="text-amber-800 font-bold shantell">
+                            +{store.jettonLastResult.rareSlice}
+                          </div>
+                          <div className="text-amber-600 text-sm shantell">
+                            Rare
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {store.jettonLastResult?.mystikalSlice && (
+                      <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 flex items-center gap-2">
+                        <img
+                          src={`${store.imgUrl}icon_pizza_mystical.png`}
+                          alt="Mystical"
+                          className="w-10 h-10"
+                        />
+                        <div className="text-left">
+                          <div className="text-amber-800 font-bold shantell">
+                            +{store.jettonLastResult.mystikalSlice}
+                          </div>
+                          <div className="text-amber-600 text-sm shantell">
+                            Mystical
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setShowNYBoxModal(false);
+                      setJettonUiMessage(null);
+                      setJettonUiType(null);
+                    }}
+                    className="relative w-full py-3 rounded-lg flex items-center justify-center hover:opacity-90 transition-opacity"
+                  >
+                    <img
+                      src={`${store.imgUrl}b_orange_round.png`}
+                      alt=""
+                      className="absolute inset-0 w-full h-full object-contain"
+                    />
+                    <span className="relative z-10 text-white font-bold shantell text-lg">
+                      Забрать награды
+                    </span>
+                  </button>
+                </div>
+              )}
+
+              {/* Таблица призов - показываем только если нет результатов проверки */}
+              {(!jettonUiMessage || jettonUiType === "error") && (
+                <div className="bg-white/50 rounded-xl p-4 border border-amber-300">
+                  <div className="text-center mb-3">
+                    <span className="text-amber-800 font-bold shantell text-lg">
+                      Возможные призы:
+                    </span>
+                  </div>
+                  <table className="w-full">
+                    <tbody>
+                      <tr>
+                        <td className="py-2 text-left">
+                          <img
+                            src={`${store.imgUrl}icon_dollar_coin.png`}
+                            alt="P-coin"
+                            className="w-8 h-8"
+                          />
+                        </td>
+                        <td className="py-2 text-right">
+                          <span className="text-amber-800 shantell font-bold">
+                            P-coin от 5.000-7.000
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 text-left">
+                          <img
+                            src={`${store.imgUrl}icon_pizza.png`}
+                            alt="Pizza"
+                            className="w-8 h-8"
+                          />
+                        </td>
+                        <td className="py-2 text-right">
+                          <span className="text-amber-800 shantell font-bold">
+                            Pizza от 20.000-28.000
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 text-left">
+                          <img
+                            src={`${store.imgUrl}icon_dollar.png`}
+                            alt="P-Dollar"
+                            className="w-8 h-8"
+                          />
+                        </td>
+                        <td className="py-2 text-right">
+                          <span className="text-amber-800 shantell font-bold">
+                            P-dollar от 50.000-80.000
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 text-left">
+                          <img
+                            src={`${store.imgUrl}icon_pizza_common.png`}
+                            alt="Common"
+                            className="w-8 h-8"
+                          />
+                        </td>
+                        <td className="py-2 text-right">
+                          <span className="text-amber-800 shantell font-bold">
+                            Common от 1-7
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 text-left">
+                          <img
+                            src={`${store.imgUrl}icon_pizza_uncommon.png`}
+                            alt="Uncommon"
+                            className="w-8 h-8"
+                          />
+                        </td>
+                        <td className="py-2 text-right">
+                          <span className="text-amber-800 shantell font-bold">
+                            Uncommon от 1-5
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 text-left">
+                          <img
+                            src={`${store.imgUrl}icon_pizza_rare.png`}
+                            alt="Rare"
+                            className="w-8 h-8"
+                          />
+                        </td>
+                        <td className="py-2 text-right">
+                          <span className="text-amber-800 shantell font-bold">
+                            Rare от 1-3
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 text-left">
+                          <img
+                            src={`${store.imgUrl}icon_pizza_mystical.png`}
+                            alt="Mystical"
+                            className="w-8 h-8"
+                          />
+                        </td>
+                        <td className="py-2 text-right">
+                          <span className="text-amber-800 shantell font-bold">
+                            Mystical 1
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Уведомление с пиццей */}
       {showPizzaNotification && (
         <button
           onClick={handlePizzaNotificationClick}
-          className="fixed bottom-20 -right-68 z-40 animate-bounce hover:scale-105 transition-transform"
+          className="fixed bottom-20 -right-68 z-40 hover:scale-105 transition-transform"
           style={{ animationDuration: "2s" }}
         >
           <img

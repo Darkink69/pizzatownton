@@ -35,6 +35,8 @@ export type OperationType =
   | "CHEST_OPEN"
   | "PIZZA_CRAFT_BOX"
   | "BANK_MANUAL_WITHDRAW_HISTORY"
+  | "FIX_CLICK_JETTON_LINK"
+  | "CHECK_JETTON_PAYMENT"
   | (string & {}); // резерв на будущее
 
 // -------------------- База запроса --------------------
@@ -85,6 +87,23 @@ export interface UserFloor {
           | null;
       }[]
     | null;
+}
+
+
+export interface JettonRq {
+    telegramId: number;
+}
+
+export interface JettonResponse {
+    haveDepo: boolean;
+    pcoin: number;
+    pizza: number;
+    pdollar: number;
+    commonSlice: number;
+    unCommonSlice: number;
+    rareSlice: number;
+    mystikalSlice: number;
+    pieces: unknown;
 }
 
 export interface ManualWithdrawRq {
@@ -323,6 +342,9 @@ export interface WsRequest extends WsBase {
 
   // лутбокс (коробка пиццы)
   pizzaBoxOpenRq?: PizzaBoxOpenRq;
+
+      // jetton (коробка NY)
+    jettonRq?: JettonRq;
 
   // сундуки и крафт
   chestGetStateRq?: ChestGetStateRq;

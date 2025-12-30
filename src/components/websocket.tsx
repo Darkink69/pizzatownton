@@ -12,18 +12,20 @@ import type {
   TaskCompleteResponse,
   TaskVerifyResponse,
   ManualWithdrawHistoryData,
+  // ChestOpenPayload,
+  JettonResponse,
   WsRequest,
   WsResponse,
 } from "../types/ws";
 import { bankStore } from "../store/BankStore.ts";
 import { runInAction } from "mobx";
+import { normalizePizzaPieces } from "../types/chestsNormalize.ts";
 
 function generateRequestId() {
   return Math.random().toString(36).substring(2, 10);
 }
 
 const WebSocketComponent = observer(() => {
-
   const lastClaimRefreshAtRef = useRef<number>(0);
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -36,12 +38,14 @@ const WebSocketComponent = observer(() => {
     if (now - lastClaimRefreshAtRef.current < 3000) return;
     lastClaimRefreshAtRef.current = now;
 
-    ws.send(JSON.stringify({
-      type: "CLAIM_REFRESH",
-      requestId: generateRequestId(),
-      session: store.sessionId,
-      claimRefreshRq: { telegramId: store.user.telegramId },
-    }));
+    ws.send(
+      JSON.stringify({
+        type: "CLAIM_REFRESH",
+        requestId: generateRequestId(),
+        session: store.sessionId,
+        claimRefreshRq: { telegramId: store.user.telegramId },
+      })
+    );
   };
   const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const claimRefreshIntervalRef = useRef<number | null>(null);
@@ -219,13 +223,15 @@ const WebSocketComponent = observer(() => {
               // после апрува/реджекта перезагружаем таблицу
               store.requestAdminData();
             } else {
-              console.error("❌ ADMIN_OPERATION failed:", parsed.message, parsed);
+              console.error(
+                "❌ ADMIN_OPERATION failed:",
+                parsed.message,
+                parsed
+              );
               toast.error(parsed.message || "ADMIN_OPERATION failed");
             }
             break;
           }
-
-
 
           case "BANK_LINK_WALLET": {
             if (parsed.success) {
@@ -293,8 +299,8 @@ const WebSocketComponent = observer(() => {
                     referralInfoData.referralLink ??
                     "",
                   levels: Array.isArray(referralInfoData.levels)
-                      ? referralInfoData.levels
-                      : [],
+                    ? referralInfoData.levels
+                    : [],
                 };
               });
 
@@ -303,6 +309,49 @@ const WebSocketComponent = observer(() => {
               toast.error(
                 parsed.message || "Ошибка загрузки реферальных данных"
               );
+            }
+            break;
+          }
+
+          /** ------------------ JETTON_BOX_OPEN ------------------ */
+          case "FIX_CLICK_JETTON_LINK": {
+            if (parsed.success) {
+              console.log("✅ FIX_CLICK_JETTON_LINK ok");
+            } else {
+              toast.error(parsed.message || "Ошибка фикса перехода");
+            }
+            break;
+          }
+
+          case "CHECK_JETTON_PAYMENT": {
+            if (parsed.success && parsed.data) {
+              const d = parsed.data as JettonResponse;
+
+              store.setJettonLastResult?.(d);
+
+              // totals кусочков пришли с бэка -> мгновенно обновляем витрину сундуков
+              if (d.pieces) {
+                const normalized = normalizePizzaPieces(d.pieces);
+                runInAction(() => {
+                  store.pieces = normalized;
+                });
+              }
+            } else {
+              // ВАЖНО: чтобы Home снял "Проверяем..." и показал ошибку
+              const fallback: JettonResponse = {
+                haveDepo: false,
+                pcoin: 0,
+                pizza: 0,
+                pdollar: 0,
+                commonSlice: 0,
+                unCommonSlice: 0,
+                rareSlice: 0,
+                mystikalSlice: 0,
+                pieces: null,
+              };
+
+              store.setJettonLastResult?.(fallback);
+              toast.error(parsed.message || "Не удалось проверить депозит");
             }
             break;
           }
