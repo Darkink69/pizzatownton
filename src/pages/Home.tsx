@@ -2063,19 +2063,9 @@ const Home = observer(() => {
               />
             </button>
 
-            {/* Адвокат */}
-            <div className="absolute -top-2 left-3 w-20 z-10">
-              <img
-                src={`${store.imgUrl}law.jpg`}
-                alt=""
-                className="w-full h-full rounded-4xl"
-              />
-              <span className="text-center text-black shantell">Адвокат</span>
-            </div>
-
             {/* Контент */}
             <div className="p-3 text-center">
-              <div className="-mt-6">
+              <div className="-mt-10">
                 <img
                   src={`${store.imgUrl}NY_box_open.png`}
                   alt="NY Box Open"
@@ -2452,6 +2442,20 @@ const Home = observer(() => {
                         <td className="text-right">
                           <span className="text-amber-800 shantell font-bold">
                             Mystical 1
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="text-left">
+                          <img
+                            src={`${store.imgUrl}law.jpg`}
+                            alt="Mystical"
+                            className="w-6"
+                          />
+                        </td>
+                        <td className="text-right">
+                          <span className="text-amber-800 shantell font-bold">
+                            Адвокат
                           </span>
                         </td>
                       </tr>
