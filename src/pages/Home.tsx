@@ -2023,7 +2023,7 @@ const Home = observer(() => {
 
       {/* Модальное окно NY_box */}
       {showNYBoxModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-3">
           <div
             className="relative w-full max-w-md mx-auto bg-cover bg-center rounded-2xl"
             style={{
@@ -2063,26 +2063,36 @@ const Home = observer(() => {
               />
             </button>
 
+            {/* Адвокат */}
+            <div className="absolute -top-2 left-3 w-20 z-10">
+              <img
+                src={`${store.imgUrl}law.jpg`}
+                alt=""
+                className="w-full h-full rounded-4xl"
+              />
+              <span className="text-center text-black shantell">Адвокат</span>
+            </div>
+
             {/* Контент */}
-            <div className="p-4 text-center">
-              <div className="mb-2 -mt-6">
+            <div className="p-3 text-center">
+              <div className="-mt-6">
                 <img
                   src={`${store.imgUrl}NY_box_open.png`}
                   alt="NY Box Open"
-                  className="w-48 mx-auto"
+                  className="w-40 mx-auto"
                 />
               </div>
 
               {/* Основной текст и кнопки - скрываем при положительном результате */}
               {!jettonUiMessage || jettonUiType === "error" ? (
                 <>
-                  <p className="text-md text-amber-800 shantell mb-4">
+                  <p className="text-md text-amber-800 shantell mb-1">
                     Для получения данного бокса необходимо сделать депозит от
                     10$ у наших партнеров!
                   </p>
 
                   {/* Кнопки */}
-                  <div className="space-y-3 mb-6">
+                  <div className="space-y-3 mb-1">
                     <button
                       onClick={() => {
                         const ok = store.fixClickJetton();
@@ -2097,7 +2107,7 @@ const Home = observer(() => {
                         // открываем партнёра
                         window.open(JETTON_DEPOSIT_URL, "_blank");
                       }}
-                      className="relative w-full py-3 rounded-lg flex items-center justify-center hover:opacity-90 transition-opacity"
+                      className="relative w-full py-1 rounded-lg flex items-center justify-center hover:opacity-90 transition-opacity"
                     >
                       <img
                         src={`${store.imgUrl}b_green.png`}
@@ -2127,7 +2137,7 @@ const Home = observer(() => {
                           );
                         }
                       }}
-                      className="relative w-full py-3 rounded-lg flex items-center justify-center hover:opacity-90 transition-opacity"
+                      className="relative w-full py-1 rounded-lg flex items-center justify-center hover:opacity-90 transition-opacity"
                     >
                       <img
                         src={`${store.imgUrl}b_red_round.png`}
@@ -2144,14 +2154,9 @@ const Home = observer(() => {
 
               {/* Результат проверки депозита - ОШИБКА */}
               {jettonUiMessage && jettonUiType === "error" && (
-                <div className="mt-4 mb-6">
-                  <div className="bg-red-100/70 border-2 border-red-400 rounded-xl p-4 mb-4">
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                      <img
-                        src={`${store.imgUrl}icon_warning.png`}
-                        alt="Ошибка"
-                        className="w-8 h-8"
-                      />
+                <div className="mt-2 mb-2">
+                  <div className="bg-red-100/70 border-2 border-red-400 rounded-xl p-1">
+                    <div className="flex items-center justify-center gap-2">
                       <span className="text-red-800 font-bold shantell text-lg">
                         Депозит не найден
                       </span>
@@ -2160,22 +2165,12 @@ const Home = observer(() => {
                       {jettonUiMessage}
                     </p>
                   </div>
-
-                  <button
-                    onClick={() => {
-                      setJettonUiMessage(null);
-                      setJettonUiType(null);
-                    }}
-                    className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-lg font-bold shantell transition"
-                  >
-                    Попробовать снова
-                  </button>
                 </div>
               )}
 
               {/* Результат проверки депозита - УСПЕХ */}
               {jettonUiMessage && jettonUiType === "success" && (
-                <div className="mt-4 mb-6">
+                <div className="mt-1 mb-1">
                   {/* Проигрываем звук win.mp3 при успехе */}
                   {(() => {
                     useEffect(() => {
@@ -2192,13 +2187,8 @@ const Home = observer(() => {
                   })()}
 
                   {/* Заголовок успеха */}
-                  <div className="bg-green-100/70 border-2 border-green-400 rounded-xl p-4 mb-4">
+                  <div className="bg-green-100/70 border-2 border-green-400 rounded-xl p-1 mb-1">
                     <div className="flex items-center justify-center gap-2 mb-2">
-                      <img
-                        src={`${store.imgUrl}icon_success.png`}
-                        alt="Успех"
-                        className="w-8 h-8"
-                      />
                       <span className="text-green-800 font-bold shantell text-xl">
                         Успешно!
                       </span>
@@ -2209,7 +2199,7 @@ const Home = observer(() => {
                   </div>
 
                   {/* Сетка призов с картинками */}
-                  <div className="grid grid-cols-2 gap-3 mb-6">
+                  <div className="grid grid-cols-2 gap-3 mb-1">
                     {store.jettonLastResult?.pcoin && (
                       <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 flex items-center gap-2">
                         <img
@@ -2229,7 +2219,7 @@ const Home = observer(() => {
                     )}
 
                     {store.jettonLastResult?.pizza && (
-                      <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 flex items-center gap-2">
+                      <div className="bg-amber-50 border border-amber-300 rounded-lg p-1 flex items-center gap-2">
                         <img
                           src={`${store.imgUrl}icon_pizza.png`}
                           alt="Pizza"
@@ -2368,98 +2358,98 @@ const Home = observer(() => {
                   <table className="w-full">
                     <tbody>
                       <tr>
-                        <td className="py-2 text-left">
+                        <td className="text-left">
                           <img
                             src={`${store.imgUrl}icon_dollar_coin.png`}
                             alt="P-coin"
-                            className="w-8 h-8"
+                            className="w-6"
                           />
                         </td>
-                        <td className="py-2 text-right">
+                        <td className="text-right">
                           <span className="text-amber-800 shantell font-bold">
                             P-coin от 5.000-7.000
                           </span>
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-2 text-left">
+                        <td className="text-left">
                           <img
                             src={`${store.imgUrl}icon_pizza.png`}
                             alt="Pizza"
-                            className="w-8 h-8"
+                            className="w-6"
                           />
                         </td>
-                        <td className="py-2 text-right">
+                        <td className="text-right">
                           <span className="text-amber-800 shantell font-bold">
                             Pizza от 20.000-28.000
                           </span>
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-2 text-left">
+                        <td className="text-left">
                           <img
                             src={`${store.imgUrl}icon_dollar.png`}
                             alt="P-Dollar"
-                            className="w-8 h-8"
+                            className="w-6"
                           />
                         </td>
-                        <td className="py-2 text-right">
+                        <td className="text-right">
                           <span className="text-amber-800 shantell font-bold">
                             P-dollar от 50.000-80.000
                           </span>
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-2 text-left">
+                        <td className="text-left">
                           <img
                             src={`${store.imgUrl}icon_pizza_common.png`}
                             alt="Common"
-                            className="w-8 h-8"
+                            className="w-6"
                           />
                         </td>
-                        <td className="py-2 text-right">
+                        <td className="text-right">
                           <span className="text-amber-800 shantell font-bold">
                             Common от 1-7
                           </span>
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-2 text-left">
+                        <td className="text-left">
                           <img
                             src={`${store.imgUrl}icon_pizza_uncommon.png`}
                             alt="Uncommon"
-                            className="w-8 h-8"
+                            className="w-6"
                           />
                         </td>
-                        <td className="py-2 text-right">
+                        <td className="text-right">
                           <span className="text-amber-800 shantell font-bold">
                             Uncommon от 1-5
                           </span>
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-2 text-left">
+                        <td className="text-left">
                           <img
                             src={`${store.imgUrl}icon_pizza_rare.png`}
                             alt="Rare"
-                            className="w-8 h-8"
+                            className="w-6"
                           />
                         </td>
-                        <td className="py-2 text-right">
+                        <td className="text-right">
                           <span className="text-amber-800 shantell font-bold">
                             Rare от 1-3
                           </span>
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-2 text-left">
+                        <td className="text-left">
                           <img
                             src={`${store.imgUrl}icon_pizza_mystical.png`}
                             alt="Mystical"
-                            className="w-8 h-8"
+                            className="w-6"
                           />
                         </td>
-                        <td className="py-2 text-right">
+                        <td className="text-right">
                           <span className="text-amber-800 shantell font-bold">
                             Mystical 1
                           </span>
