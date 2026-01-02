@@ -294,7 +294,7 @@ const ChestsPage = observer(() => {
 
                 <div className="absolute top-1 left-1/2 -translate-x-1/2 z-20">
                   <span className="shantell text-xl text-amber-800 tracking-wider">
-                    ЛУТБОКС
+                    КРАФТ
                   </span>
                 </div>
 
@@ -519,7 +519,6 @@ const ChestsPage = observer(() => {
           </button>
         </ChestModal>
       )}
-      // Затем в компоненте ChestsPage замените существующее модальное окно на:
       {isGiftsModalOpen && (
         <GiftsModal
           isOpen={isGiftsModalOpen}

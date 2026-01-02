@@ -22,7 +22,7 @@ import type {
 } from "../types/ws";
 import { bankStore } from "../store/BankStore.ts";
 import { runInAction } from "mobx";
-import { normalizePizzaPieces } from "../types/chestsNormalize.ts";
+
 import type { Rarity } from "../types/chests.ts";
 
 function generateRequestId() {
@@ -170,6 +170,8 @@ const WebSocketComponent = observer(() => {
               // загружаем этажи
               sendFloorsGetRequest();
 
+              // сразу подтягиваем ключи/кусочки, чтобы страница сундуков показывала totals при первом заходе
+              store.getChestsState();
               // мгновенный refresh
               ws.send(
                 JSON.stringify({
@@ -328,17 +330,12 @@ const WebSocketComponent = observer(() => {
             if (parsed.success && parsed.data) {
               const d = parsed.data as JettonResponse;
 
+              // важно для UI Jetton (чтобы Home понял, что ответ пришёл)
               store.setJettonLastResult?.(d);
 
-              // totals кусочков пришли с бэка -> мгновенно обновляем витрину сундуков
-              if (d.pieces) {
-                const normalized = normalizePizzaPieces(d.pieces);
-                runInAction(() => {
-                  store.pieces = normalized;
-                });
-              }
+              // важно для Chests totals
+              store.getChestsState();
             } else {
-              // ВАЖНО: чтобы Home снял "Проверяем..." и показал ошибку
               const fallback: JettonResponse = {
                 haveDepo: false,
                 pcoin: 0,
@@ -446,6 +443,7 @@ const WebSocketComponent = observer(() => {
                   nftPrizeName,
                   received: Boolean(d.received),
                 };
+                store.getChestsState();
               });
             } else {
               toast.error(parsed.message || "Ошибка крафта");
@@ -573,9 +571,17 @@ const WebSocketComponent = observer(() => {
           case "BANK_ORDER_STATUS_CHANGED": {
             if (parsed.success && parsed.data) {
               const orderViewData = parsed.data as BankOrderViewData;
+
               (store as any).setBankOrderView?.(orderViewData);
               (store as any).setConfirmedOrder?.(orderViewData);
+
               toast.info(`💳 Статус ордера: ${orderViewData.status}`);
+
+              // ВАЖНО: если PAID — могли выдать deposit-ключи
+              if (orderViewData.status === "PAID") {
+                store.getChestsState();
+              }
+
             } else {
               (store as any).setBankError?.(
                 parsed.message || "BANK_ORDER_VIEW failed"

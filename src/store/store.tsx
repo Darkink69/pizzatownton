@@ -2,7 +2,7 @@ import { makeAutoObservable, runInAction } from "mobx";
 import {
   normalizeChestKeys,
   normalizePizzaPieces,
-} from "../types/chestsNormalize";
+} from "../utils/chestsNormalize";
 import type {
   ChestGetStatePayload,
   ChestOpenPayload,
@@ -26,6 +26,7 @@ class Store {
   referrerId: string | null = null;
   startParam: string | null = null;
   private wsSend: ((rq: WsRequest) => boolean) | null = null;
+  private lastChestsStateAt = 0;
   sessionId: string | null = null;
   isAuthenticating = false;
   authError: string | null = null;
@@ -136,8 +137,10 @@ class Store {
         this.updateUserData(payload.user);
       }
 
-      if ("rewards" in payload && payload.rewards) {
-        this.lastRewards = payload.rewards;
+      if ("rewards" in payload) {
+        this.lastRewards = Array.isArray((payload as any).rewards)
+            ? ((payload as any).rewards as Reward[])
+            : [];
       }
     });
   };
@@ -149,16 +152,30 @@ class Store {
   getChestsState = (): boolean => {
     if (!this.wsSend || !this.sessionId || !this.user?.telegramId) return false;
 
+    const now = Date.now();
+    if (now - this.lastChestsStateAt < 500) return false;
+    this.lastChestsStateAt = now;
+
     const rq: WsRequest = {
       type: "CHEST_GET_STATE",
       requestId: genId(),
       session: this.sessionId,
       chestGetStateRq: { telegramId: this.user.telegramId },
     };
+
     this.send(rq);
-    console.log("✅ CHEST_GET_STATE отправлен:", rq);
     return true;
   };
+
+
+  handleJettonSuccess(res: JettonResponse) {
+    runInAction(() => {
+      this.jettonLastResult = res;
+    });
+
+    // всегда подтягиваем totals с сервера
+    this.getChestsState();
+  }
 
   // =========================================================================
   // GIFTS (Jetton Box ITEMS)
@@ -220,6 +237,9 @@ class Store {
       };
     });
   }
+
+
+
 
   // =========================================================================
   // GIFTS (CRAFTED NFT ITEMS)

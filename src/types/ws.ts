@@ -93,11 +93,14 @@ export interface JettonResponse {
     pcoin: number;
     pizza: number;
     pdollar: number;
+
+    // выпало (можно оставить для модалки)
     commonSlice: number;
     unCommonSlice: number;
     rareSlice: number;
     mystikalSlice: number;
-    pieces: unknown;
+
+    pieces?: unknown;
 }
 
 export interface ManualWithdrawRq {
