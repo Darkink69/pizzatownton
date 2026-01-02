@@ -15,7 +15,6 @@ import { Page } from "../../components/Page";
 import { bem } from "../../css/bem";
 import Footer from "../../components/Footer";
 
-
 const [, e] = bem("ton-connect-page");
 
 function nanosToTonStr(nano: string | number, fractionDigits = 2): string {
@@ -274,7 +273,6 @@ export const TONConnectPage: FC = observer(() => {
         </div>
 
         <Footer />
-
       </Page>
     );
   }
@@ -343,9 +341,6 @@ export const TONConnectPage: FC = observer(() => {
               <div className="text-xs text-amber-500 mt-1 text-center">
                 {t("ton_connect.click_to_copy_short")}
               </div>
-              <div className="text-xs text-amber-500 mt-1 text-center">
-                Нажмите для копирования
-              </div>
             </div>
 
             {/* Кнопки действий */}
@@ -389,7 +384,6 @@ export const TONConnectPage: FC = observer(() => {
         </div>
       </div>
       <Footer />
-
     </Page>
   );
 });

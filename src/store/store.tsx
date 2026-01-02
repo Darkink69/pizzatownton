@@ -1,19 +1,22 @@
 import { makeAutoObservable, runInAction } from "mobx";
+import {
+  normalizeChestKeys,
+  normalizePizzaPieces,
+} from "../types/chestsNormalize";
 import type {
   ChestGetStatePayload,
   ChestOpenPayload,
+  AdminWithdrawalData,
   ManualWithdrawHistoryItem,
   TgUser,
   UserFloor,
-  WsRequest,
   UserState,
+  WsRequest,
   JettonResponse,
 } from "../types/ws";
-import type { AdminWithdrawalData } from "../types/ws";
+import type { ChestKeys, PizzaPieces, Rarity, Reward } from "../types/chests";
 import { bankStore } from "./BankStore";
-import type { Rarity } from "../types/chests";
-import type { ReferralLevelInfoData } from "../types/ws";
-import { normalizePizzaPieces } from "../types/chestsNormalize";
+import translations, { type Language } from "../components/translations";
 
 class Store {
   imgUrl =
@@ -35,7 +38,7 @@ class Store {
     return tgId ? Number(tgId) : null;
   }
 
-  adminData: AdminWithdrawalData[] = [];
+  adminData: any[] = [];
   isAdmin = false;
 
   tonBalance: string = "0";
@@ -46,6 +49,7 @@ class Store {
   pizza = 20000;
 
   isAuthed = false;
+
   setAuthState(state: boolean) {
     runInAction(() => {
       this.isAuthed = state;
@@ -61,32 +65,44 @@ class Store {
     earnedPcoin: 0,
     earnedPdollar: 0,
     link: "",
-    levels: [] as ReferralLevelInfoData[],
   };
+
+  language: Language = "ru";
+  translations = translations;
 
   //  РЕЗУЛЬТАТ КОРОБКИ ПИЦЦЫ
   lastPizzaBoxResult: { pizzaSpent: number; pcoinReward: number } | null = null;
 
   // =========================================================================
-  // CHESTS & CRAFTING START
+  // CHESTS & CRAFTING
   // =========================================================================
 
-  /** @observable */
-  keys = { task: 0, referral: 0, deposit: 0 };
-  /** @observable */
-  pieces = { common: 0, uncommon: 0, rare: 0, mystical: 0 };
+  keys: ChestKeys = { task: 0, referral: 0, deposit: 0 };
+  pieces: PizzaPieces = { common: 0, uncommon: 0, rare: 0, mystical: 0 };
 
-  /**
-   * @observable
-   * Хранит награды из последнего сундука для отображения в модальном окне.
-   */
-  lastRewards: any[] = []; // This will be typed more specifically when we have proper Reward type from BE
+  // награды последнего открытия сундука (для модалки)
+  lastRewards: Reward[] = [];
 
-  /**
-   * @observable
-   * Хранит результат последнего крафта для отображения в модальном окне.
-   */
-  lastCraftResult: { rarity: Rarity; nftBoxId: number } | null = null;
+  // результат крафта
+  lastCraftResult: {
+    piecesRarity: Rarity;
+    piecesLeft: number;
+    nftPrizeId: number;
+    nftPrizeName?: string;
+    received: boolean;
+  } | null = null;
+
+  gifts: Array<{
+    id: number;
+    code: string;
+    name: string;
+    rarity: Rarity;
+    createdAt: string;
+    withdrawStatus: string;
+  }> = [];
+
+  giftsLoading = false;
+  giftsError: string | null = null;
 
   /**
    * Очищает данные о последних полученных наградах.
@@ -108,17 +124,18 @@ class Store {
    */
   updateChestsState = (payload: ChestGetStatePayload | ChestOpenPayload) => {
     runInAction(() => {
-      if (payload.keys) {
-        this.keys = payload.keys;
+      if ("keys" in payload) {
+        this.keys = normalizeChestKeys(payload.keys);
       }
-      if (payload.pieces) {
-        this.pieces = payload.pieces;
+
+      if ("pieces" in payload) {
+        this.pieces = normalizePizzaPieces(payload.pieces);
       }
-      // Обновляем балансы пользователя, если они есть в ответе
+
       if ("user" in payload && payload.user) {
         this.updateUserData(payload.user);
       }
-      // Сохраняем награды для модального окна
+
       if ("rewards" in payload && payload.rewards) {
         this.lastRewards = payload.rewards;
       }
@@ -140,28 +157,6 @@ class Store {
     };
     this.send(rq);
     console.log("✅ CHEST_GET_STATE отправлен:", rq);
-    return true;
-  };
-
-  /**
-   * Отправляет запрос на открытие сундука.
-   * @param {'task' | 'referral' | 'deposit'} chestType - Тип сундука.
-   * @returns {boolean} - true, если запрос был отправлен.
-   */
-  openChest = (chestType: "task" | "referral" | "deposit"): boolean => {
-    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) return false;
-
-    const rq: WsRequest = {
-      type: "CHEST_OPEN",
-      requestId: genId(),
-      session: this.sessionId,
-      chestOpenRq: {
-        telegramId: this.user.telegramId,
-        chestType,
-      },
-    };
-    this.send(rq);
-    console.log("✅ CHEST_OPEN отправлен:", rq);
     return true;
   };
 
@@ -225,6 +220,100 @@ class Store {
       };
     });
   }
+
+  // =========================================================================
+  // GIFTS (CRAFTED NFT ITEMS)
+  // =========================================================================
+
+  getGiftsList = (): boolean => {
+    const telegramId = this.user?.telegramId ?? this.user?.id;
+    if (!this.wsSend || !this.sessionId || !telegramId) return false;
+
+    runInAction(() => {
+      this.giftsLoading = true;
+      this.giftsError = null;
+    });
+
+    const rq: WsRequest = {
+      type: "NFT_GIFTS_GET_LIST",
+      requestId: genId(),
+      session: this.sessionId,
+      nftGiftsGetListRq: { telegramId: Number(telegramId) },
+    };
+
+    this.send(rq);
+    console.log("✅ NFT_GIFTS_GET_LIST отправлен:", rq);
+    return true;
+  };
+
+  requestGiftWithdraw = (itemId: number): boolean => {
+    const telegramId = this.user?.telegramId ?? this.user?.id;
+    if (!this.wsSend || !this.sessionId || !telegramId) return false;
+
+    const rq: WsRequest = {
+      type: "NFT_GIFTS_WITHDRAW_REQUEST",
+      requestId: genId(),
+      session: this.sessionId,
+      nftGiftsWithdrawRequestRq: { telegramId: Number(telegramId), itemId },
+    };
+
+    this.send(rq);
+    console.log("✅ NFT_GIFTS_WITHDRAW_REQUEST отправлен:", rq);
+    return true;
+  };
+
+  setGiftsList = (items: Array<any>) => {
+    runInAction(() => {
+      const normalized = (items || []).map((it) => ({
+        id: Number(it.id),
+        code: String(it.code),
+        name: String(it.name),
+        rarity: String(it.rarity).toLowerCase() as Rarity,
+        createdAt: String(it.createdAt),
+        withdrawStatus: String(it.withdrawStatus || "AVAILABLE"),
+      }));
+
+      // по твоему требованию: "после на вывод исчезал" — показываем только AVAILABLE
+      this.gifts = normalized.filter((g) => g.withdrawStatus === "AVAILABLE");
+      this.giftsLoading = false;
+      this.giftsError = null;
+    });
+  };
+
+  setGiftsError = (message: string) => {
+    runInAction(() => {
+      this.giftsLoading = false;
+      this.giftsError = message;
+    });
+  };
+
+  markGiftRequested = (itemId: number) => {
+    runInAction(() => {
+      this.gifts = this.gifts.filter((g) => g.id !== itemId);
+    });
+  };
+
+  /**
+   * Отправляет запрос на открытие сундука.
+   * @param {'task' | 'referral' | 'deposit'} chestType - Тип сундука.
+   * @returns {boolean} - true, если запрос был отправлен.
+   */
+  openChest = (chestType: "task" | "referral" | "deposit"): boolean => {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) return false;
+
+    const rq: WsRequest = {
+      type: "CHEST_OPEN",
+      requestId: genId(),
+      session: this.sessionId,
+      chestOpenRq: {
+        telegramId: this.user.telegramId,
+        chestType,
+      },
+    };
+    this.send(rq);
+    console.log("✅ CHEST_OPEN отправлен:", rq);
+    return true;
+  };
 
   /**
    * Отправляет запрос на крафт NFT-бокса.
@@ -338,14 +427,12 @@ class Store {
     earnedPcoin?: number;
     earnedPdollar?: number;
     link?: string;
-    levels?: ReferralLevelInfoData[];
   }) {
     runInAction(() => {
       this.referral.totalReferrals = Number(data.totalReferrals ?? 0);
       this.referral.earnedPcoin = Number(data.earnedPcoin ?? 0);
       this.referral.earnedPdollar = Number(data.earnedPdollar ?? 0);
       this.referral.link = data.link ?? "";
-      this.referral.levels = Array.isArray(data.levels) ? data.levels : [];
     });
   }
 
@@ -422,6 +509,51 @@ class Store {
   get currentBalance(): number {
     return this.pcoin ?? 0;
   }
+
+  // -------------------------------------------------------------------------
+  // Languages
+  // -------------------------------------------------------------------------
+
+  // Загружаем язык из localStorage
+  loadLanguageFromStorage() {
+    if (typeof window !== "undefined") {
+      const savedLang = localStorage.getItem("app_language") as Language;
+      if (
+        savedLang &&
+        (savedLang === "ru" || savedLang === "en" || savedLang === "es")
+      ) {
+        this.language = savedLang;
+      }
+    }
+  }
+
+  // Сохраняем язык в localStorage
+  saveLanguageToStorage(lang: Language) {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("app_language", lang);
+    }
+  }
+
+  // Устанавливаем язык
+  setLanguage(lang: Language) {
+    this.language = lang;
+    this.saveLanguageToStorage(lang);
+  }
+
+  // Получаем текущие переводы
+  get currentTranslations() {
+    return this.translations[this.language];
+  }
+
+  // Получаем массив доступных языков
+  get availableLanguages(): { code: Language; name: string }[] {
+    return [
+      { code: "ru", name: "Русский" },
+      { code: "en", name: "English" },
+      { code: "es", name: "Español" },
+    ];
+  }
+
   // -------------------------------------------------------------------------
   // CURRENCY OPERATIONS
   // -------------------------------------------------------------------------
@@ -575,6 +707,7 @@ class Store {
   setAdminData(data: AdminWithdrawalData[]) {
     runInAction(() => {
       this.adminData = data;
+      console.log("📊 Админ данные получены:", data);
     });
   }
 
@@ -639,6 +772,18 @@ class Store {
   // -------------------------------------------------------------------------
   // PIZZA BOX (лутбокс за 2000 pizza)
   // -------------------------------------------------------------------------
+
+  craftNftBox(rarity: Rarity) {
+    const telegramId = this.user?.telegramId ?? this.user?.id;
+    if (!this.wsSend || !this.sessionId || !telegramId) return false;
+
+    this.wsSend?.({
+      type: "PIZZA_CRAFT_BOX",
+      requestId: genId(),
+      session: this.sessionId,
+      pizzaCraftBoxRq: { telegramId, rarity },
+    });
+  }
 
   setLastPizzaBoxResult(
     result: { pizzaSpent: number; pcoinReward: number } | null
@@ -1029,6 +1174,8 @@ class Store {
         buyFloorRq: { telegramId: tgId, floorId },
       });
 
+      this.deductCurrency(price, currency);
+
       // обновляем массив этажей
       runInAction(() => {
         this.userFloors.data.userFloorList = this.safeUserFloorList.map((f) =>
@@ -1064,6 +1211,8 @@ class Store {
         session: this.sessionId!,
         updateFloorRq: { telegramId: tgId, floorId },
       });
+
+      this.deductCurrency(cost, currency);
 
       runInAction(() => {
         this.userFloors.data.userFloorList = this.safeUserFloorList.map(
@@ -1263,7 +1412,6 @@ class Store {
         earnedPcoin: 0,
         earnedPdollar: 0,
         link: "",
-        levels: [],
       };
       this.taskInvite3Status = "idle";
       this.taskInvite3Error = null;

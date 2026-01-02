@@ -16,10 +16,14 @@ import type {
   JettonResponse,
   WsRequest,
   WsResponse,
+  ChestOpenPayload,
+  ChestGetStatePayload,
+  PizzaCraftBoxPayload,
 } from "../types/ws";
 import { bankStore } from "../store/BankStore.ts";
 import { runInAction } from "mobx";
 import { normalizePizzaPieces } from "../types/chestsNormalize.ts";
+import type { Rarity } from "../types/chests.ts";
 
 function generateRequestId() {
   return Math.random().toString(36).substring(2, 10);
@@ -298,9 +302,6 @@ const WebSocketComponent = observer(() => {
                     referralInfoData.link ??
                     referralInfoData.referralLink ??
                     "",
-                  levels: Array.isArray(referralInfoData.levels)
-                    ? referralInfoData.levels
-                    : [],
                 };
               });
 
@@ -393,6 +394,89 @@ const WebSocketComponent = observer(() => {
               toast.success("✅ Персонал нанят / обновлён!");
             } else {
               toast.error(parsed.message || "Ошибка найма персонала");
+            }
+            break;
+          }
+
+          // ===================================================================
+          // CHESTS & CRAFTING
+          // ===================================================================
+
+          /** ------------------ CHEST_GET_STATE ------------------ */
+          case "CHEST_GET_STATE": {
+            if (parsed.success && parsed.data) {
+              const data = parsed.data as ChestGetStatePayload;
+              store.updateChestsState(data);
+              console.log("✅ Chests state loaded:", data);
+            } else {
+              toast.error(
+                parsed.message || "Ошибка загрузки данных о сундуках"
+              );
+            }
+            break;
+          }
+
+          /** ------------------ CHEST_OPEN ------------------ */
+          case "CHEST_OPEN": {
+            if (parsed.success && parsed.data) {
+              const data = parsed.data as ChestOpenPayload;
+              store.updateChestsState(data);
+            } else {
+              toast.error(parsed.message || "Не удалось открыть сундук");
+            }
+            break;
+          }
+
+          /** ------------------ PIZZA_CRAFT_BOX ------------------ */
+          case "PIZZA_CRAFT_BOX": {
+            if (parsed.success && parsed.data) {
+              const d = parsed.data as PizzaCraftBoxPayload;
+
+              const rarity = String(d.piecesRarity).toLowerCase() as Rarity;
+              const piecesLeft = Number(d.piecesLeft);
+              const nftPrizeId = Number(d.nftPrizeId);
+              const nftPrizeName = String(d.nftPrizeName);
+
+              runInAction(() => {
+                store.pieces = { ...store.pieces, [rarity]: piecesLeft };
+                store.lastCraftResult = {
+                  piecesRarity: rarity,
+                  piecesLeft,
+                  nftPrizeId,
+                  nftPrizeName,
+                  received: Boolean(d.received),
+                };
+              });
+            } else {
+              toast.error(parsed.message || "Ошибка крафта");
+            }
+            break;
+          }
+
+          case "NFT_GIFTS_GET_LIST": {
+            if (parsed.success && parsed.data) {
+              // ожидаем: { items: [...] }
+              const d = parsed.data as any;
+              store.setGiftsList(d.items || []);
+              console.log("✅ NFT_GIFTS_GET_LIST loaded:", d);
+            } else {
+              const msg = parsed.message || "Ошибка загрузки подарков";
+              store.setGiftsError(msg);
+              toast.error(msg);
+            }
+            break;
+          }
+
+          case "NFT_GIFTS_WITHDRAW_REQUEST": {
+            if (parsed.success && parsed.data) {
+              const d = parsed.data as any; // { itemId, withdrawStatus }
+              const itemId = Number(d.itemId);
+              store.markGiftRequested(itemId);
+              toast.success("✅ Подарок поставлен на вывод");
+            } else {
+              toast.error(
+                parsed.message || "Не удалось поставить подарок на вывод"
+              );
             }
             break;
           }

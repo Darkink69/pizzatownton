@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import store from "../store/store";
-// import Footer from "../components/Footer";
+import Footer from "../components/Footer";
 import { Link } from "react-router-dom";
-import FooterHome from "../components/FooterHome";
+// import FooterHome from "../components/FooterHome";
 import GuideOverlay from "../pages/GuideOverlay";
 import { getFloorUpgradeData, getCurrentUpgradeCost } from "./floorUpgradeData";
 import { useTranslation } from "react-i18next";
@@ -1513,13 +1513,15 @@ const Home = observer(() => {
         <button
           id="claim-button"
           onClick={handleClaimDo}
-          className="fixed bottom-4 left-1/2 w-30 lg:w-50 transform -translate-x-1/2 z-50 hover:opacity-90 transition-opacity active:scale-95"
+          className="fixed bottom-25 left-1/2 w-30 lg:w-50 transform -translate-x-1/2 z-50 hover:opacity-90 transition-opacity active:scale-95"
         >
-          <div className="absolute top-8 left-1/2 transform -translate-x-1/2 flex items-center justify-center text-2xl md:text-4xl text-blue-900 shantell">
-            {store.claimProgress.toFixed(1)}%
+          <div className="absolute top-1 left-1/2 transform -translate-x-1/2 flex items-center justify-center text-sm md:text-xl text-blue-900 shantell">
+            {store.claimProgress.toFixed(1)}% Забрать
+            {/* <span className="text-sm shantell">Забрать</span> */}
           </div>
+
           <img
-            src={`${store.imgUrl}b_zabrat2.png`}
+            src={`${store.imgUrl}b_zabrat3.png`}
             alt={t("home.claim_button_alt")}
           />
         </button>
@@ -2730,7 +2732,7 @@ const Home = observer(() => {
         </div>
       )}
 
-      <FooterHome />
+      <Footer />
     </>
   );
 });

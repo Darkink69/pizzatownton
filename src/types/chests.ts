@@ -17,6 +17,15 @@ export type ChestType = (typeof CHEST_TYPES)[keyof typeof CHEST_TYPES];
 export const chestTypeList = Object.values(CHEST_TYPES);
 
 /**
+ * Названия сундуков для отображения в UI.
+ */
+export const CHEST_NAMES: Record<ChestType, string> = {
+  [CHEST_TYPES.TASK]: "Активности",
+  [CHEST_TYPES.REFERRAL]: "Рефералы",
+  [CHEST_TYPES.DEPOSIT]: "Депозиты",
+};
+
+/**
  * Редкость кусочков пиццы и NFT-боксов.
  * common - обычный.
  * uncommon - необычный.
@@ -37,14 +46,14 @@ export const rarityList = Object.values(RARITIES);
 /**
  * Типы наград, которые могут выпасть из сундука.
  * pizza_piece - кусочек пиццы.
- * pizza_soft - игровая валюта Pizza.
+ * pizza - игровая валюта Pizza.
  * pcoin - игровая валюта PCoin.
  * pdollar - игровая валюта PDollar.
  * item - особый предмет.
  */
 export const REWARD_TYPES = {
   PIZZA_PIECE: "pizza_piece",
-  PIZZA_SOFT: "pizza_soft",
+  PIZZA: "pizza",
   PCOIN: "pcoin",
   PDOLLAR: "pdollar",
   ITEM: "item",
@@ -55,10 +64,17 @@ export type RewardType = (typeof REWARD_TYPES)[keyof typeof REWARD_TYPES];
 /**
  * Описывает одну награду, полученную из сундука.
  */
+// export interface Reward {
+//   type: RewardType;
+//   rarity: Rarity | null;
+//   amount: number;
+// }
+
 export interface Reward {
-  type: RewardType;
-  rarity: Rarity | null;
   amount: number;
+  type: string;
+  rarity?: Rarity;
+  // другие поля если есть
 }
 
 /**
@@ -80,3 +96,19 @@ export interface UserData {
   pcoin: number;
   pdollar: number;
 }
+
+export interface NftGiftsGetListRq {
+  telegramId: number;
+}
+
+export interface NftGiftsWithdrawRequestRq {
+  telegramId: number;
+  itemId: number;
+}
+
+export interface ChestRewardDto {
+  type: Reward["type"];           // или RewardType
+  rarity: Reward["rarity"];       // Rarity | null
+  amount: number;                // на бэке Long, тут number
+}
+
