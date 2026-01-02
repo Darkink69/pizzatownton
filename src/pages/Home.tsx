@@ -1517,7 +1517,6 @@ const Home = observer(() => {
         >
           <div className="absolute top-1 left-1/2 transform -translate-x-1/2 flex items-center justify-center text-sm md:text-xl text-blue-900 shantell">
             {store.claimProgress.toFixed(1)}% Забрать
-            {/* <span className="text-sm shantell">Забрать</span> */}
           </div>
 
           <img
