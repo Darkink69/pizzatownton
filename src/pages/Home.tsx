@@ -2208,7 +2208,7 @@ const Home = observer(() => {
                             setJettonUiMessage("Не удалось отправить покупку (нет WS/сессии).");
                           }
                         }}
-                        className="relative w-full h-[52px] flex items-center justify-center hover:opacity-90 transition-opacity"
+                        className="relative w-full py-1 rounded-lg flex items-center justify-center hover:opacity-90 transition-opacity"
                     >
                       <img
                           src={`${store.imgUrl}b_orange_round.png`}
@@ -2216,7 +2216,7 @@ const Home = observer(() => {
                           className="absolute inset-0 w-full h-full object-contain"
                       />
                       <span className="relative z-10 text-white font-bold shantell text-lg">
-                          Купить за 15000 PCoin
+                        Купить за 15000 PCoin
                       </span>
                     </button>
 
