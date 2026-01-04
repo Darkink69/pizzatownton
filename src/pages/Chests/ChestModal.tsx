@@ -24,19 +24,18 @@ const ChestModal = ({
   rewards,
   craftResult,
 }: ChestModalProps) => {
-  if (!isOpen) {
-    return null;
-  }
-
-  // Проигрываем звук при открытии модального окна
   useEffect(() => {
     if (isOpen) {
       const audio = new Audio(`${store.imgUrl}win.mp3`);
       audio
-        .play()
-        .catch((e) => console.log("Ошибка воспроизведения звука:", e));
+          .play()
+          .catch((e) => console.log("Ошибка воспроизведения звука:", e));
     }
   }, [isOpen]);
+
+  if (!isOpen) {
+    return null;
+  }
 
   // Функция для получения изображения приза
   const getRewardImage = (reward: Reward) => {

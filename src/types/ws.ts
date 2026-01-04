@@ -32,6 +32,7 @@ export type OperationType =
     | "NFT_GIFTS_WITHDRAW_REQUEST"
     | "FIX_CLICK_JETTON_LINK"
     | "CHECK_JETTON_PAYMENT"
+    | "JETTON_BOX_BUY"
     | (string & {}); // резерв на будущее
 
 // -------------------- База запроса --------------------

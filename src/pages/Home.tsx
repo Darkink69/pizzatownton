@@ -18,6 +18,7 @@ const Home = observer(() => {
 
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [jettonAction, setJettonAction] = useState<"deposit_check" | "buy_pcoin" | null>(null);
   const [selectedFloorId, setSelectedFloorId] = useState<number | null>(null);
   const [liftPosition, setLiftPosition] = useState<number>(0);
   const [liftHasPizza, setLiftHasPizza] = useState<boolean>(false);
@@ -54,14 +55,64 @@ const Home = observer(() => {
   const [showNYBoxNotification, setShowNYBoxNotification] = useState(false);
   const [showNYBoxModal, setShowNYBoxModal] = useState(false);
   const [isJettonChecking, setIsJettonChecking] = useState(false);
+  const jettonSoundPlayedRef = useRef(false);
 
   useEffect(() => {
-    console.log("jettonLastResult changed:", store.jettonLastResult);
     const r = store.jettonLastResult;
-    if (!r) return;
+    const e = store.jettonLastError;
 
-    // ответ пришёл -> разблокируем кнопку
-    setIsJettonChecking(false);
+    // пришёл любой ответ -> разблокируем кнопку
+    if (r || e) setIsJettonChecking(false);
+
+    // если это покупка за pcoin — обрабатываем отдельно
+    if (jettonAction === "buy_pcoin") {
+      // 1) ошибка покупки
+      if (e) {
+        setJettonUiType("error");
+
+        if (String(e).includes("NOT_ENOUGH_PCOIN")) {
+          const need = 15000;
+          const have = Number(store.pcoin ?? 0);
+          setJettonUiMessage(`Не хватает PCoin: нужно ${need}, у вас ${have}.`);
+        } else if (e === "ALREADY_RECEIVED") {
+          setJettonUiMessage("Вы уже получали этот бокс.");
+        } else {
+          setJettonUiMessage(`Не удалось купить бокс: ${String(e)}`);
+        }
+        return;
+      }
+
+      // 2) успех покупки, но r может ещё не быть
+      if (!r) return;
+
+      const currencyParts: string[] = [];
+      if (r.pcoin) currencyParts.push(`+${r.pcoin} PCoin`);
+      if (r.pizza) currencyParts.push(`+${r.pizza} Pizza`);
+      if (r.pdollar) currencyParts.push(`+${r.pdollar} PDollar`);
+
+      const sliceParts: string[] = [];
+      if (r.commonSlice) sliceParts.push(`Common +${r.commonSlice}`);
+      if (r.unCommonSlice) sliceParts.push(`Uncommon +${r.unCommonSlice}`);
+      if (r.rareSlice) sliceParts.push(`Rare +${r.rareSlice}`);
+      if (r.mystikalSlice) sliceParts.push(`Mystical +${r.mystikalSlice}`);
+
+      setJettonUiType("success");
+      setJettonUiMessage(
+          `Успешно!\n` +
+          (currencyParts.length ? `Награда: ${currencyParts.join(", ")}\n` : "") +
+          (sliceParts.length ? `Кусочки: ${sliceParts.join(", ")}` : "")
+      );
+      return;
+    }
+
+    // ниже — сценарий проверки депозита
+    if (e) {
+      setJettonUiType("error");
+      setJettonUiMessage(`Ошибка проверки: ${String(e)}`);
+      return;
+    }
+
+    if (!r) return;
 
     if (!r.haveDepo) {
       setJettonUiType("error");
@@ -80,14 +131,13 @@ const Home = observer(() => {
     if (r.rareSlice) sliceParts.push(`Rare +${r.rareSlice}`);
     if (r.mystikalSlice) sliceParts.push(`Mystical +${r.mystikalSlice}`);
 
-    const msg =
-      `Депозит подтверждён!\n` +
-      (currencyParts.length ? `Награда: ${currencyParts.join(", ")}\n` : "") +
-      (sliceParts.length ? `Кусочки: ${sliceParts.join(", ")}` : "");
-
     setJettonUiType("success");
-    setJettonUiMessage(msg);
-  }, [store.jettonLastResult]);
+    setJettonUiMessage(
+        `Депозит подтверждён!\n` +
+        (currencyParts.length ? `Награда: ${currencyParts.join(", ")}\n` : "") +
+        (sliceParts.length ? `Кусочки: ${sliceParts.join(", ")}` : "")
+    );
+  }, [store.jettonLastResult, store.jettonLastError, jettonAction, store.pcoin]);
 
   // Запрос данных при монтировании
   useEffect(() => {
@@ -179,6 +229,27 @@ const Home = observer(() => {
       text: "home.guide.finish",
     },
   ];
+
+  useEffect(() => {
+    // если модалка закрыта — сбрасываем флаг, чтобы при следующем успехе сыграло снова
+    if (!showNYBoxModal) {
+      jettonSoundPlayedRef.current = false;
+      return;
+    }
+    if (jettonUiType !== "success") return;
+    if (jettonSoundPlayedRef.current) return;
+
+    jettonSoundPlayedRef.current = true;
+
+    const audio = new Audio(`${store.imgUrl}win.mp3`);
+    audio.play().catch((e) => console.log("Ошибка воспроизведения звука:", e));
+
+    return () => {
+      audio.pause();
+      audio.currentTime = 0;
+    };
+  }, [jettonUiType, showNYBoxModal, store.imgUrl]);
+
 
   // Эффект для анимации лифта
   useEffect(() => {
@@ -2053,7 +2124,12 @@ const Home = observer(() => {
                 setShowNYBoxModal(false);
                 setJettonUiMessage(null);
                 setJettonUiType(null);
+                setJettonAction(null);
                 setIsJettonChecking(false);
+
+                store.setJettonLastResult(null);
+                store.setJettonLastError(null);
+
               }}
               className="absolute -top-8 -right-2 w-8 h-8 hover:scale-110 transition-transform z-10"
             >
@@ -2111,11 +2187,49 @@ const Home = observer(() => {
                     </button>
 
                     <button
+                        onClick={() => {
+                          if (isJettonChecking) return;
+
+                          setJettonAction("buy_pcoin");
+                          setJettonUiMessage(null);
+                          setJettonUiType(null);
+
+                          store.setJettonLastResult(null);
+                          store.setJettonLastError(null);
+
+                          setIsJettonChecking(true);
+
+
+
+                          const ok = store.buyJettonBoxForPcoin?.();
+                          if (!ok) {
+                            setIsJettonChecking(false);
+                            setJettonUiType("error");
+                            setJettonUiMessage("Не удалось отправить покупку (нет WS/сессии).");
+                          }
+                        }}
+                        className="relative inline-flex h-[52px] w-fit max-w-full items-center justify-center mx-auto"
+                    >
+                      <img
+                          src={`${store.imgUrl}b_orange_round.png`}
+                          alt=""
+                          className="absolute inset-0 w-full h-full object-fill"
+                      />
+                      <span className="relative z-10 px-10 text-center text-white font-bold shantell leading-none whitespace-nowrap text-[14px] sm:text-[16px]">
+                          Купить за 15000 PCoin
+                      </span>
+                    </button>
+
+                    <button
                       onClick={() => {
                         if (isJettonChecking) return;
 
+                        setJettonAction("deposit_check");
                         setJettonUiMessage(null);
                         setJettonUiType(null);
+
+                        store.setJettonLastResult(null);
+                        store.setJettonLastError(null);
 
                         setIsJettonChecking(true);
                         const ok = store.checkJettonPayment();
@@ -2143,13 +2257,13 @@ const Home = observer(() => {
                 </>
               ) : null}
 
-              {/* Результат проверки депозита - ОШИБКА */}
+              {/* Результат проверки депозита или оплаты за pcoin- ОШИБКА */}
               {jettonUiMessage && jettonUiType === "error" && (
                 <div className="mt-2 mb-2">
                   <div className="bg-red-100/70 border-2 border-red-400 rounded-xl p-1">
                     <div className="flex items-center justify-center gap-2">
                       <span className="text-red-800 font-bold shantell text-lg">
-                        Депозит не найден
+                        {jettonAction === "buy_pcoin" ? "Недостаточно PCoin" : "Депозит не найден"}
                       </span>
                     </div>
                     <p className="text-red-700 shantell text-sm whitespace-pre-wrap">
@@ -2164,16 +2278,7 @@ const Home = observer(() => {
                 <div className="mt-1 mb-1">
                   {/* Проигрываем звук win.mp3 при успехе */}
                   {(() => {
-                    useEffect(() => {
-                      if (jettonUiType === "success") {
-                        const audio = new Audio(`${store.imgUrl}win.mp3`);
-                        audio
-                          .play()
-                          .catch((e) =>
-                            console.log("Ошибка воспроизведения звука:", e)
-                          );
-                      }
-                    }, [jettonUiType]);
+
                     return null;
                   })()}
 
@@ -2185,7 +2290,7 @@ const Home = observer(() => {
                       </span>
                     </div>
                     <p className="text-green-700 shantell text-lg font-bold">
-                      Депозит подтверждён!
+                      {jettonAction === "buy_pcoin" ? "Бокс куплен!" : "Депозит подтверждён!"}
                     </p>
                   </div>
 
@@ -2323,15 +2428,20 @@ const Home = observer(() => {
                       setShowNYBoxModal(false);
                       setJettonUiMessage(null);
                       setJettonUiType(null);
+                      setJettonAction(null);
+                      setIsJettonChecking(false);
+
+                      store.setJettonLastResult(null);
+                      store.setJettonLastError(null);
                     }}
-                    className="relative w-full py-3 rounded-lg flex items-center justify-center hover:opacity-90 transition-opacity"
+                    className="relative inline-flex h-[52px] w-fit max-w-full items-center justify-center mx-auto"
                   >
                     <img
                       src={`${store.imgUrl}b_orange_round.png`}
                       alt=""
-                      className="absolute inset-0 w-full h-full object-contain"
+                      className="absolute inset-0 w-full h-full object-fill"
                     />
-                    <span className="relative z-10 text-white font-bold shantell text-lg">
+                    <span className="relative z-10 px-10 text-center text-white font-bold shantell leading-none whitespace-nowrap text-[16px]">
                       Забрать награды
                     </span>
                   </button>

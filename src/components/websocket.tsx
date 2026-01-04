@@ -329,26 +329,11 @@ const WebSocketComponent = observer(() => {
           case "CHECK_JETTON_PAYMENT": {
             if (parsed.success && parsed.data) {
               const d = parsed.data as JettonResponse;
-
-              // важно для UI Jetton (чтобы Home понял, что ответ пришёл)
-              store.setJettonLastResult?.(d);
-
-              // важно для Chests totals
+              store.handleJettonSuccess(d);
               store.getChestsState();
             } else {
-              const fallback: JettonResponse = {
-                haveDepo: false,
-                pcoin: 0,
-                pizza: 0,
-                pdollar: 0,
-                commonSlice: 0,
-                unCommonSlice: 0,
-                rareSlice: 0,
-                mystikalSlice: 0,
-                pieces: null,
-              };
-
-              store.setJettonLastResult?.(fallback);
+              store.setJettonLastResult?.(null);
+              store.setJettonLastError?.(String(parsed.message ?? "CHECK_FAILED"));
               toast.error(parsed.message || "Не удалось проверить депозит");
             }
             break;
@@ -894,6 +879,22 @@ const WebSocketComponent = observer(() => {
             }
             break;
           }
+
+          case "JETTON_BOX_BUY": {
+            if (parsed.success && parsed.data) {
+              const d = parsed.data as JettonResponse;
+              store.handleJettonSuccess(d);
+              store.getChestsState();
+            } else {
+              store.setJettonLastResult?.(null);
+              store.setJettonLastError?.(String(parsed.message ?? "UNKNOWN_ERROR"));
+               if (parsed.message === "NOT_ENOUGH_PCOIN") toast.error("Недостаточно PCoin (нужно 15000)");
+               else toast.error(parsed.message || "Не удалось купить бокс");
+            }
+            break;
+          }
+
+
           /** ---------------- DEFAULT ---------------- */
           default:
             // другие типы можно обрабатывать позже

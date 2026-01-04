@@ -145,6 +145,18 @@ class Store {
     });
   };
 
+  buyJettonBoxForPcoin(): boolean {
+    const tgId = this.user?.telegramId ?? this.user?.id;
+    if (!this.wsSend || !this.sessionId || !tgId) return false;
+
+    return this.send({
+      type: "JETTON_BOX_BUY",
+      requestId: genId(),
+      session: this.sessionId,
+      jettonRq: { telegramId: Number(tgId) },
+    });
+  }
+
   /**
    * Запрашивает начальное состояние сундуков и ключей.
    * @returns {boolean} - true, если запрос был отправлен.
@@ -171,21 +183,27 @@ class Store {
   handleJettonSuccess(res: JettonResponse) {
     runInAction(() => {
       this.jettonLastResult = res;
+      this.jettonLastError = null;
     });
 
-    // всегда подтягиваем totals с сервера
     this.getChestsState();
   }
-
   // =========================================================================
   // GIFTS (Jetton Box ITEMS)
   // =========================================================================
 
   jettonLastResult: JettonResponse | null = null;
+  jettonLastError: string | null = null;
 
   setJettonLastResult(res: JettonResponse | null) {
     runInAction(() => {
       this.jettonLastResult = res;
+    });
+  }
+
+  setJettonLastError(err: string | null) {
+    runInAction(() => {
+      this.jettonLastError = err;
     });
   }
 
