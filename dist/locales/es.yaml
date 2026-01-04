@@ -144,6 +144,27 @@ home:
     prize_pcoin_description: "Para compras en el juego"
     pizza_notification_alt: "Notificación de Pizza"
 
+  ny_box_modal:
+    title: "NY Box"
+    notification_alt: "NY Box"
+    box_alt: "NY Box Abierto"
+    description: "¡Para recibir esta caja, necesitas hacer un depósito de $10+ con nuestros socios!"
+    possible_prizes: "Posibles premios:"
+    errors:
+      no_ws_session: "No se pudo registrar la transición (sin WS/sesión)"
+      buy_failed: "No se pudo enviar la compra (sin WS/sesión)."
+      check_failed: "No se pudo enviar la verificación (sin WS/sesión)."
+    buttons:
+      make_deposit: "Hacer Depósito"
+      buy_for_pcoin: "Comprar por {{pcoin}} PCoin"
+      check: "Verificar"
+      checking: "Verificando..."
+    results:
+      not_enough_pcoin: "No hay suficiente PCoin"
+      deposit_not_found: "Depósito no encontrado"
+      box_purchased: "¡Caja comprada!"
+      deposit_confirmed: "¡Depósito confirmado!"
+
 tasks:
   title: "Tareas"
   reward_notification:

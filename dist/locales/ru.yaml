@@ -48,7 +48,7 @@ home:
   buy_floor_button: "ОТКРЫТЬ {{floorName}}"
   your_browser_no_video: "Your browser does not support the video tag."
   income_per_hour: "+{{totalIncome}}/час"
-  claim_button_alt: "Claim"
+  claim_button_alt: "Забрать"
 
   floor:
     name: "{{floorId}} этаж"
@@ -143,6 +143,27 @@ home:
     prize_pcoin_description: "Для покупок в игре"
     pizza_notification_alt: "Pizza Notification"
 
+  ny_box_modal:
+    title: "NY Box"
+    notification_alt: "NY Box"
+    box_alt: "NY Box Открытый"
+    description: "Для получения данного бокса необходимо сделать депозит от 10$ у наших партнеров!"
+    possible_prizes: "Возможные призы:"
+    errors:
+      no_ws_session: "Не удалось зафиксировать переход (нет WS/сессии)"
+      buy_failed: "Не удалось отправить покупку (нет WS/сессии)."
+      check_failed: "Не удалось отправить проверку (нет WS/сессии)."
+    buttons:
+      make_deposit: "Сделать депозит"
+      buy_for_pcoin: "Купить за {{pcoin}} PCoin"
+      check: "Проверить"
+      checking: "Проверяем..."
+    results:
+      not_enough_pcoin: "Недостаточно PCoin"
+      deposit_not_found: "Депозит не найден"
+      box_purchased: "Бокс куплен!"
+      deposit_confirmed: "Депозит подтверждён!"
+
 tasks:
   title: "Задания"
   reward_notification:
@@ -216,14 +237,13 @@ friends:
     Награды за друзей:
     При покупке PCoin:
     1ур - 1%, 2ур - 1%, 3ур - 1%
-    
+
     При сборе дохода PDollar:
     1ур - 1%, 2ур - 1%, 3ур - 2%, 4ур - 2%, 5ур - 0.5%, 6ур - 0.3%, 7ур - 0.2%
 
   referral_link: "Ваша ссылка"
   statistics:
     friends: "Друзья"
-
 
   levels:
     title: "Уровни и начисления"
@@ -238,7 +258,6 @@ friends:
   alts:
     modal_background: "Фон модального окна"
     copy_button_alt: "Кнопка копирования"
-
 
 bank:
   title: "Банк"

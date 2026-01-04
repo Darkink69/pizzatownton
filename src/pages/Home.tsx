@@ -1595,7 +1595,7 @@ const Home = observer(() => {
           className="fixed bottom-25 left-1/2 w-30 lg:w-50 transform -translate-x-1/2 z-50 hover:opacity-90 transition-opacity active:scale-95"
         >
           <div className="absolute top-1 left-1/2 transform -translate-x-1/2 flex items-center justify-center text-sm md:text-xl text-blue-900 shantell">
-            {store.claimProgress.toFixed(1)}% Забрать
+            {store.claimProgress.toFixed(1)}% {t("home.claim_button_alt")}
           </div>
 
           <img
@@ -2095,13 +2095,12 @@ const Home = observer(() => {
         >
           <img
             src={`${store.imgUrl}NY_box.png`}
-            alt="NY Box"
+            alt={t("home.ny_box_modal.notification_alt")}
             className="w-1/3 object-contain"
           />
         </button>
       )}
 
-      {/* Модальное окно NY_box */}
       {showNYBoxModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-3">
           <div
@@ -2115,12 +2114,12 @@ const Home = observer(() => {
               <div className="w-1/2 relative">
                 <img
                   src={`${store.imgUrl}img_window_header.png`}
-                  alt="Header"
+                  alt={t("common.labels.header")}
                   className="w-full h-auto"
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="text-amber-800 font-bold text-lg shantell">
-                    NY Box
+                    {t("home.ny_box_modal.title")}
                   </span>
                 </div>
               </div>
@@ -2134,7 +2133,6 @@ const Home = observer(() => {
                 setJettonUiType(null);
                 setJettonAction(null);
                 setIsJettonChecking(false);
-
                 store.setJettonLastResult(null);
                 store.setJettonLastError(null);
               }}
@@ -2142,7 +2140,7 @@ const Home = observer(() => {
             >
               <img
                 src={`${store.imgUrl}b_close.png`}
-                alt="Закрыть"
+                alt={t("common.buttons.close")}
                 className="w-full h-full"
               />
             </button>
@@ -2152,7 +2150,7 @@ const Home = observer(() => {
               <div className="-mt-10">
                 <img
                   src={`${store.imgUrl}NY_box_open.png`}
-                  alt="NY Box Open"
+                  alt={t("home.ny_box_modal.box_alt")}
                   className="w-40 mx-auto"
                 />
               </div>
@@ -2161,8 +2159,7 @@ const Home = observer(() => {
               {!jettonUiMessage || jettonUiType === "error" ? (
                 <>
                   <p className="text-md text-amber-800 shantell mb-1">
-                    Для получения данного бокса необходимо сделать депозит от
-                    10$ у наших партнеров!
+                    {t("home.ny_box_modal.description")}
                   </p>
 
                   {/* Кнопки */}
@@ -2172,13 +2169,11 @@ const Home = observer(() => {
                         const ok = store.fixClickJetton();
                         if (!ok) {
                           showNotification(
-                            "Не удалось зафиксировать переход (нет WS/сессии)",
+                            t("home.ny_box_modal.errors.no_ws_session"),
                             "error"
                           );
                           return;
                         }
-
-                        // открываем партнёра
                         window.open(JETTON_DEPOSIT_URL, "_blank");
                       }}
                       className="relative w-full py-1 rounded-lg flex items-center justify-center hover:opacity-90 transition-opacity"
@@ -2189,29 +2184,25 @@ const Home = observer(() => {
                         className="absolute inset-0 w-full h-full object-contain"
                       />
                       <span className="relative z-10 text-white font-bold shantell text-lg">
-                        Сделать депозит
+                        {t("home.ny_box_modal.buttons.make_deposit")}
                       </span>
                     </button>
 
                     <button
                       onClick={() => {
                         if (isJettonChecking) return;
-
                         setJettonAction("buy_pcoin");
                         setJettonUiMessage(null);
                         setJettonUiType(null);
-
                         store.setJettonLastResult(null);
                         store.setJettonLastError(null);
-
                         setIsJettonChecking(true);
-
                         const ok = store.buyJettonBoxForPcoin?.();
                         if (!ok) {
                           setIsJettonChecking(false);
                           setJettonUiType("error");
                           setJettonUiMessage(
-                            "Не удалось отправить покупку (нет WS/сессии)."
+                            t("home.ny_box_modal.errors.buy_failed")
                           );
                         }
                       }}
@@ -2223,29 +2214,27 @@ const Home = observer(() => {
                         className="absolute inset-0 w-full h-full object-contain"
                       />
                       <span className="relative z-10 text-white font-bold shantell text-lg">
-                        Купить за 15000 PCoin
+                        {t("home.ny_box_modal.buttons.buy_for_pcoin", {
+                          pcoin: "15000",
+                        })}{" "}
                       </span>
                     </button>
 
                     <button
                       onClick={() => {
                         if (isJettonChecking) return;
-
                         setJettonAction("deposit_check");
                         setJettonUiMessage(null);
                         setJettonUiType(null);
-
                         store.setJettonLastResult(null);
                         store.setJettonLastError(null);
-
                         setIsJettonChecking(true);
                         const ok = store.checkJettonPayment();
-
                         if (!ok) {
                           setIsJettonChecking(false);
                           setJettonUiType("error");
                           setJettonUiMessage(
-                            "Не удалось отправить проверку (нет WS/сессии)."
+                            t("home.ny_box_modal.errors.check_failed")
                           );
                         }
                       }}
@@ -2257,7 +2246,9 @@ const Home = observer(() => {
                         className="absolute inset-0 w-full h-full object-contain"
                       />
                       <span className="relative z-10 text-white font-bold shantell text-lg">
-                        {isJettonChecking ? "Проверяем..." : "Проверить"}
+                        {isJettonChecking
+                          ? t("home.ny_box_modal.buttons.checking")
+                          : t("home.ny_box_modal.buttons.check")}{" "}
                       </span>
                     </button>
                   </div>
@@ -2271,8 +2262,10 @@ const Home = observer(() => {
                     <div className="flex items-center justify-center gap-2">
                       <span className="text-red-800 font-bold shantell text-lg">
                         {jettonAction === "buy_pcoin"
-                          ? "Недостаточно PCoin"
-                          : "Депозит не найден"}
+                          ? t("home.ny_box_modal.results.not_enough_pcoin")
+                          : t(
+                              "home.ny_box_modal.results.deposit_not_found"
+                            )}{" "}
                       </span>
                     </div>
                     <p className="text-red-700 shantell text-sm whitespace-pre-wrap">
@@ -2285,153 +2278,21 @@ const Home = observer(() => {
               {/* Результат проверки депозита - УСПЕХ */}
               {jettonUiMessage && jettonUiType === "success" && (
                 <div className="mt-1 mb-1">
-                  {/* Проигрываем звук win.mp3 при успехе */}
-                  {(() => {
-                    return null;
-                  })()}
-
                   {/* Заголовок успеха */}
                   <div className="bg-green-100/70 border-2 border-green-400 rounded-xl p-1 mb-1">
                     <div className="flex items-center justify-center gap-2 mb-2">
                       <span className="text-green-800 font-bold shantell text-xl">
-                        Успешно!
+                        {t("common.notifications.success")}
                       </span>
                     </div>
                     <p className="text-green-700 shantell text-lg font-bold">
                       {jettonAction === "buy_pcoin"
-                        ? "Бокс куплен!"
-                        : "Депозит подтверждён!"}
+                        ? t("home.ny_box_modal.results.box_purchased")
+                        : t("home.ny_box_modal.results.deposit_confirmed")}{" "}
                     </p>
                   </div>
 
-                  {/* Сетка призов с картинками */}
-                  <div className="grid grid-cols-2 gap-3 mb-1">
-                    {store.jettonLastResult?.pcoin && (
-                      <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 flex items-center gap-2">
-                        <img
-                          src={`${store.imgUrl}icon_dollar_coin.png`}
-                          alt="P-Coin"
-                          className="w-10 h-10"
-                        />
-                        <div className="text-left">
-                          <div className="text-amber-800 font-bold shantell">
-                            +{store.jettonLastResult.pcoin}
-                          </div>
-                          <div className="text-amber-600 text-sm shantell">
-                            P-Coin
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {store.jettonLastResult?.pizza && (
-                      <div className="bg-amber-50 border border-amber-300 rounded-lg p-1 flex items-center gap-2">
-                        <img
-                          src={`${store.imgUrl}icon_pizza.png`}
-                          alt="Pizza"
-                          className="w-10 h-10"
-                        />
-                        <div className="text-left">
-                          <div className="text-amber-800 font-bold shantell">
-                            +{store.jettonLastResult.pizza}
-                          </div>
-                          <div className="text-amber-600 text-sm shantell">
-                            Pizza
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {store.jettonLastResult?.pdollar && (
-                      <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 flex items-center gap-2">
-                        <img
-                          src={`${store.imgUrl}icon_dollar.png`}
-                          alt="P-Dollar"
-                          className="w-10 h-10"
-                        />
-                        <div className="text-left">
-                          <div className="text-amber-800 font-bold shantell">
-                            +{store.jettonLastResult.pdollar}
-                          </div>
-                          <div className="text-amber-600 text-sm shantell">
-                            P-Dollar
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {store.jettonLastResult?.commonSlice && (
-                      <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 flex items-center gap-2">
-                        <img
-                          src={`${store.imgUrl}icon_pizza_common.png`}
-                          alt="Common"
-                          className="w-10 h-10"
-                        />
-                        <div className="text-left">
-                          <div className="text-amber-800 font-bold shantell">
-                            +{store.jettonLastResult.commonSlice}
-                          </div>
-                          <div className="text-amber-600 text-sm shantell">
-                            Common
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {store.jettonLastResult?.unCommonSlice && (
-                      <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 flex items-center gap-2">
-                        <img
-                          src={`${store.imgUrl}icon_pizza_uncommon.png`}
-                          alt="Uncommon"
-                          className="w-10 h-10"
-                        />
-                        <div className="text-left">
-                          <div className="text-amber-800 font-bold shantell">
-                            +{store.jettonLastResult.unCommonSlice}
-                          </div>
-                          <div className="text-amber-600 text-sm shantell">
-                            Uncommon
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {store.jettonLastResult?.rareSlice && (
-                      <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 flex items-center gap-2">
-                        <img
-                          src={`${store.imgUrl}icon_pizza_rare.png`}
-                          alt="Rare"
-                          className="w-10 h-10"
-                        />
-                        <div className="text-left">
-                          <div className="text-amber-800 font-bold shantell">
-                            +{store.jettonLastResult.rareSlice}
-                          </div>
-                          <div className="text-amber-600 text-sm shantell">
-                            Rare
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {store.jettonLastResult?.mystikalSlice && (
-                      <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 flex items-center gap-2">
-                        <img
-                          src={`${store.imgUrl}icon_pizza_mystical.png`}
-                          alt="Mystical"
-                          className="w-10 h-10"
-                        />
-                        <div className="text-left">
-                          <div className="text-amber-800 font-bold shantell">
-                            +{store.jettonLastResult.mystikalSlice}
-                          </div>
-                          <div className="text-amber-600 text-sm shantell">
-                            Mystical
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  {/* Сетка призов с картинками - остаётся как есть, так как это данные из стора */}
 
                   <button
                     onClick={() => {
@@ -2440,7 +2301,6 @@ const Home = observer(() => {
                       setJettonUiType(null);
                       setJettonAction(null);
                       setIsJettonChecking(false);
-
                       store.setJettonLastResult(null);
                       store.setJettonLastError(null);
                     }}
@@ -2452,13 +2312,13 @@ const Home = observer(() => {
                       className="absolute inset-0 w-full h-full object-fill"
                     />
                     <span className="relative z-10 px-10 text-center text-white font-bold shantell leading-none whitespace-nowrap text-[16px]">
-                      Забрать награды
+                      {t("common.buttons.claim_prizes")}
                     </span>
                   </button>
                 </div>
               )}
 
-              {/* Таблица призов - показываем только если нет результатов проверки */}
+              {/* Таблица призов */}
               {(!jettonUiMessage || jettonUiType === "error") && (
                 <div className="bg-white/50 rounded-xl p-4 border border-amber-300">
                   <div className="text-center mb-3">
