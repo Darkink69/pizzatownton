@@ -2213,7 +2213,7 @@ const Home = observer(() => {
                       <img
                           src={`${store.imgUrl}b_orange_round.png`}
                           alt=""
-                          className="absolute inset-0 w-full h-full object-contain"
+                          className="absolute inset-0 w-full h-full object-fill"
                       />
                       <span className="relative z-10 text-white font-bold shantell text-lg">
                         Купить за 15000 PCoin
