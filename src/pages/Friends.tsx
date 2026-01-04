@@ -2,8 +2,13 @@ import {useEffect, useRef, useState} from "react";
 import {observer} from "mobx-react-lite";
 import store from "../store/store";
 import Footer from "../components/Footer";
-import {PCOIN_PERCENTS, PDOLLAR_PERCENTS} from "../utils/referral";
 import {useTranslation} from "react-i18next";
+import {
+  PCOIN_PERCENTS,
+  PDOLLAR_PERCENTS,
+  getPcoinPercent,
+  getPdollarPercent,
+} from "../utils/referral";
 
 const Friends = observer(() => {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -28,6 +33,7 @@ const Friends = observer(() => {
 
   const {
     link,
+    totalReferrals,
     earnedPcoin = 0,
     earnedPdollar = 0,
     levels = [],
@@ -47,7 +53,14 @@ const Friends = observer(() => {
     };
   });
 
-  const totalFromLevels = levelsNormalized.reduce((sum, r) => sum + r.countRef, 0);
+  const totalFromLevels = levelsNormalized.reduce(
+      (sum, r) => sum + r.countRef, 0);
+
+  const totalFriends = Number.isFinite(Number(totalReferrals))
+      ? Number(totalReferrals)
+      : totalFromLevels;
+
+
 
   // -------------------- копирование ссылки --------------------
   function tryExecCommandCopy(text: string): boolean {
@@ -203,8 +216,8 @@ const Friends = observer(() => {
                   />
                   <StatBlock
                       icon={`${store.imgUrl}icon_friends.png`}
-                      value={`+${totalFromLevels}`}
-                      // label={t('friends.statistics.friends')}
+                      value={`+${totalFriends.toLocaleString()}`}
+
                   />
                 </div>
 
@@ -225,13 +238,22 @@ const Friends = observer(() => {
                     </div>
 
                     {levelsNormalized.map((r) => {
-                      const pcoinPct = PCOIN_PERCENTS[r.level] ?? 0;
-                      const pdollarPct = PDOLLAR_PERCENTS[r.level] ?? 0;
+                      const pcoinFrac = PCOIN_PERCENTS[r.level] ?? 0;   // 0.01
+                      const pdollarFrac = PDOLLAR_PERCENTS[r.level] ?? 0; // 0.02
+
+                      const pcoinPct = getPcoinPercent(r.level);     // вернёт 1, 1, 1...
+                      const pdollarPct = getPdollarPercent(r.level); // вернёт 1,1,2,2,0.5...
+
+                      const fmtPct = (v: number) => {
+                        // чтобы 0.5 нормально показывалось
+                        const rounded = Math.round(v * 1000) / 1000;
+                        return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+                      };
 
                       const pctLabel =
-                          (pcoinPct ? `PC ${pcoinPct}%` : "") +
-                          (pcoinPct && pdollarPct ? " / " : "") +
-                          (pdollarPct ? `PD ${pdollarPct}%` : "");
+                          (pcoinFrac ? `PC ${fmtPct(pcoinPct)}%` : "") +
+                          (pcoinFrac && pdollarFrac ? " / " : "") +
+                          (pdollarFrac ? `PD ${fmtPct(pdollarPct)}%` : "");
 
                       return (
                           <div

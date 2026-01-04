@@ -140,13 +140,14 @@ export interface AdminOperationRq {
 
 // -------------------- Тип для данных администратора --------------------
 export interface AdminWithdrawalData {
-    id: number;
-    telegramId: number;          // tg пользователя, который выводит
-    walletAdd: string;
-    amountPdollar: number;
-    amountTon: string | number;  // важно
-    status: AdminWithdrawStatus;
-    isBlogger: boolean;
+  id: number;
+  telegramId: number;          // tg пользователя, который выводит
+  walletAdd: string;
+  amountPdollar: number;
+  amountTon: string | number;  // важно
+  status: AdminWithdrawStatus;
+  attention: boolean;
+  isBlogger: boolean;
 }
 
 // -------------------- Запрос на привязку кошелька --------------------
@@ -312,6 +313,28 @@ export interface ChestOpenRq {
 export interface PizzaCraftBoxRq {
     telegramId: number;
     rarity: Rarity;
+}
+
+
+export interface ReferralLevelInfoData {
+    level: number;
+    countRef: number;
+    // бэк-формат:
+    earnedPcoin?: string | number;
+    earnedPdollar?: string | number;
+    // (опционально) старый формат/на будущее:
+    pcoin?: string | number;
+    pdollar?: string | number;
+}
+
+export interface ReferralInfoData {
+    totalReferrals: number;
+    earnedPcoin: number;
+    earnedPdollar: number;
+    link: string;
+    referralLink?: string;
+
+    levels?: ReferralLevelInfoData[]; // <-- NEW
 }
 
 // -------------------- Полный WS-запрос --------------------

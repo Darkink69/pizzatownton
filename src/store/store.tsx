@@ -17,6 +17,7 @@ import type {
 import type { ChestKeys, PizzaPieces, Rarity, Reward } from "../types/chests";
 import { bankStore } from "./BankStore";
 import translations, { type Language } from "../components/translations";
+import type { ReferralLevelInfoData } from "../types/ws";
 
 class Store {
   imgUrl =
@@ -39,7 +40,7 @@ class Store {
     return tgId ? Number(tgId) : null;
   }
 
-  adminData: any[] = [];
+  adminData: AdminWithdrawalData[] = [];
   isAdmin = false;
 
   tonBalance: string = "0";
@@ -50,7 +51,6 @@ class Store {
   pizza = 20000;
 
   isAuthed = false;
-
   setAuthState(state: boolean) {
     runInAction(() => {
       this.isAuthed = state;
@@ -66,6 +66,7 @@ class Store {
     earnedPcoin: 0,
     earnedPdollar: 0,
     link: "",
+    levels: [] as ReferralLevelInfoData[],
   };
 
   language: Language = "ru";
@@ -465,12 +466,14 @@ class Store {
     earnedPcoin?: number;
     earnedPdollar?: number;
     link?: string;
+    levels?: ReferralLevelInfoData[];
   }) {
     runInAction(() => {
       this.referral.totalReferrals = Number(data.totalReferrals ?? 0);
       this.referral.earnedPcoin = Number(data.earnedPcoin ?? 0);
       this.referral.earnedPdollar = Number(data.earnedPdollar ?? 0);
       this.referral.link = data.link ?? "";
+      this.referral.levels = Array.isArray(data.levels) ? data.levels : [];
     });
   }
 
@@ -1450,6 +1453,7 @@ class Store {
         earnedPcoin: 0,
         earnedPdollar: 0,
         link: "",
+        levels: [],
       };
       this.taskInvite3Status = "idle";
       this.taskInvite3Error = null;

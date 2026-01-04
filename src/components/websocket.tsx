@@ -304,6 +304,9 @@ const WebSocketComponent = observer(() => {
                     referralInfoData.link ??
                     referralInfoData.referralLink ??
                     "",
+                  levels: Array.isArray(referralInfoData.levels)
+                      ? referralInfoData.levels
+                      : [],
                 };
               });
 
