@@ -18,7 +18,9 @@ const Home = observer(() => {
 
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [jettonAction, setJettonAction] = useState<"deposit_check" | "buy_pcoin" | null>(null);
+  const [jettonAction, setJettonAction] = useState<
+    "deposit_check" | "buy_pcoin" | null
+  >(null);
   const [selectedFloorId, setSelectedFloorId] = useState<number | null>(null);
   const [liftPosition, setLiftPosition] = useState<number>(0);
   const [liftHasPizza, setLiftHasPizza] = useState<boolean>(false);
@@ -98,8 +100,10 @@ const Home = observer(() => {
 
       setJettonUiType("success");
       setJettonUiMessage(
-          `Успешно!\n` +
-          (currencyParts.length ? `Награда: ${currencyParts.join(", ")}\n` : "") +
+        `Успешно!\n` +
+          (currencyParts.length
+            ? `Награда: ${currencyParts.join(", ")}\n`
+            : "") +
           (sliceParts.length ? `Кусочки: ${sliceParts.join(", ")}` : "")
       );
       return;
@@ -133,11 +137,16 @@ const Home = observer(() => {
 
     setJettonUiType("success");
     setJettonUiMessage(
-        `Депозит подтверждён!\n` +
+      `Депозит подтверждён!\n` +
         (currencyParts.length ? `Награда: ${currencyParts.join(", ")}\n` : "") +
         (sliceParts.length ? `Кусочки: ${sliceParts.join(", ")}` : "")
     );
-  }, [store.jettonLastResult, store.jettonLastError, jettonAction, store.pcoin]);
+  }, [
+    store.jettonLastResult,
+    store.jettonLastError,
+    jettonAction,
+    store.pcoin,
+  ]);
 
   // Запрос данных при монтировании
   useEffect(() => {
@@ -249,7 +258,6 @@ const Home = observer(() => {
       audio.currentTime = 0;
     };
   }, [jettonUiType, showNYBoxModal, store.imgUrl]);
-
 
   // Эффект для анимации лифта
   useEffect(() => {
@@ -2129,7 +2137,6 @@ const Home = observer(() => {
 
                 store.setJettonLastResult(null);
                 store.setJettonLastError(null);
-
               }}
               className="absolute -top-8 -right-2 w-8 h-8 hover:scale-110 transition-transform z-10"
             >
@@ -2187,33 +2194,33 @@ const Home = observer(() => {
                     </button>
 
                     <button
-                        onClick={() => {
-                          if (isJettonChecking) return;
+                      onClick={() => {
+                        if (isJettonChecking) return;
 
-                          setJettonAction("buy_pcoin");
-                          setJettonUiMessage(null);
-                          setJettonUiType(null);
+                        setJettonAction("buy_pcoin");
+                        setJettonUiMessage(null);
+                        setJettonUiType(null);
 
-                          store.setJettonLastResult(null);
-                          store.setJettonLastError(null);
+                        store.setJettonLastResult(null);
+                        store.setJettonLastError(null);
 
-                          setIsJettonChecking(true);
+                        setIsJettonChecking(true);
 
-
-
-                          const ok = store.buyJettonBoxForPcoin?.();
-                          if (!ok) {
-                            setIsJettonChecking(false);
-                            setJettonUiType("error");
-                            setJettonUiMessage("Не удалось отправить покупку (нет WS/сессии).");
-                          }
-                        }}
-                        className="relative w-full py-1 rounded-lg flex items-center justify-center hover:opacity-90 transition-opacity"
+                        const ok = store.buyJettonBoxForPcoin?.();
+                        if (!ok) {
+                          setIsJettonChecking(false);
+                          setJettonUiType("error");
+                          setJettonUiMessage(
+                            "Не удалось отправить покупку (нет WS/сессии)."
+                          );
+                        }
+                      }}
+                      className="relative w-full py-1 rounded-lg flex items-center justify-center hover:opacity-90 transition-opacity"
                     >
                       <img
-                          src={`${store.imgUrl}b_orange_round.png`}
-                          alt=""
-                          className="absolute inset-0 w-full h-full object-fill"
+                        src={`${store.imgUrl}b_orange_round2.png`}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-contain"
                       />
                       <span className="relative z-10 text-white font-bold shantell text-lg">
                         Купить за 15000 PCoin
@@ -2263,7 +2270,9 @@ const Home = observer(() => {
                   <div className="bg-red-100/70 border-2 border-red-400 rounded-xl p-1">
                     <div className="flex items-center justify-center gap-2">
                       <span className="text-red-800 font-bold shantell text-lg">
-                        {jettonAction === "buy_pcoin" ? "Недостаточно PCoin" : "Депозит не найден"}
+                        {jettonAction === "buy_pcoin"
+                          ? "Недостаточно PCoin"
+                          : "Депозит не найден"}
                       </span>
                     </div>
                     <p className="text-red-700 shantell text-sm whitespace-pre-wrap">
@@ -2278,7 +2287,6 @@ const Home = observer(() => {
                 <div className="mt-1 mb-1">
                   {/* Проигрываем звук win.mp3 при успехе */}
                   {(() => {
-
                     return null;
                   })()}
 
@@ -2290,7 +2298,9 @@ const Home = observer(() => {
                       </span>
                     </div>
                     <p className="text-green-700 shantell text-lg font-bold">
-                      {jettonAction === "buy_pcoin" ? "Бокс куплен!" : "Депозит подтверждён!"}
+                      {jettonAction === "buy_pcoin"
+                        ? "Бокс куплен!"
+                        : "Депозит подтверждён!"}
                     </p>
                   </div>
 
