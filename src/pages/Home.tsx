@@ -2208,14 +2208,14 @@ const Home = observer(() => {
                             setJettonUiMessage("Не удалось отправить покупку (нет WS/сессии).");
                           }
                         }}
-                        className="relative inline-flex h-[52px] w-fit max-w-full items-center justify-center mx-auto"
+                        className="relative w-full h-[52px] flex items-center justify-center hover:opacity-90 transition-opacity"
                     >
                       <img
                           src={`${store.imgUrl}b_orange_round.png`}
                           alt=""
-                          className="absolute inset-0 w-full h-full object-fill"
+                          className="absolute inset-0 w-full h-full object-contain"
                       />
-                      <span className="relative z-10 px-10 text-center text-white font-bold shantell leading-none whitespace-nowrap text-[14px] sm:text-[16px]">
+                      <span className="relative z-10 text-white font-bold shantell text-lg">
                           Купить за 15000 PCoin
                       </span>
                     </button>
