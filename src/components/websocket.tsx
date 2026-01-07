@@ -18,7 +18,7 @@ import type {
   WsResponse,
   ChestOpenPayload,
   ChestGetStatePayload,
-  PizzaCraftBoxPayload,
+  PizzaCraftBoxPayload, PDollarToPcoinExchangeResponseData,
 } from "../types/ws";
 import { bankStore } from "../store/BankStore.ts";
 import { runInAction } from "mobx";
@@ -549,6 +549,27 @@ const WebSocketComponent = observer(() => {
               toast.success("💸 Ордер на покупку PCoin создан");
             } else {
               toast.error(parsed.message || "Ошибка при создании ордера");
+            }
+            break;
+          }
+
+            /** ---------------- BANK_EXCHANGE_PDOLLAR_TO_PCOIN ---------------- */
+          case "BANK_EXCHANGE_PDOLLAR_TO_PCOIN": {
+            if (parsed.success && parsed.data) {
+              const d = parsed.data as PDollarToPcoinExchangeResponseData;
+              toast.success(`✅ Обмен выполнен: +${d.amountPcoin} PCoin`);
+              sendClaimRefresh();
+
+            } else {
+              if (parsed.message?.startsWith("MIN_SELL_PDOLLAR")) {
+                toast.error("Сумма меньше минимальной для обмена");
+              } else if (parsed.message === "NOT_ENOUGH_PDOLLAR") {
+                toast.error("Недостаточно PDollar");
+              } else if (parsed.message === "RATE_NOT_CONFIGURED") {
+                toast.error("Курс не настроен");
+              } else {
+                toast.error(parsed.message || "Ошибка обмена");
+              }
             }
             break;
           }

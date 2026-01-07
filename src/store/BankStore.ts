@@ -1,5 +1,6 @@
 import { makeAutoObservable } from "mobx";
 import store from "./store.tsx";
+import type {WsRequest} from "../types/ws.ts";
 
 // Типы DTO
 export interface BankOrder {
@@ -102,6 +103,47 @@ class BankStore {
     } finally {
       this.creating = false; // важно сбрасывать, иначе canBuy остаётся false
     }
+  }
+
+  // ------------------------------------------------------------------------
+// 🔁 ОБМЕН PDollar → PCoin
+// ------------------------------------------------------------------------
+  async exchangePdollarToPcoin(amountPDollar: number) {
+    this.creating = true;
+    this.error = null;
+
+    const amountInt = Math.floor(Number(amountPDollar) || 0);
+    if (amountInt <= 0) {
+      this.error = "Некорректная сумма";
+      this.creating = false;
+      return;
+    }
+
+    const tgId = store.user.telegramId ?? store.user.id;
+    const session = store.sessionId;
+
+    if (!session || !tgId) {
+      this.error = "Нет sessionId или telegramId";
+      this.creating = false;
+      return;
+    }
+
+    const rq: WsRequest = {
+      type: "BANK_EXCHANGE_PDOLLAR_TO_PCOIN",
+      requestId: `ex_pd_pc_${Math.random().toString(36).slice(2, 10)}`,
+      session,
+      pdollarToPcoinExchangeRq: {
+        telegramId: tgId,
+        amountPDollar: amountInt,
+      },
+    };
+
+    const ok = store.send(rq);
+    if (!ok) {
+      this.error = "Ошибка: WebSocket не подключён.";
+    }
+
+    this.creating = false;
   }
 
   // ------------------------------------------------------------------------

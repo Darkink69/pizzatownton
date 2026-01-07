@@ -28,6 +28,7 @@ export type OperationType =
     | "CHEST_OPEN"
     | "PIZZA_CRAFT_BOX"
     | "BANK_MANUAL_WITHDRAW_HISTORY"
+    | "BANK_EXCHANGE_PDOLLAR_TO_PCOIN"
     | "NFT_GIFTS_GET_LIST"
     | "NFT_GIFTS_WITHDRAW_REQUEST"
     | "FIX_CLICK_JETTON_LINK"
@@ -300,6 +301,17 @@ export interface PDollarExchangeRq {
     amountPDollar: number;
 }
 
+export interface PDollarToPcoinExchangeRq {
+    telegramId: number;
+    amountPDollar: number;
+}
+
+export interface PDollarToPcoinExchangeResponseData {
+    amountPDollar: number;
+    amountPcoin: number | string;
+    ratePcoinPerPdollar: number | string;
+}
+
 // --- Сундуки (Chests) ---
 export interface ChestGetStateRq {
     telegramId: number;
@@ -380,6 +392,7 @@ export interface WsRequest extends WsBase {
     manualWithdrawRq?: ManualWithdrawRq;
     manualWithdrawHistoryRq?: ManualWithdrawHistoryRq;
     pdollarExchangeRq?: PDollarExchangeRq; // BANK_EXCHANGE_PDOLLAR
+    pdollarToPcoinExchangeRq?: PDollarToPcoinExchangeRq;
 
     // задачи
     taskRq?: TaskRq;
