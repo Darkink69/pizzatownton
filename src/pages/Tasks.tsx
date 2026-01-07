@@ -29,6 +29,7 @@ const TASK_CODE_BY_ID: Record<number, string> = {
     1: "SUBSCRIBE_MAIN_CHANNEL",
     2: "INVITE_3_FRIENDS",
     3: "SUBSCRIBE_TEAM_LOVE_CHANNEL",
+    4: "LOOTY_GAME",
 };
 
 const PIZZA_LIST = [
@@ -58,9 +59,11 @@ function Tasks() {
     const [showDailyCombo, setShowDailyCombo] = useState(false);
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [isSubscribedToTeamLove, setIsSubscribedToTeamLove] = useState(false);
+    const [isSubscribedToLooty, setIsSubscribedToLooty] = useState(false);
     const [serverTaskCodes, setServerTaskCodes] = useState<Set<string>>(
         new Set()
     );
+
     // const [isInviteTaskDone, setIsInviteTaskDone] = useState(false);
     // const [completedTaskIds, setCompletedTaskIds] = useState<number[]>([]);
     const [isAdsgramLoaded, setIsAdsgramLoaded] = useState(false);
@@ -115,6 +118,8 @@ function Tasks() {
         isWin: false,
         winAmount: null,
     });
+
+
 
     useEffect(() => {
         if (!store.sessionId || !store.user?.telegramId) return;
@@ -173,12 +178,18 @@ function Tasks() {
     //   setTaskRewardNotification({ show: false, message: "" });
     // };
 
+    useEffect(() => {
+        setIsSubscribedToLooty(localStorage.getItem("subscribedLootyTaskDone") === "true");
+    }, []);
+
     const isHiddenByLocalRules = (code: string) => {
         switch (code) {
             case "SUBSCRIBE_MAIN_CHANNEL":
                 return isSubscribed;
             case "SUBSCRIBE_TEAM_LOVE_CHANNEL":
                 return isSubscribedToTeamLove;
+            case "LOOTY_GAME":
+                return isSubscribedToLooty;
             case "INVITE_3_FRIENDS":
                 return store.taskInvite3Status === "rewarded";
             default:
@@ -397,6 +408,40 @@ function Tasks() {
         return () => clearTimeout(timer);
     };
 
+    const handleSubscribeLooty = () => {
+        if (isSubscribedToLooty) return;
+
+        const tgId = store.user?.telegramId ?? 0;
+        toast.info("🔔 Проверяем подписку...");
+
+        const timer = setTimeout(() => {
+            const rq = {
+                type: "TASKS_COMPLETE" as const,
+                requestId: Math.random().toString(36).substring(2, 10),
+                session: store.sessionId ?? "",
+                taskRq: {
+                    telegramId: tgId,
+                    code: "LOOTY_GAME",
+                },
+            };
+
+            if (store.send(rq)) {
+                toast.dismiss();
+                toast.success("✅ Готово! Получаем награду...");
+                setIsSubscribedToLooty(true);
+                localStorage.setItem("subscribedLootyTaskDone", "true");
+
+                showRewardNotification("1000 pizza");
+            } else {
+                toast.error("WebSocket не подключён");
+            }
+        }, 8000);
+
+        return () => clearTimeout(timer);
+    };
+
+
+
     // выполнение таски INVITE_3_FRIENDS (инициируем проверку)
     const handleInvite3Task = () => {
         if (store.taskInvite3Status === "rewarded") {
@@ -463,6 +508,18 @@ function Tasks() {
             disabled: isSubscribedToTeamLove,
             isCompleted: isSubscribedToTeamLove,
         },
+        {
+            id: 4,
+            title: "Запустить игру Looty Game",
+            rewardPizza: "1000",
+            link: "https://t.me/looty_app_bot/app?startapp=ref_2100676836",
+            buttonText: isSubscribedToLooty ? "ВЫПОЛНЕНО" : "ПЕРЕЙТИ",
+            buttonBg: isSubscribedToLooty ? "b_blue_small.png" : "b_red_small.png",
+            onClick: !isSubscribedToLooty ? handleSubscribeLooty : undefined,
+            disabled: isSubscribedToLooty,
+            isCompleted: isSubscribedToLooty,
+        },
+
     ];
 
     const visibleTaskBlocks = taskBlocks.filter((block) => {
@@ -907,7 +964,7 @@ function Tasks() {
 
                                                 {/* Кнопки действий */}
                                                 <div className="mt-auto px-2">
-                                                    {block.id === 1 || block.id === 3 ? (
+                                                    {block.id === 1 || block.id === 3 || block.id === 4 ? (
                                                         block.link ? (
                                                             <a
                                                                 href={block.link}
