@@ -1,0 +1,16 @@
+.fridge {
+    display: inline-block;
+    will-change: filter;
+}
+
+.fridgeWarn {
+    filter:
+            drop-shadow(0 0 8px rgba(255, 190, 60, 0.85))
+            drop-shadow(0 0 16px rgba(255, 190, 60, 0.55));
+}
+
+.fridgeDanger {
+    filter:
+            drop-shadow(0 0 8px rgba(255, 60, 60, 0.85))
+            drop-shadow(0 0 16px rgba(255, 60, 60, 0.55));
+}

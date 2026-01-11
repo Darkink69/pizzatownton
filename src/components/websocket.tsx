@@ -941,49 +941,51 @@ const WebSocketComponent = observer(() => {
 
 
           case "FOOD_BUY": {
-            if (parsed.success && parsed.data) {
-              const d = parsed.data as FoodBuyResponse;
+            try {
+              if (parsed.success && parsed.data) {
+                const d = parsed.data as FoodBuyResponse;
 
-              // 1) баланс
-              if (d.user) {
-                store.updateUserData({
-                  pizza: Number(d.user.pizza ?? store.pizza),
-                  pcoin: Number(d.user.pcoin ?? store.pcoin),
-                  pdollar: Number(d.user.pdollar ?? store.pdollar),
-                });
+                // 1) баланс
+                if (d.user) {
+                  store.updateUserData({
+                    pcoin: Number(d.user.pcoin ?? store.pcoin),
+                    pdollar: Number(d.user.pdollar ?? store.pdollar),
+                  });
+                }
+
+                // 2) статус холодильника
+                store.setFoodStatus(d.status ?? null);
+
+                toast.success(d.message || "✅ Продукты куплены на 7 дней");
+              } else {
+                const code = String(parsed.message ?? "");
+
+                const msg =
+                    code === "NOT_ENOUGH_PCOIN"
+                        ? "Недостаточно PCOIN"
+                        : code === "NO_FLOORS"
+                            ? "Сначала купите этаж (кроме бейсмента)"
+                            : code === "BAD_REQUEST"
+                                ? "Некорректный запрос"
+                                : "Не удалось купить продукты";
+
+                toast.error(msg);
+
+                // если бэк вернул status даже при ошибке — обновляем
+                const d = parsed.data as FoodBuyResponse | undefined;
+                if (d?.status) store.setFoodStatus(d.status);
+                if (d?.user) {
+                  store.updateUserData({
+                    pizza: Number(d.user.pizza ?? store.pizza),
+                    pcoin: Number(d.user.pcoin ?? store.pcoin),
+                    pdollar: Number(d.user.pdollar ?? store.pdollar),
+                  });
+                }
               }
-
-              // 2) статус холодильника
-              store.setFoodStatus(d.status ?? null);
-
-              toast.success(d.message || "✅ Продукты куплены на 7 дней");
-
-              // floors больше не трогаем: еда глобальная
-            } else {
-              const code = String(parsed.message ?? "");
-
-              const msg =
-                  code === "NOT_ENOUGH_PCOIN"
-                      ? "Недостаточно PCOIN"
-                      : code === "NO_FLOORS"
-                          ? "Сначала купите этаж (кроме бейсмента)"
-                          : code === "BAD_REQUEST"
-                              ? "Некорректный запрос"
-                              : "Не удалось купить продукты";
-
-              toast.error(msg);
-
-              // если бэк вернул status даже при ошибке (на будущее) — можно обновить
-              const d = parsed.data as FoodBuyResponse | undefined;
-              if (d?.status) store.setFoodStatus(d.status);
-              if (d?.user) {
-                store.updateUserData({
-                  pizza: Number(d.user.pizza ?? store.pizza),
-                  pcoin: Number(d.user.pcoin ?? store.pcoin),
-                  pdollar: Number(d.user.pdollar ?? store.pdollar),
-                });
-              }
+            } finally {
+              store.finishFoodBuy(); // ✅ разблокировать кнопку всегда
             }
+
             break;
           }
 

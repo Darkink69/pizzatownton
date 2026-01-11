@@ -431,6 +431,21 @@ class Store {
     });
   };
 
+  foodBuyInProgress = false;
+
+  startFoodBuy(): boolean {
+    if (this.foodBuyInProgress) return false;
+    this.foodBuyInProgress = true;
+
+    const ok = this.buyFoodWeekly();
+    if (!ok) this.foodBuyInProgress = false;
+    return ok;
+  }
+
+  finishFoodBuy() {
+    this.foodBuyInProgress = false;
+  }
+
   /**
    * Отправляет запрос на открытие сундука.
    * @param {'task' | 'referral' | 'deposit'} chestType - Тип сундука.
