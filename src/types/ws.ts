@@ -34,6 +34,8 @@ export type OperationType =
     | "FIX_CLICK_JETTON_LINK"
     | "CHECK_JETTON_PAYMENT"
     | "JETTON_BOX_BUY"
+    | "FOOD_GET"
+    | "FOOD_BUY"
     | (string & {}); // резерв на будущее
 
 // -------------------- База запроса --------------------
@@ -46,8 +48,8 @@ export interface WsBase {
 export interface UserFloor {
     floorId: number;
     level: number;
-    yieldPerHour: number;
-    earningsPerHour: number;
+    yieldPerHour: number;          // инкремент на уровне (как в бэке)
+    earningsPerHour: number;       // итог по этажу (user_floors.earnings_per_hour)
     yieldCurrency: string;
     floorName: string;
     floorType: string;
@@ -57,6 +59,9 @@ export interface UserFloor {
     earned?: number;
     owned: boolean;
     balance?: number;
+
+    // суточный расход на текущем уровне (участвует в dailyTotal)
+    foodCostPcoin?: number | string | null;
 
     staff?:
         | {
@@ -84,6 +89,38 @@ export interface UserFloor {
             | null;
     }[]
         | null;
+}
+
+export interface UserFoodStatusDto {
+    stockPcoin: number | string;
+    stockUpdatedAt: string | null;
+
+    dailyTotal: number | string;
+    weeklyPrice: number | string;
+
+    daysLeft: number | string;
+    active: boolean;
+}
+
+export interface FoodBuyResponse {
+    status: UserFoodStatusDto | null;
+    user: {
+        tgId: number;
+        pizza: number;
+        pcoin: number;
+        pdollar: number;
+    } | null;
+    message: string;
+}
+
+export interface FoodGetRq {
+    telegramId: number;
+    floorId?: number | null;
+}
+
+export interface FoodBuyRq {
+    telegramId: number;
+    floorId?: number | null;
 }
 
 export interface JettonRq {
@@ -398,6 +435,10 @@ export interface WsRequest extends WsBase {
     taskRq?: TaskRq;
     comboRq?: ComboTodayRq;
     pickComboRq?: ComboPickRq;
+
+    // food
+    foodGetRq?: FoodGetRq;
+    foodBuyRq?: FoodBuyRq;
 
     [key: string]: any;
 }

@@ -18,7 +18,7 @@ import type {
   WsResponse,
   ChestOpenPayload,
   ChestGetStatePayload,
-  PizzaCraftBoxPayload, PDollarToPcoinExchangeResponseData,
+  PizzaCraftBoxPayload, PDollarToPcoinExchangeResponseData, FoodBuyResponse, UserFoodStatusDto,
 } from "../types/ws";
 import { bankStore } from "../store/BankStore.ts";
 import { runInAction } from "mobx";
@@ -169,6 +169,7 @@ const WebSocketComponent = observer(() => {
 
               // загружаем этажи
               sendFloorsGetRequest();
+              store.requestFoodStatus();
 
               // сразу подтягиваем ключи/кусочки, чтобы страница сундуков показывала totals при первом заходе
               store.getChestsState();
@@ -254,6 +255,7 @@ const WebSocketComponent = observer(() => {
           case "FLOORS_GET": {
             if (parsed.success) {
               store.setFloorsData(parsed);
+
               console.log("✅ Floors data loaded");
             } else {
               console.error("❌ FLOORS_GET failed:", parsed.message);
@@ -265,9 +267,12 @@ const WebSocketComponent = observer(() => {
           case "FLOORS_BUY": {
             if (parsed.success) {
               store.setFloorsData(parsed);
+              // ✅ обновить глобальные продукты (цена/время меняются)
+              store.revalidateFoodAfterFloorsChange();
+
+
               toast.success("🏗 Этаж куплен!");
               store.updateClaimProgress(0);
-              toast.info("⏱ Новый цикл фарма запущен после улучшения этажа!");
             } else {
               toast.error(parsed.message || "Ошибка покупки этажа");
             }
@@ -278,11 +283,15 @@ const WebSocketComponent = observer(() => {
           case "FLOORS_UPGRADE": {
             if (parsed.success) {
               store.setFloorsData(parsed);
+              // ✅ обновить глобальные продукты (цена/время меняются)
+              store.revalidateFoodAfterFloorsChange();
+
               toast.success(
                 parsed.type === "FLOORS_BUY"
                   ? "🏗 Этаж куплен!"
                   : "🔼 Этаж улучшен!"
               );
+
               store.updateClaimProgress(0);
             } else {
               toast.error(parsed.message);
@@ -914,6 +923,66 @@ const WebSocketComponent = observer(() => {
               store.setJettonLastError?.(String(parsed.message ?? "UNKNOWN_ERROR"));
                if (parsed.message === "NOT_ENOUGH_PCOIN") toast.error("Недостаточно PCoin (нужно 15000)");
                else toast.error(parsed.message || "Не удалось купить бокс");
+            }
+            break;
+          }
+
+          case "FOOD_GET": {
+            if (parsed.success) {
+              const status = (parsed.data ?? null) as UserFoodStatusDto | null;
+
+              store.setFoodStatus(status);
+              console.log("🍱 FOOD_GET (глобально):", status);
+            } else {
+              toast.error(parsed.message || "Ошибка получения статуса продуктов");
+            }
+            break;
+          }
+
+
+          case "FOOD_BUY": {
+            if (parsed.success && parsed.data) {
+              const d = parsed.data as FoodBuyResponse;
+
+              // 1) баланс
+              if (d.user) {
+                store.updateUserData({
+                  pizza: Number(d.user.pizza ?? store.pizza),
+                  pcoin: Number(d.user.pcoin ?? store.pcoin),
+                  pdollar: Number(d.user.pdollar ?? store.pdollar),
+                });
+              }
+
+              // 2) статус холодильника
+              store.setFoodStatus(d.status ?? null);
+
+              toast.success(d.message || "✅ Продукты куплены на 7 дней");
+
+              // floors больше не трогаем: еда глобальная
+            } else {
+              const code = String(parsed.message ?? "");
+
+              const msg =
+                  code === "NOT_ENOUGH_PCOIN"
+                      ? "Недостаточно PCOIN"
+                      : code === "NO_FLOORS"
+                          ? "Сначала купите этаж (кроме бейсмента)"
+                          : code === "BAD_REQUEST"
+                              ? "Некорректный запрос"
+                              : "Не удалось купить продукты";
+
+              toast.error(msg);
+
+              // если бэк вернул status даже при ошибке (на будущее) — можно обновить
+              const d = parsed.data as FoodBuyResponse | undefined;
+              if (d?.status) store.setFoodStatus(d.status);
+              if (d?.user) {
+                store.updateUserData({
+                  pizza: Number(d.user.pizza ?? store.pizza),
+                  pcoin: Number(d.user.pcoin ?? store.pcoin),
+                  pdollar: Number(d.user.pdollar ?? store.pdollar),
+                });
+              }
             }
             break;
           }

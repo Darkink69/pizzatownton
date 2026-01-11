@@ -12,7 +12,7 @@ import type {
   UserFloor,
   UserState,
   WsRequest,
-  JettonResponse,
+  JettonResponse, UserFoodStatusDto,
 } from "../types/ws";
 import type { ChestKeys, PizzaPieces, Rarity, Reward } from "../types/chests";
 import { bankStore } from "./BankStore";
@@ -20,6 +20,9 @@ import translations, { type Language } from "../components/translations";
 import type { ReferralLevelInfoData } from "../types/ws";
 
 class Store {
+  private foodGetDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+
   imgUrl =
     "https://s3.twcstorage.ru/c6bae09a-a5938890-9b68-453c-9c54-76c439a70d3e/Pizzatownton/";
 
@@ -158,6 +161,32 @@ class Store {
     });
   }
 
+
+  requestFoodStatusDebounced(delayMs = 400): boolean {
+    const tgId = this.user?.telegramId ?? this.user?.id;
+    if (!this.wsSend || !this.sessionId || !tgId) return false;
+
+    // отменяем предыдущий хвост
+    if (this.foodGetDebounceTimer) {
+      clearTimeout(this.foodGetDebounceTimer);
+      this.foodGetDebounceTimer = null;
+    }
+
+
+
+    this.foodGetDebounceTimer = setTimeout(() => {
+      this.foodGetDebounceTimer = null;
+
+      // важно: к моменту срабатывания сессия могла уже сброситься
+      const tgId2 = this.user?.telegramId ?? this.user?.id;
+      if (!this.wsSend || !this.sessionId || !tgId2) return;
+
+      this.requestFoodStatus();
+    }, delayMs);
+
+    return true;
+  }
+
   /**
    * Запрашивает начальное состояние сундуков и ключей.
    * @returns {boolean} - true, если запрос был отправлен.
@@ -189,6 +218,76 @@ class Store {
 
     this.getChestsState();
   }
+
+  foodStatus: UserFoodStatusDto | null = null;
+
+  lastFoodGetResult: UserFoodStatusDto | null = null;
+  lastFoodGetError: string | null = null;
+
+
+  setFoodStatus(status: UserFoodStatusDto | null) {
+    runInAction(() => {
+      this.foodStatus = status;
+    });
+  }
+
+  setLastFoodGetResult(res: UserFoodStatusDto | null) {
+    runInAction(() => {
+      this.lastFoodGetResult = res;
+      this.lastFoodGetError = null;
+      this.foodStatus = res; // главное: обновляем глобальный статус
+    });
+  }
+
+  setLastFoodGetError(err: string | null) {
+    runInAction(() => {
+      this.lastFoodGetError = err;
+      this.lastFoodGetResult = null;
+    });
+  }
+
+  requestFoodStatus(): boolean {
+    const tgId = this.user?.telegramId ?? this.user?.id;
+    if (!this.wsSend || !this.sessionId || !tgId) return false;
+
+    const rq: WsRequest = {
+      type: "FOOD_GET",
+      requestId: genId(),
+      session: this.sessionId,
+      foodGetRq: {
+        telegramId: Number(tgId),
+        floorId: null,
+      } as any,
+    };
+
+    console.log("📨 FOOD_GET отправлен:", rq);
+    return this.send(rq);
+  }
+
+  buyFoodWeekly(): boolean {
+    const tgId = this.user?.telegramId ?? this.user?.id;
+    if (!this.wsSend || !this.sessionId || !tgId) return false;
+
+    const rq: WsRequest = {
+      type: "FOOD_BUY",
+      requestId: genId(),
+      session: this.sessionId,
+      foodBuyRq: {
+        telegramId: Number(tgId),
+        floorId: null, // игнорируется бэком
+      } as any,
+    };
+
+    console.log("✅ FOOD_BUY отправлен:", JSON.stringify(rq, null, 2));
+    return this.send(rq);
+  }
+
+  revalidateFoodAfterFloorsChange() {
+    this.requestFoodStatusDebounced(400);
+  }
+
+
+
   // =========================================================================
   // GIFTS (Jetton Box ITEMS)
   // =========================================================================
@@ -1215,14 +1314,7 @@ class Store {
         buyFloorRq: { telegramId: tgId, floorId },
       });
 
-      this.deductCurrency(price, currency);
 
-      // обновляем массив этажей
-      runInAction(() => {
-        this.userFloors.data.userFloorList = this.safeUserFloorList.map((f) =>
-          f.floorId === floorId ? { ...f, owned: true, purchaseCost: null } : f
-        );
-      });
 
       return true;
     } catch (e) {
@@ -1253,16 +1345,7 @@ class Store {
         updateFloorRq: { telegramId: tgId, floorId },
       });
 
-      this.deductCurrency(cost, currency);
 
-      runInAction(() => {
-        this.userFloors.data.userFloorList = this.safeUserFloorList.map(
-          (f: UserFloor) =>
-            f.floorId === floorId
-              ? { ...f, owned: true, purchaseCost: null }
-              : f
-        );
-      });
       return true;
     } catch (e) {
       console.warn("FLOORS_UPGRADE failed", e);
@@ -1446,6 +1529,7 @@ class Store {
         },
       };
 
+
       this.staffData = null;
       this.userStaff = null;
       this.referral = {
@@ -1459,6 +1543,13 @@ class Store {
       this.taskInvite3Error = null;
       this.claimProgress = 0;
     });
+
+    // ✅ ВАЖНО: чистим food debounce, чтобы не улетел FOOD_GET после выхода
+    if (this.foodGetDebounceTimer) {
+      clearTimeout(this.foodGetDebounceTimer);
+      this.foodGetDebounceTimer = null;
+    }
+
 
     // сбрасываем внешние стейты
     this.bank.reset?.();

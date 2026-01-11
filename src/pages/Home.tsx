@@ -59,6 +59,56 @@ const Home = observer(() => {
   const [isJettonChecking, setIsJettonChecking] = useState(false);
   const jettonSoundPlayedRef = useRef(false);
 
+  const [isFoodModalOpen, setIsFoodModalOpen] = useState(false);
+
+  const formatDaysLeft = (daysLeftRaw: any) => {
+    const daysLeft = Number(daysLeftRaw);
+    if (!Number.isFinite(daysLeft) || daysLeft <= 0) return "0 дней";
+
+    const totalHours = Math.floor(daysLeft * 24);
+    const days = Math.floor(totalHours / 24);
+    const hours = totalHours % 24;
+    const minutes = Math.floor(daysLeft * 24 * 60) % 60;
+
+    return `${days}д ${hours}ч ${minutes}м`;
+  };
+
+  const toNum = (v: any): number => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+
+  const dailyTotal = toNum(store.foodStatus?.dailyTotal);
+  const weeklyPrice = toNum(store.foodStatus?.weeklyPrice);
+  const active = Boolean(store.foodStatus?.active);
+
+  const statusText =
+      dailyTotal <= 0
+          ? "Нет этажей для расхода продуктов"
+          : active
+              ? "Продукты активны"
+              : "Продукты закончились";
+
+  const canBuyFood =
+      dailyTotal > 0 &&
+      weeklyPrice > 0 &&
+      Number(store.pcoin ?? 0) >= weeklyPrice;
+
+  const getFoodDaysLeft = () => toNum(store.foodStatus?.daysLeft);
+
+  const getFoodSegmentsFilled = () => {
+    const filled = Math.ceil(getFoodDaysLeft()); // рекомендую ceil
+    return Math.max(0, Math.min(7, filled));
+  };
+
+  const getFoodColorClass = () => {
+    const d = getFoodDaysLeft();
+    if (d >= 3) return "bg-green-500";
+    if (d >= 1) return "bg-yellow-400";
+    return "bg-red-500";
+  };
+
   useEffect(() => {
     const r = store.jettonLastResult;
     const e = store.jettonLastError;
@@ -151,10 +201,16 @@ const Home = observer(() => {
   // Запрос данных при монтировании
   useEffect(() => {
     if (!store.areFloorsLoaded) {
-      console.log("Requesting floors data on component mount...");
       store.requestFloorsData();
     }
   }, [store.areFloorsLoaded]);
+
+  useEffect(() => {
+    if (!store.sessionId || (!store.user?.telegramId && !store.user?.id)) return;
+    if (!store.areFloorsLoaded) return;
+
+    store.requestFoodStatusDebounced?.(200);
+  }, [store.sessionId, store.user?.telegramId, store.user?.id, store.areFloorsLoaded]);
 
   // Автоскролл при загрузке
   useEffect(() => {
@@ -986,6 +1042,8 @@ const Home = observer(() => {
     return getCurrentUpgradeCost(dataFloorId, currentLevel);
   };
 
+
+
   // Показываем загрузку пока данные не получены -----------------------------------------------------------
   // if (!store.areFloorsLoaded) {
   //   return (
@@ -1522,6 +1580,34 @@ const Home = observer(() => {
             </div>
           </div>
 
+          {/* Холодильник (глобальные продукты) */}
+          <button
+              type="button"
+              onClick={() => {
+                setIsFoodModalOpen(true);
+                store.requestFoodStatusDebounced?.(100);
+              }}
+              className="flex items-center gap-2 ml-1 mb-2 hover:opacity-90 transition-opacity"
+          >
+            <img
+                src={`${store.imgUrl}fridge.png`}
+                alt="Холодильник"
+                className="w-7 h-7 object-contain"
+            />
+
+            <div className="flex gap-1">
+              {Array.from({ length: 7 }).map((_, i) => {
+                const filled = i < getFoodSegmentsFilled();
+                return (
+                    <div
+                        key={i}
+                        className={`w-2 h-4 rounded-sm ${filled ? getFoodColorClass() : "bg-gray-200"}`}
+                    />
+                );
+              })}
+            </div>
+          </button>
+
           {/* Блоки балансов */}
           <div
             id="bank-link"
@@ -1603,6 +1689,113 @@ const Home = observer(() => {
             alt={t("home.claim_button_alt")}
           />
         </button>
+
+        {isFoodModalOpen && (
+            <div
+                className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+                onClick={() => setIsFoodModalOpen(false)}
+            >
+              <div
+                  className="relative w-full max-w-md mx-auto"
+                  onClick={(e) => e.stopPropagation()}
+              >
+                <div className="relative mb-2 flex justify-center translate-y-[8px]">
+                  <div className="w-1/2 relative">
+                    <img
+                        src={`${store.imgUrl}img_window_header.png`}
+                        alt="Холодильник"
+                        className="w-full h-auto"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-amber-800 font-bold text-lg shantell">
+              Холодильник
+            </span>
+                    </div>
+                  </div>
+
+                  <button
+                      onClick={() => setIsFoodModalOpen(false)}
+                      className="absolute -top-2 -right-2 w-8 h-8 bg-transparent hover:scale-110 transition-transform z-10"
+                  >
+                    <img src={`${store.imgUrl}b_close.png`} alt="Закрыть" className="w-full h-full" />
+                  </button>
+                </div>
+
+                <div
+                    className="bg-cover bg-center rounded-lg shadow-2xl min-h-[420px]"
+                    style={{ backgroundImage: `url('${store.imgUrl}img_window_big.png')` }}
+                >
+                  <div className="p-4 pt-8 space-y-3">
+                    <div className="bg-white rounded-lg p-3 border border-amber-800 shadow-sm">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-medium text-amber-800 shantell">Статус</span>
+                        <span
+                            className={`text-sm shantell font-bold ${
+                                dailyTotal <= 0 ? "text-amber-700" : active ? "text-green-600" : "text-red-600"
+                            }`}
+                        >
+                           {statusText}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-medium text-amber-800 shantell">Осталось дней</span>
+                        <span className="text-amber-800 shantell font-bold">
+                {formatDaysLeft(store.foodStatus?.daysLeft)}
+              </span>
+                      </div>
+
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-medium text-amber-800 shantell">Расход в сутки</span>
+                        <span className="text-amber-800 shantell font-bold">
+                {toNum(store.foodStatus?.dailyTotal).toLocaleString()}
+              </span>
+                      </div>
+
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-amber-800 shantell">Цена на 7 дней</span>
+                        <div className="flex items-center gap-1">
+                          <img src={`${store.imgUrl}icon_dollar_coin.png`} alt="" className="w-5 h-5" />
+                          <span className="text-amber-800 shantell font-bold">
+                  {toNum(store.foodStatus?.weeklyPrice).toLocaleString()}
+                </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                        disabled={!canBuyFood}
+                        onClick={() => {
+                          if (!canBuyFood) return;
+                          playSound("buy.mp3");
+                          const ok = store.buyFoodWeekly?.();
+                          if (!ok) showNotification("Не удалось отправить запрос на покупку продуктов", "error");
+                          else showNotification("Покупаем продукты на 7 дней...", "success");
+                        }}
+                        className={`w-full relative py-2 rounded-lg flex items-center justify-between px-4 transition-opacity ${
+                            canBuyFood ? "hover:opacity-90" : "opacity-50 cursor-not-allowed"
+                        }`}
+                    >
+                      <img
+                          src={`${store.imgUrl}b_red_round.png`}
+                          alt=""
+                          className="absolute inset-0 w-full h-full"
+                      />
+                      <span className="text-white font-bold text-sm shantell relative z-10">
+              Купить на 7 дней
+            </span>
+                      <div className="flex items-center gap-1 relative z-10">
+                        <img src={`${store.imgUrl}icon_dollar_coin.png`} alt="" className="w-4 h-4" />
+                        <span className="text-white font-bold text-sm shantell">
+                {toNum(store.foodStatus?.weeklyPrice).toLocaleString()}
+              </span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+        )}
 
         {/* Модальное окно улучшения этажа */}
         {isModalOpen && selectedFloor && (
