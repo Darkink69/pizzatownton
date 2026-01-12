@@ -1615,11 +1615,11 @@ const Home = observer(() => {
               className={`w-30 object-contain ${fridgeCss.fridge} ${fridgeStateClass}`}
             />
             {/* Вертикальная шкала с анимацией в зависимости от daysLeft */}
-            <div className="absolute left-18 top-7 w-2 h-[100px] overflow-hidden">
+            <div className="absolute left-18 -top-3 w-2 h-[100px] overflow-hidden">
               <img
                 src={`${store.imgUrl}img_gradient.png`}
                 alt=""
-                className={`w-2 object-contain transition-all duration-300`}
+                className={`w-2 object-cover absolute bottom-0 transition-all duration-300`}
                 style={{
                   height: `${
                     (Math.max(
@@ -1632,7 +1632,7 @@ const Home = observer(() => {
                       )
                     ) /
                       7) *
-                    100
+                    50
                   }%`,
                 }}
               />
@@ -1769,29 +1769,6 @@ const Home = observer(() => {
                       alt="Холодильник"
                       className="w-full h-full object-contain"
                     />
-                    {/* Вертикальная шкала с анимацией в зависимости от daysLeft */}
-                    <div className="absolute left-1/2 top-0 transform -translate-x-1/2 h-full overflow-hidden">
-                      <img
-                        src={`${store.imgUrl}img_gradient.png`}
-                        alt=""
-                        className={`w-2 object-contain transition-all duration-300`}
-                        style={{
-                          height: `${
-                            (Math.max(
-                              0,
-                              Math.min(
-                                7,
-                                typeof store.foodStatus?.daysLeft === "string"
-                                  ? parseFloat(store.foodStatus.daysLeft)
-                                  : Number(store.foodStatus?.daysLeft) || 0
-                              )
-                            ) /
-                              7) *
-                            100
-                          }%`,
-                        }}
-                      />
-                    </div>
                   </div>
                 </div>
 
