@@ -1585,7 +1585,7 @@ const Home = observer(() => {
           {/* Нижний блок */}
           <div
               id="balances-block"
-              className="absolute bottom-36 left-1/2 transform -translate-x-1/2 w-full max-w-lg mx-auto z-30 relative"
+              className="absolute bottom-36 left-1/2 transform -translate-x-1/2 w-full max-w-lg mx-auto z-30"
           >
             {/* Блок только с бухгалтером */}
             <div
@@ -1616,12 +1616,17 @@ const Home = observer(() => {
                   setIsFoodModalOpen(true);
                   store.requestFoodStatusDebounced?.(100);
                 }}
-                className="absolute left-6 bottom-12 z-40 hover:opacity-90 transition-opacity translate-x-[60%]"
+                className="absolute -left-16 bottom-4 z-40 hover:opacity-90 transition-opacity translate-x-[60%]"
             >
               <img
                   src={`${store.imgUrl}fridge.png`}
                   alt="Холодильник"
-                  className={`w-10 h-10 object-contain ${fridgeCss.fridge} ${fridgeStateClass}`}
+                  className={`w-30 object-contain ${fridgeCss.fridge} ${fridgeStateClass}`}
+              />
+              <img
+                  src={`${store.imgUrl}img_gradient.png`}
+                  alt=""
+                  className={`absolute left-18 top-7 w-2 object-contain`}
               />
             </button>
 
