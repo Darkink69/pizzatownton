@@ -95,10 +95,10 @@ const Home = observer(() => {
 
   const statusText =
     dailyTotal <= 0
-      ? "Нет холодильников"
+      ? `${t("home.fridge_modal.status_no_fridges")}`
       : active
-      ? "Полный холодильник"
-      : "Продукты закончились";
+      ? `${t("home.fridge_modal.status_full")}`
+      : `${t("home.fridge_modal.status_empty")}`;
 
   const canBuyFood =
     dailyTotal > 0 &&
@@ -1739,7 +1739,7 @@ const Home = observer(() => {
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span className="text-amber-800 font-bold text-lg shantell">
-                      Холодильник
+                      {t("home.fridge_modal.title")}
                     </span>
                   </div>
                 </div>
@@ -1776,7 +1776,7 @@ const Home = observer(() => {
                   <div className="bg-white rounded-lg p-3 border border-amber-800 shadow-sm">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-medium text-amber-800 shantell">
-                        Статус
+                        {t("home.fridge_modal.status_label")}
                       </span>
                       <span
                         className={`text-sm shantell font-bold ${
@@ -1793,7 +1793,7 @@ const Home = observer(() => {
 
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-medium text-amber-800 shantell">
-                        Осталось дней
+                        {t("home.fridge_modal.days_left_label")}
                       </span>
                       <span className="text-amber-800 shantell font-bold">
                         {formatDaysLeft(store.foodStatus?.daysLeft)}
@@ -1802,7 +1802,7 @@ const Home = observer(() => {
 
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-medium text-amber-800 shantell">
-                        Расход в сутки
+                        {t("home.fridge_modal.daily_consumption_label")}
                       </span>
                       <span className="text-amber-800 shantell font-bold">
                         {toNum(store.foodStatus?.dailyTotal).toLocaleString()}
@@ -1811,7 +1811,7 @@ const Home = observer(() => {
 
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium text-amber-800 shantell">
-                        Цена на 7 дней
+                        {t("home.fridge_modal.weekly_price_label")}
                       </span>
                       <div className="flex items-center gap-1">
                         <img
@@ -1857,12 +1857,12 @@ const Home = observer(() => {
                       const ok = store.startFoodBuy();
                       if (!ok) {
                         showNotification(
-                          "Не удалось отправить запрос на покупку продуктов",
+                          t("home.fridge_modal.buy_error_request"),
                           "error"
                         );
                       } else {
                         showNotification(
-                          "Покупаем продукты на 7 дней...",
+                          t("home.fridge_modal.buy_success"),
                           "success"
                         );
                       }
@@ -1887,7 +1887,7 @@ const Home = observer(() => {
                       className="absolute inset-0 w-full h-full"
                     />
                     <span className="text-white font-bold text-sm shantell relative z-10">
-                      Купить на 7 дней
+                      {t("home.fridge_modal.buy_button")}
                     </span>
                     <div className="flex items-center gap-1 relative z-10">
                       <img

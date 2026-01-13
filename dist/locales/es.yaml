@@ -165,6 +165,20 @@ home:
       box_purchased: "¡Caja comprada!"
       deposit_confirmed: "¡Depósito confirmado!"
 
+  fridge_modal:
+    title: "Refrigerador"
+    fridge_alt: "Refrigerador"
+    status_label: "Estado"
+    days_left_label: "Días restantes"
+    daily_consumption_label: "Consumo diario"
+    weekly_price_label: "Precio por 7 días"
+    buy_button: "Comprar por 7 días"
+    status_no_fridges: "Sin refrigeradores"
+    status_full: "Refrigerador lleno"
+    status_empty: "Se acabó la comida"
+    buy_error_request: "No se pudo enviar la solicitud de compra"
+    buy_success: "Comprando comida por 7 días..."
+
 tasks:
   title: "Tareas"
   reward_notification:

@@ -163,6 +163,19 @@ home:
       deposit_not_found: "Депозит не найден"
       box_purchased: "Бокс куплен!"
       deposit_confirmed: "Депозит подтверждён!"
+  fridge_modal:
+    title: "Холодильник"
+    fridge_alt: "Холодильник"
+    status_label: "Статус"
+    days_left_label: "Осталось дней"
+    daily_consumption_label: "Расход в сутки"
+    weekly_price_label: "Цена на 7 дней"
+    buy_button: "Купить на 7 дней"
+    status_no_fridges: "Нет холодильников"
+    status_full: "Полный холодильник"
+    status_empty: "Продукты закончились"
+    buy_error_request: "Не удалось отправить запрос на покупку продуктов"
+    buy_success: "Покупаем продукты на 7 дней..."
 
 tasks:
   title: "Задания"

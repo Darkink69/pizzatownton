@@ -143,26 +143,39 @@ home:
     prize_pcoin_description: "For in-game purchases"
     pizza_notification_alt: "Pizza Notification"
 
-ny_box_modal:
-  title: "NY Box"
-  notification_alt: "NY Box"
-  box_alt: "NY Box Open"
-  description: "To receive this box, you need to make a deposit of $10+ with our partners!"
-  possible_prizes: "Possible prizes:"
-  errors:
-    no_ws_session: "Could not record transition (no WS/session)"
-    buy_failed: "Could not send purchase (no WS/session)."
-    check_failed: "Could not send check (no WS/session)."
-  buttons:
-    make_deposit: "Make Deposit"
-    buy_for_pcoin: "Buy for {{pcoin}} PCoin"
-    check: "Check"
-    checking: "Checking..."
-  results:
-    not_enough_pcoin: "Not enough PCoin"
-    deposit_not_found: "Deposit not found"
-    box_purchased: "Box purchased!"
-    deposit_confirmed: "Deposit confirmed!"
+  ny_box_modal:
+    title: "NY Box"
+    notification_alt: "NY Box"
+    box_alt: "NY Box Open"
+    description: "To receive this box, you need to make a deposit of $10+ with our partners!"
+    possible_prizes: "Possible prizes:"
+    errors:
+      no_ws_session: "Could not record transition (no WS/session)"
+      buy_failed: "Could not send purchase (no WS/session)."
+      check_failed: "Could not send check (no WS/session)."
+    buttons:
+      make_deposit: "Make Deposit"
+      buy_for_pcoin: "Buy for {{pcoin}} PCoin"
+      check: "Check"
+      checking: "Checking..."
+    results:
+      not_enough_pcoin: "Not enough PCoin"
+      deposit_not_found: "Deposit not found"
+      box_purchased: "Box purchased!"
+      deposit_confirmed: "Deposit confirmed!"
+  fridge_modal:
+    title: "Refrigerator"
+    fridge_alt: "Refrigerator"
+    status_label: "Status"
+    days_left_label: "Days left"
+    daily_consumption_label: "Daily consumption"
+    weekly_price_label: "Price for 7 days"
+    buy_button: "Buy for 7 days"
+    status_no_fridges: "No refrigerators"
+    status_full: "Full refrigerator"
+    status_empty: "Food is out"
+    buy_error_request: "Failed to send purchase request"
+    buy_success: "Buying food for 7 days..."
 
 tasks:
   title: "Tasks"
