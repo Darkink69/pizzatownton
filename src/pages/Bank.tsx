@@ -929,7 +929,7 @@ const Bank = observer(() => {
                           <div className="bg-white rounded-xl px-4 py-4 mb-3 border-2 border-amber-800 shadow-inner text-center">
                             <div className="text-center font-bold text-lg sm:text-xl text-amber-800 shantell">
                               {/* Форматируем pcoinFromPdAmount с пробелами через каждые 3 цифры */}
-                              {pcoinFromPdAmount
+                              {Math.floor(Number(pcoinFromPdAmount))
                                 .toString()
                                 .replace(/\B(?=(\d{3})+(?!\d))/g, " ")}
                             </div>
@@ -986,7 +986,7 @@ const Bank = observer(() => {
 
                           if (!isNaN(num)) {
                             const tonValue = num * PDOLLAR_TO_TON_RATE;
-                            setTonExchangeAmount(tonValue.toFixed(5));
+                            setTonExchangeAmount(tonValue.toFixed(3));
                           }
                         }}
                         placeholder={t("bank.exchange.pdollar_placeholder")}
