@@ -23,7 +23,7 @@ declare global {
   }
 }
 /* eslint-enable @typescript-eslint/no-namespace */
-const ADSGRAM_ENABLED = false;
+const ADSGRAM_ENABLED = true;
 
 const TASK_CODE_BY_ID: Record<number, string> = {
   1: "SUBSCRIBE_MAIN_CHANNEL",
