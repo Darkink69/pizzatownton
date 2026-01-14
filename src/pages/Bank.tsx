@@ -926,7 +926,7 @@ const Bank = observer(() => {
                         </div>
 
                         <div className="relative">
-                          <div className="bg-white rounded-xl px-4 py-4 mb-3 border-2 border-amber-800 shadow-inner text-center">
+                          <div className="bg-white rounded-xl px-4 mb-3 border-2 border-amber-800 shadow-inner text-center">
                             <div className="text-center font-bold text-lg sm:text-xl text-amber-800 shantell">
                               {/* Форматируем pcoinFromPdAmount с пробелами через каждые 3 цифры */}
                               {Math.floor(Number(pcoinFromPdAmount))
@@ -1125,7 +1125,7 @@ function CurrencyInput({
         </span>
       </div>
       <div className="relative">
-        <div className="bg-white rounded-xl px-4 py-4 mb-3 border-2 border-amber-800 shadow-inner text-center">
+        <div className="bg-white rounded-xl px-4 mb-3 border-2 border-amber-800 shadow-inner text-center">
           <input
             type="text"
             inputMode="numeric"

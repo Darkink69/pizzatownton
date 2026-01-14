@@ -76,14 +76,19 @@ const Home = observer(() => {
   const isBuyingFood = store.foodBuyInProgress;
   const formatDaysLeft = (daysLeftRaw: any) => {
     const v = Number(daysLeftRaw);
-    if (!Number.isFinite(v) || v <= 0) return "0д 0ч 0м";
+    if (!Number.isFinite(v) || v <= 0)
+      return `0${t("home.fridge_modal.d")} 0${t("home.fridge_modal.h")} 0${t(
+        "home.fridge_modal.m"
+      )}`;
 
     const totalMinutes = Math.floor(v * 24 * 60);
     const days = Math.floor(totalMinutes / (24 * 60));
     const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
     const minutes = totalMinutes % 60;
 
-    return `${days}д ${hours}ч ${minutes}м`;
+    return `${days}${t("home.fridge_modal.d")} ${hours}${t(
+      "home.fridge_modal.h"
+    )} ${minutes}${t("home.fridge_modal.m")}`;
   };
 
   const toNum = (v: any): number => {
@@ -96,6 +101,8 @@ const Home = observer(() => {
   const statusText =
     dailyTotal <= 0
       ? `${t("home.fridge_modal.status_no_fridges")}`
+      : dailyTotal < 2
+      ? `${t("home.fridge_modal.status_low")}`
       : active
       ? `${t("home.fridge_modal.status_full")}`
       : `${t("home.fridge_modal.status_empty")}`;
@@ -1782,6 +1789,8 @@ const Home = observer(() => {
                         className={`text-sm shantell font-bold ${
                           dailyTotal <= 0
                             ? "text-amber-700"
+                            : dailyTotal < 2
+                            ? "text-yellow-600"
                             : active
                             ? "text-green-600"
                             : "text-red-600"
@@ -1816,7 +1825,7 @@ const Home = observer(() => {
                       <div className="flex items-center gap-1">
                         <img
                           src={`${store.imgUrl}icon_dollar_coin.png`}
-                          alt=""
+                          alt={t("common.labels.coin_icon")}
                           className="w-5 h-5"
                         />
                         <span className="text-amber-800 shantell font-bold">
