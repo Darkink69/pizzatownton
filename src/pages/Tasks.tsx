@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import {useEffect, useRef, useState} from "react";
 import store from "../store/store";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -8,21 +8,9 @@ import styles from "../css/task.module.css";
 import { useTranslation } from "react-i18next";
 import type { ComboGameData, TaskWithProgress } from "../types/ws";
 
-/* eslint-disable @typescript-eslint/no-namespace */
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      "adsgram-task": React.DetailedHTMLProps<
-        React.HTMLAttributes<HTMLElement>,
-        HTMLElement
-      > & {
-        "data-block-id": string;
-        ref?: React.RefObject<HTMLElement>;
-      };
-    }
-  }
-}
-/* eslint-enable @typescript-eslint/no-namespace */
+
+
+
 const ADSGRAM_ENABLED = true;
 
 const TASK_CODE_BY_ID: Record<number, string> = {
@@ -53,6 +41,12 @@ const PIZZA_LIST = [
 
 type PizzaName = (typeof PIZZA_LIST)[number];
 
+const ADSGRAM_HIDE_UNTIL_KEY = "adsgramHideUntil";
+const ADS_TASK_LAST_DONE_KEY = "adsTaskLastDoneAt";
+const ADS_COOLDOWN_MS = 1 * 60 * 1000;        // 1 минуты
+const ADS_HIDE_ON_NOTFOUND_MS = 10 * 60 * 1000; // 10 минут скрывать если нет баннера
+
+
 function Tasks() {
   const { t } = useTranslation();
   const [tasksLoaded, setTasksLoaded] = useState(false);
@@ -64,11 +58,13 @@ function Tasks() {
     new Set()
   );
 
+  const adsCompleteLockRef = useRef(false);
   // const [isInviteTaskDone, setIsInviteTaskDone] = useState(false);
   // const [completedTaskIds, setCompletedTaskIds] = useState<number[]>([]);
   const [isAdsgramLoaded, setIsAdsgramLoaded] = useState(false);
   const [showAdsgramBlock, setShowAdsgramBlock] = useState(true);
-  const [adsTaskEl, setAdsTaskEl] = useState<HTMLElement | null>(null);
+  const adsTaskRef = useRef<HTMLElement | null>(null);
+  const [adsElReady, setAdsElReady] = useState(false);
   const [taskRewardNotification, setTaskRewardNotification] = useState<{
     show: boolean;
     message: string;
@@ -120,28 +116,30 @@ function Tasks() {
   });
 
   useEffect(() => {
-    if (!store.sessionId || !store.user?.telegramId) return;
+    const apply = () => {
+      const until = Number(localStorage.getItem(ADSGRAM_HIDE_UNTIL_KEY) ?? "0");
+      const now = Date.now();
 
-    store.send({
-      type: "TASKS_GET",
-      requestId: Math.random().toString(36).substring(2, 10),
-      session: store.sessionId,
-      taskRq: { telegramId: store.user.telegramId, code: "" },
-    });
-  }, [store.sessionId, store.user?.telegramId]);
+      if (until > now) {
+        setShowAdsgramBlock(false);
 
-  useEffect(() => {
-    if (!ADSGRAM_ENABLED) return;
+        const t = window.setTimeout(() => {
+          // время прошло — показываем обратно
+          localStorage.removeItem(ADSGRAM_HIDE_UNTIL_KEY);
+          setShowAdsgramBlock(true);
+        }, until - now);
 
-    const checkAdsgram = () => {
-      if (customElements.get("adsgram-task")) setIsAdsgramLoaded(true);
-      else setIsAdsgramLoaded(false);
+        return () => window.clearTimeout(t);
+      } else {
+        // hideUntil истёк
+        localStorage.removeItem(ADSGRAM_HIDE_UNTIL_KEY);
+        setShowAdsgramBlock(true);
+      }
     };
 
-    checkAdsgram();
-    const checkInterval = setInterval(checkAdsgram, 5000);
-    return () => clearInterval(checkInterval);
+    return apply();
   }, []);
+
 
   // Функция для показа уведомления о награде
   const showRewardNotification = (rewardMessage: string) => {
@@ -226,21 +224,49 @@ function Tasks() {
     );
   }, []);
 
-  // Эффект для adsgram-task
   useEffect(() => {
     if (!ADSGRAM_ENABLED) return;
 
-    if (!adsTaskEl) {
-      console.log("🔧 adsgram-task element is not ready yet");
-      return;
-    }
+    let cancelled = false;
 
-    console.log("🔧 Setting up adsgram-task listener, element:", adsTaskEl);
+    (async () => {
+      if (!customElements.get("adsgram-task")) {
+        try {
+          await customElements.whenDefined("adsgram-task");
+        } catch {
+          // ignore
+        }
+      }
 
-    const rewardHandler = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      console.log("📢 Adsgram-task reward event received!", customEvent);
-      console.log("Event detail:", customEvent.detail);
+      if (!cancelled) {
+        setIsAdsgramLoaded(!!customElements.get("adsgram-task"));
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+
+
+  // Эффект для adsgram-task
+  useEffect(() => {
+    if (!ADSGRAM_ENABLED) return;
+    if (!adsElReady) return;
+
+    const el = adsTaskRef.current;
+    if (!el) return;
+
+    const hideAdsgramFor = (ms: number) => {
+      localStorage.setItem(ADSGRAM_HIDE_UNTIL_KEY, String(Date.now() + ms));
+      setShowAdsgramBlock(false);
+    };
+
+    const rewardHandler = () => {
+      if (adsCompleteLockRef.current) return;
+      adsCompleteLockRef.current = true;
+      setTimeout(() => (adsCompleteLockRef.current = false), 2500);
 
       if (!store.sessionId || !store.user?.telegramId) {
         toast.error("Авторизуйтесь, чтобы получить награду за рекламу");
@@ -251,76 +277,54 @@ function Tasks() {
         type: "TASKS_COMPLETE" as const,
         requestId: Math.random().toString(36).substring(2, 10),
         session: store.sessionId,
-        taskRq: {
-          telegramId: store.user.telegramId,
-          code: "ADS_TASK_1",
-        },
+        taskRq: { telegramId: store.user.telegramId, code: "ADS_TASK_1" },
       };
 
-      console.log("🚀 Sending ADS_TASK_1 request:", rq);
-
-      const ok = store.send(rq);
-      if (!ok) {
+      if (!store.send(rq)) {
         toast.error("WebSocket не подключён");
         return;
       }
 
-      // Для adsgram не показываем уведомление с поваром
+      // ✅ фиксируем кулдаун и скрываем блок на 2 минуты
+      const now = Date.now();
+      localStorage.setItem(ADS_TASK_LAST_DONE_KEY, String(now));
+      localStorage.setItem(ADSGRAM_HIDE_UNTIL_KEY, String(now + ADS_COOLDOWN_MS));
+      setShowAdsgramBlock(false);
+
+      // ✅ автопоказ через 2 минуты (без перезагрузки)
+      window.setTimeout(() => {
+        const until = Number(localStorage.getItem(ADSGRAM_HIDE_UNTIL_KEY) ?? "0");
+        if (until <= Date.now()) {
+          localStorage.removeItem(ADSGRAM_HIDE_UNTIL_KEY);
+          setShowAdsgramBlock(true);
+        }
+      }, ADS_COOLDOWN_MS);
+
       toast.success("🎉 Рекламное задание выполнено! Начисляем награду...");
     };
 
-    const stateHandler = (e: Event) => {
-      console.log("Adsgram-task statechange:", e);
-      const el = e.target as HTMLElement;
-      console.log("Current state:", el.getAttribute("state"));
+    const stateChangeHandler = (e: Event) => {
+      const cur = e.currentTarget as HTMLElement;
+      console.log("Adsgram state:", cur.getAttribute("state"));
     };
 
-    const bannerNotFoundHandler = (e: Event) => {
-      console.log("❌ Adsgram-task banner not found event:", e);
-      // Полностью скрываем блок с рекламным заданием
-      setShowAdsgramBlock(false);
+    const bannerNotFoundHandler = () => {
+      hideAdsgramFor(ADS_HIDE_ON_NOTFOUND_MS);
       toast.info("Рекламное задание временно недоступно");
     };
 
-    adsTaskEl.addEventListener("reward", rewardHandler);
-    adsTaskEl.addEventListener("statechange", stateHandler);
-    adsTaskEl.addEventListener("onBannerNotFound", bannerNotFoundHandler);
-
-    // Проверяем состояние
-    setTimeout(() => {
-      console.log(
-        "Adsgram-task initial state:",
-        adsTaskEl.getAttribute?.("state")
-      );
-      console.log("Adsgram-task attributes:", adsTaskEl.attributes);
-    }, 1000);
+    el.addEventListener("reward", rewardHandler);
+    el.addEventListener("stateChange", stateChangeHandler);
+    el.addEventListener("bannerNotFound", bannerNotFoundHandler);
 
     return () => {
-      adsTaskEl.removeEventListener("reward", rewardHandler);
-      adsTaskEl.removeEventListener("statechange", stateHandler);
-      adsTaskEl.removeEventListener("onBannerNotFound", bannerNotFoundHandler);
+      el.removeEventListener("reward", rewardHandler);
+      el.removeEventListener("stateChange", stateChangeHandler);
+      el.removeEventListener("bannerNotFound", bannerNotFoundHandler);
     };
-  }, [adsTaskEl, store.sessionId, store.user?.telegramId]);
+  }, [adsElReady, store.sessionId, store.user?.telegramId]);
 
-  // Проверяем загрузку adsgram-task
-  useEffect(() => {
-    const checkAdsgram = () => {
-      if (customElements.get("adsgram-task")) {
-        console.log("✅ Adsgram-task custom element loaded");
-        setIsAdsgramLoaded(true);
-      } else {
-        setIsAdsgramLoaded(false);
-        console.log("❌ Adsgram-task custom element not found");
-      }
-    };
 
-    checkAdsgram();
-
-    // Проверяем периодически
-    const checkInterval = setInterval(checkAdsgram, 5000);
-
-    return () => clearInterval(checkInterval);
-  }, []);
 
   // следим за статусом INVITE_3_FRIENDS из стора:
   useEffect(() => {
@@ -814,9 +818,11 @@ function Tasks() {
       window.removeEventListener("inviteTaskRewarded", handleInviteRewarded);
   }, []);
 
-  // Рендерим adsgram-task только если он загружен и не скрыт
+  const lastDoneAt = Number(localStorage.getItem(ADS_TASK_LAST_DONE_KEY) ?? "0");
+  const adsCooldownPassed = Date.now() - lastDoneAt > ADS_COOLDOWN_MS;
+
   const shouldRenderAdsgram =
-    ADSGRAM_ENABLED && isAdsgramLoaded && showAdsgramBlock;
+      ADSGRAM_ENABLED && isAdsgramLoaded && showAdsgramBlock && adsCooldownPassed;
 
   return (
     <>
@@ -1023,11 +1029,14 @@ function Tasks() {
 
               {/* Рекламный таск -----------------------------------------------*/}
               {shouldRenderAdsgram ? (
-                <adsgram-task
-                  className={styles.task}
-                  data-block-id="task-18892"
-                  ref={setAdsTaskEl}
-                >
+                  <adsgram-task
+                      className={styles.task}
+                      data-block-id="task-18892"
+                      ref={(el) => {
+                        adsTaskRef.current = el;
+                        setAdsElReady(!!el);
+                      }}
+                  >
                   <span
                     slot="reward"
                     className="text-amber-800 text-md shantell"
