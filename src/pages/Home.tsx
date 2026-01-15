@@ -271,7 +271,9 @@ const Home = observer(() => {
 
     const nyBoxDelay = delay + 3000; // Показываем через 3 секунды после пиццы
     const nyBoxTimer = setTimeout(() => {
-      setShowNYBoxNotification(true);
+      if (!store.jettonBoxReceived) {
+        setShowNYBoxNotification(true);
+      }
     }, nyBoxDelay);
 
     return () => {

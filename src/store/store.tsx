@@ -12,7 +12,8 @@ import type {
   UserFloor,
   UserState,
   WsRequest,
-  JettonResponse, UserFoodStatusDto,
+  JettonResponse,
+  UserFoodStatusDto,
 } from "../types/ws";
 import type { ChestKeys, PizzaPieces, Rarity, Reward } from "../types/chests";
 import { bankStore } from "./BankStore";
@@ -21,7 +22,6 @@ import type { ReferralLevelInfoData } from "../types/ws";
 
 class Store {
   private foodGetDebounceTimer: ReturnType<typeof setTimeout> | null = null;
-
 
   imgUrl =
     "https://s3.twcstorage.ru/c6bae09a-a5938890-9b68-453c-9c54-76c439a70d3e/Pizzatownton/";
@@ -74,6 +74,7 @@ class Store {
 
   language: Language = "ru";
   translations = translations;
+  jettonBoxReceived = false;
 
   //  РЕЗУЛЬТАТ КОРОБКИ ПИЦЦЫ
   lastPizzaBoxResult: { pizzaSpent: number; pcoinReward: number } | null = null;
@@ -143,11 +144,15 @@ class Store {
 
       if ("rewards" in payload) {
         this.lastRewards = Array.isArray((payload as any).rewards)
-            ? ((payload as any).rewards as Reward[])
-            : [];
+          ? ((payload as any).rewards as Reward[])
+          : [];
       }
     });
   };
+
+  setJettonBoxReceived(r: boolean) {
+    this.jettonBoxReceived = r;
+  }
 
   buyJettonBoxForPcoin(): boolean {
     const tgId = this.user?.telegramId ?? this.user?.id;
@@ -161,7 +166,6 @@ class Store {
     });
   }
 
-
   requestFoodStatusDebounced(delayMs = 400): boolean {
     const tgId = this.user?.telegramId ?? this.user?.id;
     if (!this.wsSend || !this.sessionId || !tgId) return false;
@@ -171,8 +175,6 @@ class Store {
       clearTimeout(this.foodGetDebounceTimer);
       this.foodGetDebounceTimer = null;
     }
-
-
 
     this.foodGetDebounceTimer = setTimeout(() => {
       this.foodGetDebounceTimer = null;
@@ -209,7 +211,6 @@ class Store {
     return true;
   };
 
-
   handleJettonSuccess(res: JettonResponse) {
     runInAction(() => {
       this.jettonLastResult = res;
@@ -223,7 +224,6 @@ class Store {
 
   lastFoodGetResult: UserFoodStatusDto | null = null;
   lastFoodGetError: string | null = null;
-
 
   setFoodStatus(status: UserFoodStatusDto | null) {
     runInAction(() => {
@@ -285,8 +285,6 @@ class Store {
   revalidateFoodAfterFloorsChange() {
     this.requestFoodStatusDebounced(400);
   }
-
-
 
   // =========================================================================
   // GIFTS (Jetton Box ITEMS)
@@ -355,9 +353,6 @@ class Store {
       };
     });
   }
-
-
-
 
   // =========================================================================
   // GIFTS (CRAFTED NFT ITEMS)
@@ -1329,8 +1324,6 @@ class Store {
         buyFloorRq: { telegramId: tgId, floorId },
       });
 
-
-
       return true;
     } catch (e) {
       console.warn("FLOORS_BUY failed", e);
@@ -1359,7 +1352,6 @@ class Store {
         session: this.sessionId!,
         updateFloorRq: { telegramId: tgId, floorId },
       });
-
 
       return true;
     } catch (e) {
@@ -1544,7 +1536,6 @@ class Store {
         },
       };
 
-
       this.staffData = null;
       this.userStaff = null;
       this.referral = {
@@ -1564,7 +1555,6 @@ class Store {
       clearTimeout(this.foodGetDebounceTimer);
       this.foodGetDebounceTimer = null;
     }
-
 
     // сбрасываем внешние стейты
     this.bank.reset?.();

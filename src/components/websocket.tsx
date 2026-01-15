@@ -18,7 +18,10 @@ import type {
   WsResponse,
   ChestOpenPayload,
   ChestGetStatePayload,
-  PizzaCraftBoxPayload, PDollarToPcoinExchangeResponseData, FoodBuyResponse, UserFoodStatusDto,
+  PizzaCraftBoxPayload,
+  PDollarToPcoinExchangeResponseData,
+  FoodBuyResponse,
+  UserFoodStatusDto,
 } from "../types/ws";
 import { bankStore } from "../store/BankStore.ts";
 import { runInAction } from "mobx";
@@ -162,10 +165,14 @@ const WebSocketComponent = observer(() => {
           /** ------------------ AUTH_INIT ------------------ */
           case "AUTH_INIT": {
             if (parsed.success) {
-              const { user, sessionId } = (parsed.data || {}) as AuthData;
+              const { user, sessionId, jettonBoxReceived } = (parsed.data ||
+                {}) as AuthData;
               store.setUser?.(user);
               store.setSessionId?.(sessionId);
               store.isAuthed = true;
+              if (store.setJettonBoxReceived) {
+                store.setJettonBoxReceived(jettonBoxReceived || false);
+              }
 
               // загружаем этажи
               sendFloorsGetRequest();
@@ -270,7 +277,6 @@ const WebSocketComponent = observer(() => {
               // ✅ обновить глобальные продукты (цена/время меняются)
               store.revalidateFoodAfterFloorsChange();
 
-
               toast.success("🏗 Этаж куплен!");
               store.updateClaimProgress(0);
             } else {
@@ -314,8 +320,8 @@ const WebSocketComponent = observer(() => {
                     referralInfoData.referralLink ??
                     "",
                   levels: Array.isArray(referralInfoData.levels)
-                      ? referralInfoData.levels
-                      : [],
+                    ? referralInfoData.levels
+                    : [],
                 };
               });
 
@@ -345,7 +351,9 @@ const WebSocketComponent = observer(() => {
               store.getChestsState();
             } else {
               store.setJettonLastResult?.(null);
-              store.setJettonLastError?.(String(parsed.message ?? "CHECK_FAILED"));
+              store.setJettonLastError?.(
+                String(parsed.message ?? "CHECK_FAILED")
+              );
               toast.error(parsed.message || "Не удалось проверить депозит");
             }
             break;
@@ -562,13 +570,12 @@ const WebSocketComponent = observer(() => {
             break;
           }
 
-            /** ---------------- BANK_EXCHANGE_PDOLLAR_TO_PCOIN ---------------- */
+          /** ---------------- BANK_EXCHANGE_PDOLLAR_TO_PCOIN ---------------- */
           case "BANK_EXCHANGE_PDOLLAR_TO_PCOIN": {
             if (parsed.success && parsed.data) {
               const d = parsed.data as PDollarToPcoinExchangeResponseData;
               toast.success(`✅ Обмен выполнен: +${d.amountPcoin} PCoin`);
               sendClaimRefresh();
-
             } else {
               if (parsed.message?.startsWith("MIN_SELL_PDOLLAR")) {
                 toast.error("Сумма меньше минимальной для обмена");
@@ -599,7 +606,6 @@ const WebSocketComponent = observer(() => {
               if (orderViewData.status === "PAID") {
                 store.getChestsState();
               }
-
             } else {
               (store as any).setBankError?.(
                 parsed.message || "BANK_ORDER_VIEW failed"
@@ -920,9 +926,12 @@ const WebSocketComponent = observer(() => {
               store.getChestsState();
             } else {
               store.setJettonLastResult?.(null);
-              store.setJettonLastError?.(String(parsed.message ?? "UNKNOWN_ERROR"));
-               if (parsed.message === "NOT_ENOUGH_PCOIN") toast.error("Недостаточно PCoin (нужно 15000)");
-               else toast.error(parsed.message || "Не удалось купить бокс");
+              store.setJettonLastError?.(
+                String(parsed.message ?? "UNKNOWN_ERROR")
+              );
+              if (parsed.message === "NOT_ENOUGH_PCOIN")
+                toast.error("Недостаточно PCoin (нужно 15000)");
+              else toast.error(parsed.message || "Не удалось купить бокс");
             }
             break;
           }
@@ -934,11 +943,12 @@ const WebSocketComponent = observer(() => {
               store.setFoodStatus(status);
               console.log("🍱 FOOD_GET (глобально):", status);
             } else {
-              toast.error(parsed.message || "Ошибка получения статуса продуктов");
+              toast.error(
+                parsed.message || "Ошибка получения статуса продуктов"
+              );
             }
             break;
           }
-
 
           case "FOOD_BUY": {
             try {
@@ -961,13 +971,13 @@ const WebSocketComponent = observer(() => {
                 const code = String(parsed.message ?? "");
 
                 const msg =
-                    code === "NOT_ENOUGH_PCOIN"
-                        ? "Недостаточно PCOIN"
-                        : code === "NO_FLOORS"
-                            ? "Сначала купите этаж (кроме бейсмента)"
-                            : code === "BAD_REQUEST"
-                                ? "Некорректный запрос"
-                                : "Не удалось купить продукты";
+                  code === "NOT_ENOUGH_PCOIN"
+                    ? "Недостаточно PCOIN"
+                    : code === "NO_FLOORS"
+                    ? "Сначала купите этаж (кроме бейсмента)"
+                    : code === "BAD_REQUEST"
+                    ? "Некорректный запрос"
+                    : "Не удалось купить продукты";
 
                 toast.error(msg);
 
@@ -988,7 +998,6 @@ const WebSocketComponent = observer(() => {
 
             break;
           }
-
 
           /** ---------------- DEFAULT ---------------- */
           default:
