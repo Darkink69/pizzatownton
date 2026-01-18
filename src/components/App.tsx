@@ -39,7 +39,7 @@ function getStartParamFromUrlLike(): string | null {
 
 function extractStartParam(
   rawInitData: unknown,
-  lpStartParam?: unknown
+  lpStartParam?: unknown,
 ): string | null {
   const raw = typeof rawInitData === "string" ? rawInitData : null;
   const lp = typeof lpStartParam === "string" ? lpStartParam : null;
@@ -68,7 +68,7 @@ export const App = observer(() => {
   const startedRef = useRef(false);
   const startParam = useMemo(
     () => extractStartParam(rawInitData, lp.startParam),
-    [rawInitData, lp.startParam]
+    [rawInitData, lp.startParam],
   );
   const [debugInfo] = useState<string | null>(null);
   const [showLoading, setShowLoading] = useState(false);

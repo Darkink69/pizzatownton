@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from "react";
+import { useEffect, useRef, useState } from "react";
 import store from "../store/store";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -8,10 +8,8 @@ import styles from "../css/task.module.css";
 import { useTranslation } from "react-i18next";
 import type { ComboGameData, TaskWithProgress } from "../types/ws";
 
-
-
-
 const ADSGRAM_ENABLED = true;
+const DICE_TIMER_SECONDS = 5;
 
 const TASK_CODE_BY_ID: Record<number, string> = {
   1: "SUBSCRIBE_MAIN_CHANNEL",
@@ -43,9 +41,8 @@ type PizzaName = (typeof PIZZA_LIST)[number];
 
 const ADSGRAM_HIDE_UNTIL_KEY = "adsgramHideUntil";
 const ADS_TASK_LAST_DONE_KEY = "adsTaskLastDoneAt";
-const ADS_COOLDOWN_MS = 1 * 60 * 1000;        // 1 минуты
+const ADS_COOLDOWN_MS = 1 * 60 * 1000; // 1 минуты
 const ADS_HIDE_ON_NOTFOUND_MS = 10 * 60 * 1000; // 10 минут скрывать если нет баннера
-
 
 function Tasks() {
   const { t } = useTranslation();
@@ -55,12 +52,18 @@ function Tasks() {
   const [isSubscribedToTeamLove, setIsSubscribedToTeamLove] = useState(false);
   const [isSubscribedToLooty, setIsSubscribedToLooty] = useState(false);
   const [serverTaskCodes, setServerTaskCodes] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
 
   const adsCompleteLockRef = useRef(false);
   // const [isInviteTaskDone, setIsInviteTaskDone] = useState(false);
   // const [completedTaskIds, setCompletedTaskIds] = useState<number[]>([]);
+  const [isFightModalOpen, setIsFightModalOpen] = useState(false);
+  const [diceValues, setDiceValues] = useState<[number, number]>([1, 1]);
+  const [diceRotations, setDiceRotations] = useState<[number, number]>([0, 0]);
+  const [timer, setTimer] = useState(DICE_TIMER_SECONDS);
+  const [_showDice, setShowDice] = useState(false);
+
   const [isAdsgramLoaded, setIsAdsgramLoaded] = useState(false);
   const [showAdsgramBlock, setShowAdsgramBlock] = useState(true);
   const adsTaskRef = useRef<HTMLElement | null>(null);
@@ -115,6 +118,49 @@ function Tasks() {
     winAmount: null,
   });
 
+  // Функция для генерации случайных костей и поворотов
+  const generateRandomDice = () => {
+    const dice1 = Math.floor(Math.random() * 6) + 1;
+    const dice2 = Math.floor(Math.random() * 6) + 1;
+    const rotation1 = Math.floor(Math.random() * 46); // 0-45 градусов
+    const rotation2 = Math.floor(Math.random() * 46); // 0-45 градусов
+
+    setDiceValues([dice1, dice2]);
+    setDiceRotations([rotation1, rotation2]);
+  };
+
+  // Эффект для таймера
+  useEffect(() => {
+    if (!isFightModalOpen) {
+      setTimer(DICE_TIMER_SECONDS);
+      setShowDice(false);
+      return;
+    }
+
+    // Генерируем случайные кости при открытии окна
+    generateRandomDice();
+
+    const interval = setInterval(() => {
+      setTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setShowDice(true);
+          const audio = new Audio(`${store.imgUrl}dice.mp3`);
+          audio.volume = 0.5;
+          audio.play().catch((e) => console.log("Sound play prevented:", e));
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+      setTimer(DICE_TIMER_SECONDS);
+      setShowDice(false);
+    };
+  }, [isFightModalOpen]);
+
   useEffect(() => {
     const apply = () => {
       const until = Number(localStorage.getItem(ADSGRAM_HIDE_UNTIL_KEY) ?? "0");
@@ -139,7 +185,6 @@ function Tasks() {
 
     return apply();
   }, []);
-
 
   // Функция для показа уведомления о награде
   const showRewardNotification = (rewardMessage: string) => {
@@ -176,7 +221,7 @@ function Tasks() {
 
   useEffect(() => {
     setIsSubscribedToLooty(
-      localStorage.getItem("subscribedLootyTaskDone") === "true"
+      localStorage.getItem("subscribedLootyTaskDone") === "true",
     );
   }, []);
 
@@ -206,7 +251,7 @@ function Tasks() {
       const codes = new Set(
         (ce.detail ?? [])
           .map((t) => t?.code)
-          .filter((c): c is string => typeof c === "string" && c.length > 0)
+          .filter((c): c is string => typeof c === "string" && c.length > 0),
       );
 
       setServerTaskCodes(codes);
@@ -220,7 +265,7 @@ function Tasks() {
   useEffect(() => {
     setIsSubscribed(localStorage.getItem("subscribedTaskDone") === "true");
     setIsSubscribedToTeamLove(
-      localStorage.getItem("subscribedTeamLoveTaskDone") === "true"
+      localStorage.getItem("subscribedTeamLoveTaskDone") === "true",
     );
   }, []);
 
@@ -247,8 +292,6 @@ function Tasks() {
       cancelled = true;
     };
   }, []);
-
-
 
   // Эффект для adsgram-task
   useEffect(() => {
@@ -288,12 +331,17 @@ function Tasks() {
       // ✅ фиксируем кулдаун и скрываем блок на 2 минуты
       const now = Date.now();
       localStorage.setItem(ADS_TASK_LAST_DONE_KEY, String(now));
-      localStorage.setItem(ADSGRAM_HIDE_UNTIL_KEY, String(now + ADS_COOLDOWN_MS));
+      localStorage.setItem(
+        ADSGRAM_HIDE_UNTIL_KEY,
+        String(now + ADS_COOLDOWN_MS),
+      );
       setShowAdsgramBlock(false);
 
       // ✅ автопоказ через 2 минуты (без перезагрузки)
       window.setTimeout(() => {
-        const until = Number(localStorage.getItem(ADSGRAM_HIDE_UNTIL_KEY) ?? "0");
+        const until = Number(
+          localStorage.getItem(ADSGRAM_HIDE_UNTIL_KEY) ?? "0",
+        );
         if (until <= Date.now()) {
           localStorage.removeItem(ADSGRAM_HIDE_UNTIL_KEY);
           setShowAdsgramBlock(true);
@@ -324,8 +372,6 @@ function Tasks() {
     };
   }, [adsElReady, store.sessionId, store.user?.telegramId]);
 
-
-
   // следим за статусом INVITE_3_FRIENDS из стора:
   useEffect(() => {
     if (store.taskInvite3Status === "rewarded") {
@@ -342,7 +388,7 @@ function Tasks() {
       store.taskInvite3Status === "idle"
     ) {
       toast.info(
-        "У вас уже 3+ приглашённых. Если они открыли этаж, вы сможете забрать награду."
+        "У вас уже 3+ приглашённых. Если они открыли этаж, вы сможете забрать награду.",
       );
     }
   }, [store.referral.totalReferrals, store.taskInvite3Status]);
@@ -487,8 +533,8 @@ function Tasks() {
         store.taskInvite3Status === "rewarded"
           ? "ВЫПОЛНЕНО"
           : store.referral.totalReferrals >= 3
-          ? "ПРОВЕРИТЬ УСЛОВИЕ"
-          : "ПРИГЛАСИТЬ ДРУЗЕЙ",
+            ? "ПРОВЕРИТЬ УСЛОВИЕ"
+            : "ПРИГЛАСИТЬ ДРУЗЕЙ",
       buttonBg:
         store.taskInvite3Status === "rewarded"
           ? "b_blue_small.png"
@@ -663,7 +709,7 @@ function Tasks() {
       const comboData = customEvent.detail;
 
       const selectedFromServer = (comboData.selected ?? []).filter(
-        (x): x is number => typeof x === "number"
+        (x): x is number => typeof x === "number",
       );
 
       setDailyComboRound((prev) => ({
@@ -693,7 +739,7 @@ function Tasks() {
       const pickData = customEvent.detail;
 
       const newSelectedIndices = (pickData.selected ?? []).filter(
-        (x: unknown): x is number => typeof x === "number"
+        (x: unknown): x is number => typeof x === "number",
       );
 
       const wasHit = !!pickData.isWin;
@@ -701,7 +747,7 @@ function Tasks() {
       setDailyComboRound((prev) => {
         const prevSelected = prev.selectedIndices ?? [];
         const newIndex = newSelectedIndices.find(
-          (idx) => !prevSelected.includes(idx)
+          (idx) => !prevSelected.includes(idx),
         );
 
         const newAttempts = pickData.picksUsed ?? prev.attempts + 1;
@@ -757,7 +803,7 @@ function Tasks() {
             toast.success(`✅ Угадана пицца: ${pizzaName}! +250 pizza`);
           else
             toast.error(
-              `❌ Пицца "${pizzaName}" не входит в сегодняшний список`
+              `❌ Пицца "${pizzaName}" не входит в сегодняшний список`,
             );
         }, 0);
 
@@ -793,7 +839,7 @@ function Tasks() {
       window.removeEventListener("comboPickResult", handleComboPickResult);
       window.removeEventListener(
         "comboWinNotification",
-        handleComboWinNotification
+        handleComboWinNotification,
       );
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -818,11 +864,13 @@ function Tasks() {
       window.removeEventListener("inviteTaskRewarded", handleInviteRewarded);
   }, []);
 
-  const lastDoneAt = Number(localStorage.getItem(ADS_TASK_LAST_DONE_KEY) ?? "0");
+  const lastDoneAt = Number(
+    localStorage.getItem(ADS_TASK_LAST_DONE_KEY) ?? "0",
+  );
   const adsCooldownPassed = Date.now() - lastDoneAt > ADS_COOLDOWN_MS;
 
   const shouldRenderAdsgram =
-      ADSGRAM_ENABLED && isAdsgramLoaded && showAdsgramBlock && adsCooldownPassed;
+    ADSGRAM_ENABLED && isAdsgramLoaded && showAdsgramBlock && adsCooldownPassed;
 
   return (
     <>
@@ -892,6 +940,515 @@ function Tasks() {
         {/* Контейнер для скролла */}
         <div className="relative z-30 h-screen flex flex-col">
           <div className="flex-shrink-0 pt-25"></div>
+
+          <button
+            onClick={() => setIsFightModalOpen(true)}
+            className="text-xl shantell"
+          >
+            Открыть бой
+          </button>
+
+          {/* Модальное окно Бой */}
+          {isFightModalOpen && (
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[500] p-4"
+              onClick={() => setIsFightModalOpen(false)}
+            >
+              <div
+                className="relative w-full max-w-4xl mx-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="relative mb-2 flex justify-center translate-y-[8px]">
+                  <div className="w-1/2 relative">
+                    <img
+                      src={`${store.imgUrl}img_window_header.png`}
+                      alt="Бой"
+                      className="w-full h-auto"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-amber-800 font-bold text-sm shantell">
+                        НАЧАЛО БОЯ ЧЕРЕЗ:
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setIsFightModalOpen(false)}
+                    className="absolute -top-2 -right-2 w-8 h-8 bg-transparent hover:scale-110 transition-transform z-10"
+                  >
+                    <img
+                      src={`${store.imgUrl}b_close.png`}
+                      alt="Закрыть"
+                      className="w-full h-full"
+                    />
+                  </button>
+                </div>
+
+                <div
+                  className="bg-cover bg-center rounded-lg shadow-2xl max-h-[600px] p-3"
+                  style={{
+                    backgroundImage: `url('${store.imgUrl}img_window_big.png')`,
+                  }}
+                >
+                  <div className="mb-1">
+                    <div className="relative flex items-center justify-center mt-4">
+                      <div className="flex items-center absolute left-0">
+                        <div className="relative w-10 z-10">
+                          <img
+                            src={`${store.imgUrl}b_red_game.png`}
+                            alt=""
+                            className="w-full h-full"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-white font-bold text-xl shantell">
+                              2
+                            </span>
+                          </div>
+                        </div>
+                        <div className="relative -ml-4">
+                          <div className="bg-white rounded-xl px-4 py-1 border-2 border-amber-800 shadow-lg">
+                            <span className="text-amber-800 font-bold text-sm shantell">
+                              Велосипед
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="absolute left-1/2 transform -translate-x-1/2">
+                        <div className="text-amber-800 font-bold text-3xl shantell">
+                          {timer}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center absolute right-0 z-10">
+                        <div className="relative -mr-4 z-0">
+                          <div className="bg-white rounded-xl px-4 py-1 border-2 border-amber-800 shadow-lg">
+                            <span className="text-amber-800 text-sm shantell">
+                              Самокат
+                            </span>
+                          </div>
+                        </div>
+                        <div className="relative w-10">
+                          <img
+                            src={`${store.imgUrl}b_blue_game.png`}
+                            alt=""
+                            className="w-full h-full"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-white font-bold text-xl shantell">
+                              5
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Блок с велосипедом и самокатом */}
+                    <div className="mt-8">
+                      <div className="flex items-center justify-center mb-4">
+                        <div className="flex flex-col items-center">
+                          <img
+                            src={`${store.imgUrl}img_game_bike.png`}
+                            alt="Велосипед"
+                            className="w-28 mb-2"
+                          />
+                          <div className="flex gap-x-1">
+                            <div className="w-2 h-2 rounded-full bg-amber-400 border-amber-600 border-1"></div>
+                            <div className="w-2 h-2 rounded-full bg-rose-600 border-rose-900 border-1"></div>
+                            <div className="w-2 h-2 rounded-full bg-green-500 border-green-900 border-1"></div>
+                            <div className="w-2 h-2 rounded-full bg-blue-400 border-blue-900 border-1"></div>
+                            <div className="w-2 h-2 rounded-full bg-stone-400 border-stone-900 border-1"></div>
+                          </div>
+                        </div>
+
+                        {/* Игральные кости */}
+                        <div className="flex flex-col items-center">
+                          <div className="flex space-x-2 mb-4">
+                            {timer > 0 ? (
+                              // Показываем таймер
+                              <div className="flex items-center space-x-2"></div>
+                            ) : (
+                              // Показываем кости со случайным поворотом
+                              <>
+                                <img
+                                  src={`${store.imgUrl}img_bones_${diceValues[0]}.png`}
+                                  alt="Кость"
+                                  className="w-6 h-6"
+                                  style={{
+                                    transform: `rotate(${diceRotations[0]}deg)`,
+                                    transition: "transform 0.3s ease-in-out",
+                                  }}
+                                />
+                                <div className="text-amber-800 text-sm shantell">
+                                  vs
+                                </div>
+                                <img
+                                  src={`${store.imgUrl}img_bones_${diceValues[1]}.png`}
+                                  alt="Кость"
+                                  className="w-6 h-6"
+                                  style={{
+                                    transform: `rotate(${diceRotations[1]}deg)`,
+                                    transition: "transform 0.3s ease-in-out",
+                                  }}
+                                />
+                              </>
+                            )}
+                          </div>
+                          {/* Кнопка с графиком */}
+                          <button className="rounded-lg px-6 py-2 transition-all duration-300 hover:scale-105">
+                            <img
+                              src={`${store.imgUrl}img_graphic.png`}
+                              alt="График"
+                              className="w-10"
+                            />
+                          </button>
+                        </div>
+
+                        {/* Самокат */}
+                        <div className="flex flex-col items-center">
+                          <img
+                            src={`${store.imgUrl}img_game_kick.png`}
+                            alt="Самокат"
+                            className="w-28 mb-2"
+                          />
+                          <div className="flex gap-x-1">
+                            <div className="w-2 h-2 rounded-full bg-amber-400 border-amber-600 border-1"></div>
+                            <div className="w-2 h-2 rounded-full bg-rose-600 border-rose-900 border-1"></div>
+                            <div className="w-2 h-2 rounded-full bg-green-500 border-green-900 border-1"></div>
+                            <div className="w-2 h-2 rounded-full bg-blue-400 border-blue-900 border-1"></div>
+                            <div className="w-2 h-2 rounded-full bg-stone-400 border-stone-900 border-1"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Блок с 3 коричневыми квадратами */}
+                    <div className="mb-8">
+                      <div className="flex justify-center space-x-2">
+                        <div className="relative w-26 mb-2">
+                          <img
+                            src={`${store.imgUrl}img_block_game.png`}
+                            alt=""
+                            className="w-full h-full"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-white font-bold text-lg shantell mr-2">
+                              П1
+                            </span>
+                            <span className="text-amber-800 bg-white px-1 rounded-lg text-lg shantell">
+                              2,28
+                            </span>
+                          </div>
+                          <span className="text-amber-700 text-sm shantell"></span>
+                        </div>
+                        <div className="relative w-26 mb-2">
+                          <img
+                            src={`${store.imgUrl}img_block_game.png`}
+                            alt=""
+                            className="w-full h-full"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-white font-bold text-lg shantell mr-2">
+                              X
+                            </span>
+                            <span className="text-amber-800 bg-white px-1 rounded-lg text-lg shantell">
+                              5,70
+                            </span>
+                          </div>
+                          <span className="text-amber-700 text-sm shantell"></span>
+                        </div>
+                        <div className="relative w-26 mb-2">
+                          <img
+                            src={`${store.imgUrl}img_block_game.png`}
+                            alt=""
+                            className="w-full h-full"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-white font-bold text-lg shantell mr-2">
+                              П2
+                            </span>
+                            <span className="text-amber-800 bg-white px-1 rounded-lg text-lg shantell">
+                              2,28
+                            </span>
+                          </div>
+                          <span className="text-amber-700 text-sm shantell"></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Блок таблиц */}
+                  <div className="mb-1">
+                    <div className="flex space-x-2">
+                      {/* Левая часть: большая таблица */}
+                      <div className="bg-white rounded-xl p-2 border-2 border-amber-800 shadow-lg">
+                        <div className="grid grid-cols-3 gap-1 mb-2">
+                          <div className="text-center">
+                            <div className="text-amber-700 font-bold text-xs shantell mb-1">
+                              Меньше
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-amber-400 font-bold text-xs shantell mb-1">
+                              Тотал
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-amber-700 font-bold text-xs shantell mb-1">
+                              Больше
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* строка с цифрами */}
+                        <div className="grid grid-cols-3 gap-1 mb-1 mt-1">
+                          <div className="text-center">
+                            <div className="bg-white rounded-lg p-1 border-1 border-black shadow-sm">
+                              <div className="text-amber-800 font-bold text-sx shantell">
+                                3,42
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="p-2 ">
+                              <div className="text-amber-400 font-bold text-lg shantell">
+                                5,5
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="bg-white rounded-lg p-1 border-1 border-black shadow-sm">
+                              <div className="text-amber-800 font-bold text-sx shantell">
+                                3,42
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="border-t border-gray-200 my-1"></div>
+                        <div className="grid grid-cols-3 gap-1 mb-1 mt-1">
+                          <div className="text-center">
+                            <div className="bg-white rounded-lg p-1 border-1 border-black shadow-sm">
+                              <div className="text-amber-800 font-bold text-sx shantell">
+                                3,42
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="p-2 ">
+                              <div className="text-amber-400 font-bold text-lg shantell">
+                                5,5
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="bg-white rounded-lg p-1 border-1 border-black shadow-sm">
+                              <div className="text-amber-800 font-bold text-sx shantell">
+                                3,42
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="border-t border-gray-200 my-1"></div>
+                        <div className="grid grid-cols-3 gap-1 mb-1 mt-1">
+                          <div className="text-center">
+                            <div className="bg-white rounded-lg p-1 border-1 border-black shadow-sm">
+                              <div className="text-amber-800 font-bold text-sx shantell">
+                                3,42
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="p-2 ">
+                              <div className="text-amber-400 font-bold text-lg shantell">
+                                5,5
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="bg-white rounded-lg p-1 border-1 border-black shadow-sm">
+                              <div className="text-amber-800 font-bold text-sx shantell">
+                                3,42
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="border-t border-gray-200 my-1"></div>
+                      </div>
+
+                      {/* Правая часть */}
+                      <div className="flex-1">
+                        <div className="space-y-1">
+                          <div className="grid grid-cols-2 gap-1">
+                            <div className="bg-white rounded-xl p-1 border-2 border-amber-800 shadow-lg">
+                              <div className="text-center">
+                                <div className="text-amber-700 text-sm shantell">
+                                  П1
+                                </div>
+                              </div>
+                              <div className="bg-white rounded-lg py-1 border-1 border-amber-900 shadow-sm text-center">
+                                <div className="text-amber-800 font-bold text-lg shantell">
+                                  3,42
+                                </div>
+                              </div>
+                            </div>
+                            <div className="bg-white rounded-xl p-1 border-2 border-amber-800 shadow-lg">
+                              <div className="text-center">
+                                <div className="text-amber-700 text-sm shantell">
+                                  П2
+                                </div>
+                              </div>
+                              <div className="bg-white rounded-lg py-1 border-1 border-amber-900 shadow-sm text-center">
+                                <div className="text-amber-800 font-bold text-lg shantell">
+                                  3,42
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Нижние 2 плашки*/}
+                          <div className="bg-white rounded-xl p-1 border-2 border-amber-800 shadow-lg">
+                            <div className="grid grid-cols-3 gap-0">
+                              <div className="text-center">
+                                <div className="text-amber-700 font-bold text-xs shantell mb-1">
+                                  Меньше
+                                </div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-fuchsia-800 font-bold text-xs shantell mb-1">
+                                  Тотал#1
+                                </div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-amber-700 font-bold text-xs shantell mb-1">
+                                  Больше
+                                </div>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-1 mb-1 mt-1">
+                              <div className="text-center">
+                                <div className="bg-white rounded-lg p-1 border-1 border-black shadow-sm">
+                                  <div className="text-amber-800 font-bold text-sx shantell">
+                                    3,42
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-center">
+                                <div className="p-1">
+                                  <div className="text-fuchsia-800 font-bold text-lg shantell">
+                                    5,5
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-center">
+                                <div className="bg-white rounded-lg p-1 border-1 border-black shadow-sm">
+                                  <div className="text-amber-800 font-bold text-sx shantell">
+                                    3,42
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="bg-white rounded-xl p-1 border-2 border-amber-800 shadow-lg">
+                            <div className="grid grid-cols-3 gap-0">
+                              <div className="text-center">
+                                <div className="text-amber-700 font-bold text-xs shantell mb-1">
+                                  Меньше
+                                </div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-blue-900 font-bold text-xs shantell mb-1">
+                                  Тотал#2
+                                </div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-amber-700 font-bold text-xs shantell mb-1">
+                                  Больше
+                                </div>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-1 mb-1 mt-1">
+                              <div className="text-center">
+                                <div className="bg-white rounded-lg p-1 border-1 border-black shadow-sm">
+                                  <div className="text-amber-800 font-bold text-sx shantell">
+                                    3,42
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-center">
+                                <div className="p-1">
+                                  <div className="text-blue-900 font-bold text-lg shantell">
+                                    5,5
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-center">
+                                <div className="bg-white rounded-lg p-1 border-1 border-black shadow-sm">
+                                  <div className="text-amber-800 font-bold text-sx shantell">
+                                    3,42
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Блок с кнопками и плашками */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <button className="relative w-10 hover:scale-105 transition-transform">
+                        <img
+                          src={`${store.imgUrl}b_repeat.png`}
+                          alt="Повторить"
+                          className="w-full h-full"
+                        />
+                      </button>
+                    </div>
+
+                    {/* Центральные плашки */}
+                    <div className="flex space-x-1">
+                      {["All", "50", "100", "100", "All"].map(
+                        (label, index) => (
+                          <div
+                            key={index}
+                            className="flex flex-col items-center"
+                          >
+                            <div className="bg-white rounded-sm w-10 flex items-center justify-center border border-amber-800 shadow-sm mb-1">
+                              <span className="text-amber-800 font-bold text-sm shantell">
+                                {label}
+                              </span>
+                            </div>
+                          </div>
+                        ),
+                      )}
+                    </div>
+
+                    {/* Правая кнопка Вернуть */}
+                    <div className="flex flex-col items-center">
+                      <button className="relative w-10 hover:scale-105 transition-transform">
+                        <img
+                          src={`${store.imgUrl}b_return.png`}
+                          alt="Вернуть"
+                          className="w-full h-full"
+                        />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-amber-800 font-bold text-xs shantell mt-2">
+                      Повторить
+                    </span>
+                    <span className="text-amber-800 font-bold text-xs shantell mt-2">
+                      Вернуть
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Прокручиваемая область с блоками заданий */}
           <div className="flex-1 overflow-y-auto">
@@ -1029,14 +1586,14 @@ function Tasks() {
 
               {/* Рекламный таск -----------------------------------------------*/}
               {shouldRenderAdsgram ? (
-                  <adsgram-task
-                      className={styles.task}
-                      data-block-id="task-18892"
-                      ref={(el) => {
-                        adsTaskRef.current = el;
-                        setAdsElReady(!!el);
-                      }}
-                  >
+                <adsgram-task
+                  className={styles.task}
+                  data-block-id="task-18892"
+                  ref={(el) => {
+                    adsTaskRef.current = el;
+                    setAdsElReady(!!el);
+                  }}
+                >
                   <span
                     slot="reward"
                     className="text-amber-800 text-md shantell"
