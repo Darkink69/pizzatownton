@@ -25,7 +25,9 @@ class BankStore {
   creating = false;
   error: string | null = null;
   lastBuyAt: number = 0;
-
+  entryOrder: BankOrder | null = null;
+  entryCreating = false;
+  entryError: string | null = null;
 
   constructor() {
     makeAutoObservable(this);
@@ -53,6 +55,45 @@ class BankStore {
   /** Вспомогательный метод для генерации комментария к TON‑транзакции */
   private generateOrderComment(): string {
     return `ORD-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
+  }
+
+
+  async createEntryOrder() {
+    if (this.entryCreating) return;
+
+    this.entryCreating = true;
+    this.error = null;
+
+    const tgId = store.user.telegramId ?? store.user.id;
+    const session = store.sessionId;
+
+    if (!tgId || !session) {
+      this.error = "Нет sessionId или telegramId";
+      this.entryCreating = false;
+      return;
+    }
+
+    const tonComment = this.generateOrderComment(); // ORD-XXXXXX
+    const requestId = `entry_${Math.random().toString(36).slice(2, 10)}`;
+
+    const rq = {
+      type: "BANK_BUY_ENTRY",
+      requestId,
+      session,
+      createOrderRq: {
+        telegramId: tgId,
+        amountPcoin: 1,
+        tonComment,
+      },
+    };
+
+    const ok = store.send(rq as any);
+    if (!ok) {
+      this.error = "Ошибка: WebSocket не подключён";
+      this.entryCreating = false;
+    }
+
+    // entryCreating сбросим когда придёт ответ в обработчике WS
   }
 
   // ------------------------------------------------------------------------

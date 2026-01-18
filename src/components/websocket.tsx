@@ -549,6 +549,37 @@ const WebSocketComponent = observer(() => {
             break;
           }
 
+            /** ---------------- BANK_BUY_ENTRY ---------------- */
+          case "BANK_BUY_ENTRY": {
+
+            bankStore.entryCreating = false;
+
+            if (!parsed.success || !parsed.data) {
+              bankStore.entryError = parsed.message || "Ошибка при создании ордера входа";
+              toast.error(bankStore.entryError);
+              break;
+            }
+
+            const d = parsed.data as BankCreateOrderData;
+
+              // сохраняем entry order отдельно, чтобы не мешать обычному банку
+              bankStore.entryOrder = {
+                orderId: d.orderId,
+                amountTon: d.amountTon,
+                rate: d.rate ?? "0",
+                expiresAt: d.expiresAt,
+                merchantAddr: d.merchantAddr,
+                tonComment: d.comment, // comment = ORD-XXXXXX
+                status: "WAITING_PAYMENT",
+              };
+
+              toast.success("🚪 Ордер на вход создан");
+
+            break;
+          }
+
+
+
           /** ---------------- BANK_BUY_PCOIN ---------------- */
           case "BANK_BUY_PCOIN": {
             if (parsed.success && parsed.data) {
@@ -594,23 +625,48 @@ const WebSocketComponent = observer(() => {
           case "BANK_CONFIRM":
           case "BANK_ORDER_VIEW":
           case "BANK_ORDER_STATUS_CHANGED": {
-            if (parsed.success && parsed.data) {
-              const orderViewData = parsed.data as BankOrderViewData;
-
-              (store as any).setBankOrderView?.(orderViewData);
-              (store as any).setConfirmedOrder?.(orderViewData);
-
-              toast.info(`💳 Статус ордера: ${orderViewData.status}`);
-
-              // ВАЖНО: если PAID — могли выдать deposit-ключи
-              if (orderViewData.status === "PAID") {
-                store.getChestsState();
-              }
-            } else {
+            if (!parsed.success || !parsed.data) {
               (store as any).setBankError?.(
-                parsed.message || "BANK_ORDER_VIEW failed"
+                  parsed.message || "BANK_ORDER_STATUS_CHANGED failed"
               );
+              break;
             }
+
+            const orderViewData = parsed.data as BankOrderViewData;
+
+            (store as any).setBankOrderView?.(orderViewData);
+            (store as any).setConfirmedOrder?.(orderViewData);
+
+            const isEntryOrder =
+                !!bankStore.entryOrder?.orderId &&
+                orderViewData.orderId === bankStore.entryOrder.orderId;
+
+            const isPcoinOrder =
+                !!bankStore.order?.orderId && orderViewData.orderId === bankStore.order.orderId;
+
+            //  показываем toast только если это “наш” ордер (entry или pcoin)
+            if (isEntryOrder || isPcoinOrder) {
+              toast.info(`💳 Статус ордера: ${orderViewData.status}`);
+            }
+
+            if (orderViewData.status === "PAID") {
+              // ВАЖНО: если PAID — могли выдать deposit-ключи
+              store.getChestsState();
+
+              //  PAYWALL: если это entry order — открываем доступ
+              if (isEntryOrder) {
+                runInAction(() => {
+                  if (store.user) {
+                    store.user.isPaidAccess = true;
+                    localStorage.setItem("user", JSON.stringify(store.user));
+                  }
+                });
+
+                bankStore.entryOrder = null;
+                toast.success("Вход оплачен! Добро пожаловать!");
+              }
+            }
+
             break;
           }
 

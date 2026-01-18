@@ -16,6 +16,7 @@ export type OperationType =
   | "CLAIM_DO"
   | "CLAIM_REFRESH"
   | "BANK_BUY_PCOIN"
+  | "BANK_BUY_ENTRY"
   | "BANK_CONFIRM"
   | "BANK_EXCHANGE_PDOLLAR"
   | "BANK_ORDER_VIEW"
@@ -96,6 +97,14 @@ export interface UserFloor {
           | null;
       }[]
     | null;
+}
+
+export interface BankCreateEntryOrderData {
+  orderId: string;
+  amountTon: string;
+  expiresAt: string;      // ISO
+  merchantAddr: string;
+  comment: string;        // ORD-XXXXXX
 }
 
 export interface UserFoodStatusDto {
@@ -256,6 +265,7 @@ export interface TgUser {
   username?: string;
   locale?: string;
   photoUrl?: string;
+  isPaidAccess?: boolean;
 
   [k: string]: any;
 }

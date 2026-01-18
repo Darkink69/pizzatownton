@@ -1115,7 +1115,9 @@ class Store {
   }
 
   setUser(user?: TgUser) {
-    this.user = user ?? {};
+    runInAction(() => {
+      this.user = user ?? {};
+    });
     localStorage.setItem("user", JSON.stringify(this.user));
   }
 

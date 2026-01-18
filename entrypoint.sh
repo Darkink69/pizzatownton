@@ -1,8 +1,8 @@
 #!/bin/sh
 set -euo pipefail
 
-export VITE_API_URL=${VITE_API_URL:-https://solego.ru/api}
-export VITE_WS_URL=${VITE_WS_URL:-wss://solego.ru/ws}
+export VITE_API_URL=${VITE_API_URL:-https://pizzatownton.com/api}
+export VITE_WS_URL=${VITE_WS_URL:-wss://pizzatownton.com/ws}
 
 echo "VITE_API_URL=$VITE_API_URL"
 echo "VITE_WS_URL=$VITE_WS_URL"

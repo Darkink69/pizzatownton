@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import fridgeCss from "../css/fridge.module.css";
 import GuideOverlay from "../pages/GuideOverlay";
 import { getCurrentUpgradeCost, getFloorUpgradeData } from "./floorUpgradeData";
+import EntryFeeOverlay from "../pages/EntryFeeOverlay";
 import { useTranslation } from "react-i18next";
 
 const Home = observer(() => {
@@ -248,10 +249,11 @@ const Home = observer(() => {
   }, [store.areFloorsLoaded]);
 
   useEffect(() => {
-    if (!store.sessionId || (!store.user?.telegramId && !store.user?.id)) {
-      console.log("⏳ Ждём AUTH_INIT: sessionId или telegramId ещё нет");
-      return;
-    }
+    if (!store.sessionId || (!store.user?.telegramId && !store.user?.id)) return;
+
+    // ✅ пока вход не оплачен — ничего не показываем
+    if (store.user?.isPaidAccess !== true) return;
+
     if (!localStorage.getItem("main_tutorial_done")) {
       setShowGuide(true);
     }
@@ -1086,6 +1088,8 @@ const Home = observer(() => {
 
   return (
     <>
+      {/* ✅ PAYWALL: показывается только если isAuthed && !isPaidAccess */}
+      <EntryFeeOverlay />
       <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B]">
         {/* Кнопка звука */}
         <button
