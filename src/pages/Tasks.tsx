@@ -16,6 +16,7 @@ const TASK_CODE_BY_ID: Record<number, string> = {
   2: "INVITE_3_FRIENDS",
   3: "SUBSCRIBE_TEAM_LOVE_CHANNEL",
   4: "LOOTY_GAME",
+  5: "BEATS_GAME",
 };
 
 const PIZZA_LIST = [
@@ -51,6 +52,7 @@ function Tasks() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isSubscribedToTeamLove, setIsSubscribedToTeamLove] = useState(false);
   const [isSubscribedToLooty, setIsSubscribedToLooty] = useState(false);
+  const [isSubscribedToBeats, setIsSubscribedToBeats] = useState(false);
   const [serverTaskCodes, setServerTaskCodes] = useState<Set<string>>(
     new Set(),
   );
@@ -233,6 +235,8 @@ function Tasks() {
         return isSubscribedToTeamLove;
       case "LOOTY_GAME":
         return isSubscribedToLooty;
+      case "BEATS_GAME":
+        return isSubscribedToBeats;
       case "INVITE_3_FRIENDS":
         return store.taskInvite3Status === "rewarded";
       default:
@@ -490,6 +494,39 @@ function Tasks() {
     return () => clearTimeout(timer);
   };
 
+  // обработчик для Beats
+  const handleSubscribeBeats = () => {
+    if (isSubscribedToBeats) return;
+
+    const tgId = store.user?.telegramId ?? 0;
+    toast.info("🔔 Проверяем запуск игры Beats...");
+
+    const timer = setTimeout(() => {
+      const rq = {
+        type: "TASKS_COMPLETE" as const,
+        requestId: Math.random().toString(36).substring(2, 10),
+        session: store.sessionId ?? "",
+        taskRq: {
+          telegramId: tgId,
+          code: "BEATS_GAME",
+        },
+      };
+
+      if (store.send(rq)) {
+        toast.dismiss();
+        toast.success("✅ Готово! Получаем награду...");
+        setIsSubscribedToBeats(true);
+        localStorage.setItem("subscribedBeatsTaskDone", "true");
+
+        showRewardNotification("1000 pizza");
+      } else {
+        toast.error("WebSocket не подключён");
+      }
+    }, 8000);
+
+    return () => clearTimeout(timer);
+  };
+
   // выполнение таски INVITE_3_FRIENDS (инициируем проверку)
   const handleInvite3Task = () => {
     if (store.taskInvite3Status === "rewarded") {
@@ -566,6 +603,17 @@ function Tasks() {
       onClick: !isSubscribedToLooty ? handleSubscribeLooty : undefined,
       disabled: isSubscribedToLooty,
       isCompleted: isSubscribedToLooty,
+    },
+    {
+      id: 5,
+      title: "Сыграть в Beats",
+      rewardPizza: "1000", // Укажите нужную награду
+      link: "https://t.me/beats_live_bot/startapp?startapp=MjUy",
+      buttonText: isSubscribedToBeats ? "ВЫПОЛНЕНО" : "ПЕРЕЙТИ",
+      buttonBg: isSubscribedToBeats ? "b_blue_small.png" : "b_red_small.png",
+      onClick: !isSubscribedToBeats ? handleSubscribeBeats : undefined,
+      disabled: isSubscribedToBeats,
+      isCompleted: isSubscribedToBeats,
     },
   ];
 
