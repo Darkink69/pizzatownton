@@ -51,7 +51,7 @@ const WebSocketComponent = observer(() => {
         requestId: generateRequestId(),
         session: store.sessionId,
         claimRefreshRq: { telegramId: store.user.telegramId },
-      })
+      }),
     );
   };
   const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -66,7 +66,7 @@ const WebSocketComponent = observer(() => {
     () =>
       import.meta.env.VITE_WS_URL ||
       (import.meta.env.VITE_API_URL || "").replace(/^http/, "ws") + "/ws",
-    []
+    [],
   );
 
   /** Отправка запроса FLOORS_GET после подключения */
@@ -187,7 +187,7 @@ const WebSocketComponent = observer(() => {
                   requestId: generateRequestId(),
                   claimRefreshRq: { telegramId: store.user.telegramId },
                   session: store.sessionId,
-                })
+                }),
               );
 
               // предотвращаем мульти-интервалы
@@ -208,7 +208,7 @@ const WebSocketComponent = observer(() => {
                     requestId: generateRequestId(),
                     claimRefreshRq: { telegramId: store.user.telegramId },
                     session: store.sessionId,
-                  })
+                  }),
                 );
               }, 90000);
             } else {
@@ -240,7 +240,7 @@ const WebSocketComponent = observer(() => {
               console.error(
                 "❌ ADMIN_OPERATION failed:",
                 parsed.message,
-                parsed
+                parsed,
               );
               toast.error(parsed.message || "ADMIN_OPERATION failed");
             }
@@ -295,7 +295,7 @@ const WebSocketComponent = observer(() => {
               toast.success(
                 parsed.type === "FLOORS_BUY"
                   ? "🏗 Этаж куплен!"
-                  : "🔼 Этаж улучшен!"
+                  : "🔼 Этаж улучшен!",
               );
 
               store.updateClaimProgress(0);
@@ -328,7 +328,7 @@ const WebSocketComponent = observer(() => {
               console.log("👥 Referral info loaded:", referralInfoData);
             } else {
               toast.error(
-                parsed.message || "Ошибка загрузки реферальных данных"
+                parsed.message || "Ошибка загрузки реферальных данных",
               );
             }
             break;
@@ -352,7 +352,7 @@ const WebSocketComponent = observer(() => {
             } else {
               store.setJettonLastResult?.(null);
               store.setJettonLastError?.(
-                String(parsed.message ?? "CHECK_FAILED")
+                String(parsed.message ?? "CHECK_FAILED"),
               );
               toast.error(parsed.message || "Не удалось проверить депозит");
             }
@@ -412,7 +412,7 @@ const WebSocketComponent = observer(() => {
               console.log("✅ Chests state loaded:", data);
             } else {
               toast.error(
-                parsed.message || "Ошибка загрузки данных о сундуках"
+                parsed.message || "Ошибка загрузки данных о сундуках",
               );
             }
             break;
@@ -478,7 +478,7 @@ const WebSocketComponent = observer(() => {
               toast.success("✅ Подарок поставлен на вывод");
             } else {
               toast.error(
-                parsed.message || "Не удалось поставить подарок на вывод"
+                parsed.message || "Не удалось поставить подарок на вывод",
               );
             }
             break;
@@ -502,7 +502,7 @@ const WebSocketComponent = observer(() => {
                   "Некоторые посетители не заплатили за счёт 😕\n" +
                     "Вы потеряли от 5% общего дохода.\n\n" +
                     "Чтобы избежать потерь, наймите Охранника 👮🏼‍♂️",
-                  { autoClose: 7000 }
+                  { autoClose: 7000 },
                 );
               }
             } else {
@@ -520,7 +520,7 @@ const WebSocketComponent = observer(() => {
               sendClaimRefresh();
             } else {
               toast.error(
-                parsed.message || "Ошибка при создании заявки на вывод"
+                parsed.message || "Ошибка при создании заявки на вывод",
               );
             }
             break;
@@ -549,36 +549,34 @@ const WebSocketComponent = observer(() => {
             break;
           }
 
-            /** ---------------- BANK_BUY_ENTRY ---------------- */
+          /** ---------------- BANK_BUY_ENTRY ---------------- */
           case "BANK_BUY_ENTRY": {
-
             bankStore.entryCreating = false;
 
             if (!parsed.success || !parsed.data) {
-              bankStore.entryError = parsed.message || "Ошибка при создании ордера входа";
+              bankStore.entryError =
+                parsed.message || "Ошибка при создании ордера входа";
               toast.error(bankStore.entryError);
               break;
             }
 
             const d = parsed.data as BankCreateOrderData;
 
-              // сохраняем entry order отдельно, чтобы не мешать обычному банку
-              bankStore.entryOrder = {
-                orderId: d.orderId,
-                amountTon: d.amountTon,
-                rate: d.rate ?? "0",
-                expiresAt: d.expiresAt,
-                merchantAddr: d.merchantAddr,
-                tonComment: d.comment, // comment = ORD-XXXXXX
-                status: "WAITING_PAYMENT",
-              };
+            // сохраняем entry order отдельно, чтобы не мешать обычному банку
+            bankStore.entryOrder = {
+              orderId: d.orderId,
+              amountTon: d.amountTon,
+              rate: d.rate ?? "0",
+              expiresAt: d.expiresAt,
+              merchantAddr: d.merchantAddr,
+              tonComment: d.comment, // comment = ORD-XXXXXX
+              status: "WAITING_PAYMENT",
+            };
 
-              toast.success("🚪 Ордер на вход создан");
+            toast.success("🚪 Ордер на вход создан");
 
             break;
           }
-
-
 
           /** ---------------- BANK_BUY_PCOIN ---------------- */
           case "BANK_BUY_PCOIN": {
@@ -627,7 +625,7 @@ const WebSocketComponent = observer(() => {
           case "BANK_ORDER_STATUS_CHANGED": {
             if (!parsed.success || !parsed.data) {
               (store as any).setBankError?.(
-                  parsed.message || "BANK_ORDER_STATUS_CHANGED failed"
+                parsed.message || "BANK_ORDER_STATUS_CHANGED failed",
               );
               break;
             }
@@ -638,11 +636,12 @@ const WebSocketComponent = observer(() => {
             (store as any).setConfirmedOrder?.(orderViewData);
 
             const isEntryOrder =
-                !!bankStore.entryOrder?.orderId &&
-                orderViewData.orderId === bankStore.entryOrder.orderId;
+              !!bankStore.entryOrder?.orderId &&
+              orderViewData.orderId === bankStore.entryOrder.orderId;
 
             const isPcoinOrder =
-                !!bankStore.order?.orderId && orderViewData.orderId === bankStore.order.orderId;
+              !!bankStore.order?.orderId &&
+              orderViewData.orderId === bankStore.order.orderId;
 
             //  показываем toast только если это “наш” ордер (entry или pcoin)
             if (isEntryOrder || isPcoinOrder) {
@@ -690,14 +689,14 @@ const WebSocketComponent = observer(() => {
               } else {
                 console.error(
                   "❌ Неверная структура данных истории выводов:",
-                  historyData
+                  historyData,
                 );
                 store.setManualWithdrawHistory([]);
               }
             } else {
               console.error(
                 "❌ Ошибка загрузки истории выводов:",
-                parsed.message
+                parsed.message,
               );
               // Устанавливаем пустой массив при ошибке
               store.setManualWithdrawHistory([]);
@@ -722,7 +721,7 @@ const WebSocketComponent = observer(() => {
                   store.taskInvite3Error = null;
                 });
                 toast.success(
-                  "✅ Условие задания выполнено! Заберите награду."
+                  "✅ Условие задания выполнено! Заберите награду.",
                 );
 
                 if (store.sessionId && store.user?.telegramId) {
@@ -738,7 +737,7 @@ const WebSocketComponent = observer(() => {
                   ws.send(JSON.stringify(rq));
                 } else {
                   toast.error(
-                    "Не удалось завершить задачу: нет сессии или пользователя"
+                    "Не удалось завершить задачу: нет сессии или пользователя",
                   );
                 }
               } else {
@@ -750,11 +749,11 @@ const WebSocketComponent = observer(() => {
 
                 if (data.message === "NOT_ENOUGH_REFERRALS_WITH_FLOOR") {
                   toast.error(
-                    "У вас ещё меньше 3 друзей, которые купили хотя бы 1 этаж."
+                    "У вас ещё меньше 3 друзей, которые купили хотя бы 1 этаж.",
                   );
                 } else {
                   toast.error(
-                    data.message || parsed.message || "Ошибка проверки задания"
+                    data.message || parsed.message || "Ошибка проверки задания",
                   );
                 }
               }
@@ -766,7 +765,7 @@ const WebSocketComponent = observer(() => {
           case "TASKS_GET": {
             if (parsed.success && Array.isArray(parsed.data)) {
               window.dispatchEvent(
-                new CustomEvent("tasksLoaded", { detail: parsed.data })
+                new CustomEvent("tasksLoaded", { detail: parsed.data }),
               );
             }
             break;
@@ -811,7 +810,7 @@ const WebSocketComponent = observer(() => {
                 window.dispatchEvent(event);
 
                 toast.success(
-                  message || parsed.message || "🎉 Награда за друзей получена!"
+                  message || parsed.message || "🎉 Награда за друзей получена!",
                 );
               } else {
                 if (
@@ -823,11 +822,11 @@ const WebSocketComponent = observer(() => {
                     store.taskInvite3Error = null;
                   });
                   toast.info(
-                    "Награда за приглашение друзей уже была получена ранее."
+                    "Награда за приглашение друзей уже была получена ранее.",
                   );
                 } else {
                   toast.error(
-                    message || parsed.message || "Ошибка при получении награды"
+                    message || parsed.message || "Ошибка при получении награды",
                   );
                 }
               }
@@ -851,7 +850,9 @@ const WebSocketComponent = observer(() => {
                 });
 
                 toast.success(
-                  message || parsed.message || "🎉 Награда за рекламу получена!"
+                  message ||
+                    parsed.message ||
+                    "🎉 Награда за рекламу получена!",
                 );
 
                 const now = Date.now();
@@ -862,23 +863,60 @@ const WebSocketComponent = observer(() => {
                   message === "COOLDOWN_NOT_PASSED"
                 ) {
                   toast.info(
-                    "Рекламное задание уже было выполнено недавно. Попробуйте позже."
+                    "Рекламное задание уже было выполнено недавно. Попробуйте позже.",
                   );
                 } else {
                   toast.error(
                     message ||
                       parsed.message ||
-                      "Ошибка при выполнении рекламного задания"
+                      "Ошибка при выполнении рекламного задания",
                   );
                 }
               }
               break;
             }
 
+            // ---------------- BEATS_LIVE ----------------
+            if (code === "BEATS_LIVE") {
+              if (parsed.success) {
+                runInAction(() => {
+                  if (rewardPcoin != null) {
+                    store.pcoin = (store.pcoin ?? 0) + Number(rewardPcoin);
+                  }
+                  if (rewardPizza != null) {
+                    store.pizza = (store.pizza ?? 0) + Number(rewardPizza);
+                  }
+                  if (rewardPdollar != null) {
+                    store.pdollar =
+                      (store.pdollar ?? 0) + Number(rewardPdollar);
+                  }
+                });
+
+                toast.success(
+                  message ||
+                    parsed.message ||
+                    "🎉 Награда за игру Beats получена!",
+                );
+              } else {
+                if (
+                  parsed.message === "TASK_ALREADY_COMPLETED" ||
+                  message === "ALREADY_COMPLETED"
+                ) {
+                  toast.info("Награда за игру Beats уже была получена ранее.");
+                } else {
+                  toast.error(
+                    message ||
+                      parsed.message ||
+                      "Ошибка при получении награды за Beats",
+                  );
+                }
+              }
+              break;
+            }
             // ---------------- Остальные таски ----------------
             if (!parsed.success) {
               toast.error(
-                message || parsed.message || "Ошибка при получении награды"
+                message || parsed.message || "Ошибка при получении награды",
               );
               break;
             }
@@ -983,7 +1021,7 @@ const WebSocketComponent = observer(() => {
             } else {
               store.setJettonLastResult?.(null);
               store.setJettonLastError?.(
-                String(parsed.message ?? "UNKNOWN_ERROR")
+                String(parsed.message ?? "UNKNOWN_ERROR"),
               );
               if (parsed.message === "NOT_ENOUGH_PCOIN")
                 toast.error("Недостаточно PCoin (нужно 15000)");
@@ -1000,7 +1038,7 @@ const WebSocketComponent = observer(() => {
               console.log("🍱 FOOD_GET (глобально):", status);
             } else {
               toast.error(
-                parsed.message || "Ошибка получения статуса продуктов"
+                parsed.message || "Ошибка получения статуса продуктов",
               );
             }
             break;
@@ -1030,10 +1068,10 @@ const WebSocketComponent = observer(() => {
                   code === "NOT_ENOUGH_PCOIN"
                     ? "Недостаточно PCOIN"
                     : code === "NO_FLOORS"
-                    ? "Сначала купите этаж (кроме бейсмента)"
-                    : code === "BAD_REQUEST"
-                    ? "Некорректный запрос"
-                    : "Не удалось купить продукты";
+                      ? "Сначала купите этаж (кроме бейсмента)"
+                      : code === "BAD_REQUEST"
+                        ? "Некорректный запрос"
+                        : "Не удалось купить продукты";
 
                 toast.error(msg);
 

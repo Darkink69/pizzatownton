@@ -16,7 +16,7 @@ const TASK_CODE_BY_ID: Record<number, string> = {
   2: "INVITE_3_FRIENDS",
   3: "SUBSCRIBE_TEAM_LOVE_CHANNEL",
   4: "LOOTY_GAME",
-  5: "BEATS_GAME",
+  5: "BEATS_LIVE",
 };
 
 const PIZZA_LIST = [
@@ -508,7 +508,7 @@ function Tasks() {
         session: store.sessionId ?? "",
         taskRq: {
           telegramId: tgId,
-          code: "BEATS_GAME",
+          code: "BEATS_LIVE",
         },
       };
 
