@@ -60,12 +60,12 @@ const EntryFeeOverlay = observer(() => {
 
     const timer = setInterval(() => {
       bankStore.fetchOrder(id);
-    }, 5000);
+    }, 10000);
 
     return () => clearInterval(timer);
   }, [bankStore.entryOrder?.orderId]);
 
-  // 2) через 5 минут после отправки транзакции показываем блок поддержки, если доступ не открылся
+  // 2) через 1 минут после отправки транзакции показываем блок поддержки, если доступ не открылся
   useEffect(() => {
     if (!paymentSentAt) return;
 
@@ -78,7 +78,7 @@ const EntryFeeOverlay = observer(() => {
           store.requestReferralInfo();
         }
       }
-    }, 5 * 60 * 1000);
+    }, 60 * 1000);
 
     return () => clearTimeout(tmr);
   }, [
@@ -294,7 +294,7 @@ const EntryFeeOverlay = observer(() => {
                           Оплата прошла, но доступ не открылся?
                         </div>
                         <div className="text-center text-xs text-amber-700 shantell mt-1">
-                          Если прошло больше 5 минут — напишите в техподдержку и пришлите вашу реф‑ссылку (или Telegram ID).
+                          Если прошло больше 1 минут — напишите в техподдержку и пришлите вашу реф‑ссылку (или Telegram ID).
                         </div>
 
                         <div className="mt-2 bg-white rounded-xl px-3 py-2 border-2 border-amber-200 text-center">
