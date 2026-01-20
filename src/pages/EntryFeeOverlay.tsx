@@ -231,13 +231,6 @@ const EntryFeeOverlay = observer(() => {
                   : t("entry_modal.pay_button")}
               </button>
 
-              <button
-                onClick={() => setShowSupportBlock(true)}
-                className="text-sm text-black"
-              >
-                Техподдержка
-              </button>
-
               {bankStore.entryError && (
                 <div className="text-sm text-red-600 shantell text-center">
                   {bankStore.entryError}
@@ -315,54 +308,86 @@ const EntryFeeOverlay = observer(() => {
                 </div>
               )}
 
-              {/* БЛОК ТЕХПОДДЕРЖКИ: появляется через 5 минут после sendTransaction */}
+              {/* Кнопка Техподдержки - всегда видна внизу модалки */}
+              <div className="mt-4 text-center">
+                <button
+                  onClick={() => setShowSupportBlock(true)}
+                  className="text-sm text-amber-700 hover:text-amber-900 font-medium shantell underline decoration-dotted"
+                >
+                  Техподдержка
+                </button>
+              </div>
+
+              {/* Модальное окно техподдержки */}
               {showSupportBlock && (
-                <div className="w-full mt-3 pt-3 border-t border-amber-300">
-                  <div className="text-center text-sm text-amber-800 shantell font-bold">
-                    {t("entry_modal.support_title")}
-                  </div>
-                  <div className="text-center text-xs text-amber-700 shantell mt-1">
-                    {t("entry_modal.support_description")}
-                  </div>
-
-                  <div className="mt-2 bg-white rounded-xl px-3 py-2 border-2 border-amber-200 text-center">
-                    <div className="text-[10px] text-gray-500 uppercase font-bold mb-1">
-                      {t("entry_modal.referral_label")}
+                <div className="fixed inset-0 z-[201] bg-black/70 flex items-center justify-center p-4">
+                  <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
+                    <div className="text-center mb-4">
+                      <h3 className="text-xl font-bold text-amber-800 shantell">
+                        {t("entry_modal.support_title")}
+                      </h3>
+                      <p className="text-sm text-gray-600 mt-2">
+                        {t("entry_modal.support_description")}
+                      </p>
                     </div>
-                    <div className="text-xs font-mono text-blue-700 break-all select-all">
-                      {referralLink || t("entry_modal.link_loading")}
+
+                    <div className="space-y-4">
+                      <div>
+                        <div className="text-xs text-gray-500 font-bold mb-1">
+                          {t("entry_modal.referral_label")}
+                        </div>
+                        <div className="bg-gray-100 p-3 rounded-lg break-all font-mono text-sm">
+                          {referralLink || t("entry_modal.link_loading")}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs text-gray-500 font-bold mb-1">
+                          Ваш Telegram ID
+                        </div>
+                        <div className="bg-gray-100 p-3 rounded-lg break-all font-mono text-sm">
+                          {tgIdStr}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          disabled={!referralLink}
+                          onClick={() => copy(referralLink)}
+                          className={`py-3 rounded-xl font-bold shantell text-white transition ${
+                            referralLink
+                              ? "bg-amber-500 hover:bg-amber-600"
+                              : "bg-gray-400"
+                          }`}
+                        >
+                          {t("entry_modal.copy_link")}
+                        </button>
+
+                        <button
+                          onClick={() => copy(tgIdStr)}
+                          className="py-3 rounded-xl font-bold shantell text-white bg-slate-700 hover:bg-slate-800 transition"
+                        >
+                          {t("entry_modal.copy_id")}
+                        </button>
+                      </div>
+
+                      <a
+                        href={SUPPORT_LINK}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block w-full text-center py-3 rounded-xl font-bold shantell text-white bg-blue-600 hover:bg-blue-700 transition"
+                      >
+                        {t("entry_modal.contact_support")}
+                      </a>
+
+                      <button
+                        onClick={() => setShowSupportBlock(false)}
+                        className="block w-full text-center py-3 rounded-xl font-bold shantell text-gray-700 bg-gray-200 hover:bg-gray-300 transition"
+                      >
+                        Закрыть
+                      </button>
                     </div>
                   </div>
-
-                  <div className="mt-2 grid grid-cols-2 gap-2">
-                    <button
-                      disabled={!referralLink}
-                      onClick={() => copy(referralLink)}
-                      className={`py-2 rounded-xl font-bold shantell text-white transition ${
-                        referralLink
-                          ? "bg-amber-500 hover:bg-amber-600"
-                          : "bg-gray-400"
-                      }`}
-                    >
-                      {t("entry_modal.copy_link")}
-                    </button>
-
-                    <button
-                      onClick={() => copy(tgIdStr)}
-                      className="py-2 rounded-xl font-bold shantell text-white bg-slate-700 hover:bg-slate-800 transition"
-                    >
-                      {t("entry_modal.copy_id")}
-                    </button>
-                  </div>
-
-                  <a
-                    href={SUPPORT_LINK}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-2 block w-full text-center py-2 rounded-xl font-bold shantell text-white bg-blue-600 hover:bg-blue-700 transition"
-                  >
-                    {t("entry_modal.contact_support")}
-                  </a>
                 </div>
               )}
             </div>
