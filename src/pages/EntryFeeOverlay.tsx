@@ -180,7 +180,7 @@ const EntryFeeOverlay = observer(() => {
   const tgIdStr = String(store.user?.telegramId ?? store.user?.id ?? "");
 
   return (
-    <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-md flex items-center justify-center p-4">
       <div className="relative bg-[#FFF3E0] border-4 border-amber-800 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="bg-amber-700 p-4 border-b-4 border-amber-800 text-center">
           <h2 className="text-2xl font-bold text-white shantell uppercase tracking-wider drop-shadow-md">
@@ -195,20 +195,20 @@ const EntryFeeOverlay = observer(() => {
             <img
               src={`${store.imgUrl}img_chif_talk.png`}
               alt={t("entry_modal.chef_alt")}
-              className="w-36 sm:w-48 object-contain relative z-10"
+              className="w-28 sm:w-38 object-contain relative z-10"
             />
           </div>
 
           {/* ЭКРАН 1: ОФФЕР */}
           {!isWaiting ? (
             <>
-              <div className="text-center space-y-2">
+              <div className="text-center space-y-1">
                 <p className="text-amber-900 font-bold text-lg shantell">
                   {t("entry_modal.description")}
                 </p>
 
-                <div className="bg-amber-100 p-3 rounded-xl border-2 border-amber-300">
-                  <p className="text-amber-800 text-sm font-semibold">
+                <div className="bg-amber-100 p-1 rounded-xl border-2 border-amber-300">
+                  <p className="text-amber-800 text-sm shantell">
                     {t("entry_modal.cost_label")}:
                   </p>
                   <p className="text-3xl font-black text-amber-600 shantell mt-1">
@@ -229,6 +229,13 @@ const EntryFeeOverlay = observer(() => {
                 {bankStore.entryCreating
                   ? t("entry_modal.loading")
                   : t("entry_modal.pay_button")}
+              </button>
+
+              <button
+                onClick={() => setShowSupportBlock(true)}
+                className="text-sm text-black"
+              >
+                Техподдержка
               </button>
 
               {bankStore.entryError && (
