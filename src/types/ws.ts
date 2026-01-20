@@ -28,6 +28,7 @@ export type OperationType =
   | "TASKS_COMPLETE"
   | "BANK_LINK_WALLET"
   | "ADMIN_ALL"
+  | "ADMIN_DETAIL"
   | "ADMIN_OPERATION"
   | "PIZZA_BOX_OPEN"
   | "COMBO_TODAY"
@@ -191,6 +192,31 @@ export interface AdminOperationRq {
   operation: "CONFIRMED" | "REJECTED" | "COMPLETE" | "PENDING";
 }
 
+export interface AdminWithdrawDetailData {
+  id: number;
+  telegramId: number;
+  tonAddress: string;
+  amount: number;              // tonAmount
+  createdAt: string;
+
+  totalWithdraws: number;      // totalWithdraws (COMPLETED ton)
+  totalIncome: number;         // totalIncome (PAID ton)
+
+  isBlogger: boolean;
+  refIncomeTon: number;
+  refWithdrawsTon: number;
+  refCount: number;
+
+  openedTotalFloors: number;
+  openedRegularFloors: number;
+  pdollarPerHourTotal: number;
+  pizzaPerHourTotal: number;
+
+  buyPcoinCount: number;
+  buyPcoinTonTotal: number;
+  buyPcoinPcoinTotal: number;
+}
+
 // -------------------- Тип для данных администратора --------------------
 export interface AdminWithdrawalData {
   id: number;
@@ -201,6 +227,11 @@ export interface AdminWithdrawalData {
   status: AdminWithdrawStatus;
   attention: boolean;
   isBlogger: boolean;
+}
+
+export interface AdminDetailRq {
+  id: number;
+  telegramId: number;
 }
 
 // -------------------- Запрос на привязку кошелька --------------------
@@ -412,7 +443,7 @@ export interface WsRequest extends WsBase {
   // административные запросы
   adminAllRq?: AdminAllRq;
   adminOperationRq?: AdminOperationRq;
-
+  adminDetailRq?: AdminDetailRq;
   // этажи
   getFloorRq?: GetFloorRq;
   buyFloorRq?: BuyFloorRq;

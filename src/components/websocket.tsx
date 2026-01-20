@@ -21,7 +21,7 @@ import type {
   PizzaCraftBoxPayload,
   PDollarToPcoinExchangeResponseData,
   FoodBuyResponse,
-  UserFoodStatusDto,
+  UserFoodStatusDto, AdminWithdrawDetailData,
 } from "../types/ws";
 import { bankStore } from "../store/BankStore.ts";
 import { runInAction } from "mobx";
@@ -225,6 +225,18 @@ const WebSocketComponent = observer(() => {
             } else {
               console.error("❌ ADMIN_ALL failed:", parsed.message, parsed);
               toast.error(parsed.message || "ADMIN_ALL failed");
+            }
+            break;
+          }
+
+          case "ADMIN_DETAIL": {
+            if (parsed.success && parsed.data) {
+              store.setAdminDetail(parsed.data as AdminWithdrawDetailData);
+              console.log("✅ ADMIN_DETAIL loaded:", parsed.data);
+            } else {
+              console.error("❌ ADMIN_DETAIL failed:", parsed.message, parsed);
+              store.setAdminDetailError(parsed.message || "ADMIN_DETAIL failed");
+              toast.error(parsed.message || "ADMIN_DETAIL failed");
             }
             break;
           }
