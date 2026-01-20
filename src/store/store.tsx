@@ -13,7 +13,7 @@ import type {
   UserState,
   WsRequest,
   JettonResponse,
-  UserFoodStatusDto,
+  UserFoodStatusDto, AdminWithdrawDetailData,
 } from "../types/ws";
 import type { ChestKeys, PizzaPieces, Rarity, Reward } from "../types/chests";
 import { bankStore } from "./BankStore";
@@ -45,7 +45,9 @@ class Store {
 
   adminData: AdminWithdrawalData[] = [];
   isAdmin = false;
-
+  adminDetail: AdminWithdrawDetailData | null = null;
+  adminDetailLoading = false;
+  adminDetailError: string | null = null;
   tonBalance: string = "0";
   adrss: string = "Подключите кошелек чтобы увидеть адрес";
 
@@ -116,6 +118,8 @@ class Store {
   clearLastRewards = () => {
     this.lastRewards = [];
   };
+
+
 
   /**
    * Очищает данные о последнем результате крафта.
@@ -284,6 +288,53 @@ class Store {
 
   revalidateFoodAfterFloorsChange() {
     this.requestFoodStatusDebounced(400);
+  }
+
+  requestAdminWithdrawDetail(withdrawId: number, targetTgId: number): boolean {
+    if (!this.wsSend || !this.sessionId) {
+      console.warn("⚠️ Не удалось отправить ADMIN_DETAIL — нет сессии или ws");
+      return false;
+    }
+
+    const adminTgId = this.myTgId;
+    if (!adminTgId) {
+      console.warn("⚠️ Не удалось отправить ADMIN_DETAIL — нет telegramId/id");
+      return false;
+    }
+
+    runInAction(() => {
+      this.adminDetailLoading = true;
+      this.adminDetailError = null;
+      this.adminDetail = null;
+    });
+
+    const rq: WsRequest = {
+      type: "ADMIN_DETAIL",
+      requestId: `admindetail_${genId()}`,
+      session: this.sessionId,
+      adminDetailRq: {
+        id: withdrawId,          // id заявки manual_withdraws
+        telegramId: targetTgId,  // tg пользователя, который выводит
+      } as any,
+    };
+
+    console.log("📨 ADMIN_DETAIL отправлен:", rq);
+    return this.send(rq);
+  }
+
+  setAdminDetail(data: AdminWithdrawDetailData | null) {
+    runInAction(() => {
+      this.adminDetail = data;
+      this.adminDetailLoading = false;
+      this.adminDetailError = null;
+    });
+  }
+
+  setAdminDetailError(message: string) {
+    runInAction(() => {
+      this.adminDetailLoading = false;
+      this.adminDetailError = message;
+    });
   }
 
   // =========================================================================
