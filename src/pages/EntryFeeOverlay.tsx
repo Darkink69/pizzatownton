@@ -2,33 +2,33 @@ import { useEffect, useMemo, useState } from "react";
 import { observer } from "mobx-react-lite";
 import store from "../store/store";
 import { bankStore } from "../store/BankStore";
-import {
-  TonConnectButton,
-  useTonConnectUI,
-  useTonWallet,
-} from "@tonconnect/ui-react";
-import { beginCell } from "@ton/core";
+// import {
+//   TonConnectButton,
+//   useTonConnectUI,
+//   useTonWallet,
+// } from "@tonconnect/ui-react";
+// import { beginCell } from "@ton/core";
 import { useTranslation } from "react-i18next";
 
 const SUPPORT_LINK = "https://t.me/pizzatower_support";
 
-function toNano(ton: string | number): string {
-  const amount = typeof ton === "number" ? ton : Number(ton);
-  return BigInt(Math.floor(amount * 1e9)).toString();
-}
+// function toNano(ton: string | number): string {
+//   const amount = typeof ton === "number" ? ton : Number(ton);
+//   return BigInt(Math.floor(amount * 1e9)).toString();
+// }
 
-function encodeCommentAsPayload(comment: string): string {
-  return beginCell()
-    .storeUint(0, 32)
-    .storeStringTail(comment)
-    .endCell()
-    .toBoc()
-    .toString("base64");
-}
+// function encodeCommentAsPayload(comment: string): string {
+//   return beginCell()
+//     .storeUint(0, 32)
+//     .storeStringTail(comment)
+//     .endCell()
+//     .toBoc()
+//     .toString("base64");
+// }
 
 const EntryFeeOverlay = observer(() => {
-  const [tonConnectUI] = useTonConnectUI();
-  const wallet = useTonWallet();
+  // const [tonConnectUI] = useTonConnectUI();
+  // const wallet = useTonWallet();
   const { t } = useTranslation();
 
   // таймер поддержки: запускается только после успешного sendTransaction
@@ -138,35 +138,35 @@ const EntryFeeOverlay = observer(() => {
     }
   };
 
-  const handleWalletPay = async () => {
-    if (
-      !entryOrder?.merchantAddr ||
-      !entryOrder?.amountTon ||
-      !entryOrder?.tonComment
-    )
-      return;
+  // const handleWalletPay = async () => {
+  //   if (
+  //     !entryOrder?.merchantAddr ||
+  //     !entryOrder?.amountTon ||
+  //     !entryOrder?.tonComment
+  //   )
+  //     return;
 
-    const tx = {
-      validUntil: Math.floor(Date.now() / 1000) + 600,
-      messages: [
-        {
-          address: entryOrder.merchantAddr,
-          amount: toNano(entryOrder.amountTon),
-          payload: encodeCommentAsPayload(entryOrder.tonComment),
-        },
-      ],
-    };
+  //   const tx = {
+  //     validUntil: Math.floor(Date.now() / 1000) + 600,
+  //     messages: [
+  //       {
+  //         address: entryOrder.merchantAddr,
+  //         amount: toNano(entryOrder.amountTon),
+  //         payload: encodeCommentAsPayload(entryOrder.tonComment),
+  //       },
+  //     ],
+  //   };
 
-    try {
-      await tonConnectUI.sendTransaction(tx);
-      // стартуем 5-минутный таймер поддержки
-      setPaymentSentAt(Date.now());
-      setShowSupportBlock(false);
-    } catch (err) {
-      // пользователь отменил или ошибка кошелька
-      console.error("❌ TonConnect payment error:", err);
-    }
-  };
+  //   try {
+  //     await tonConnectUI.sendTransaction(tx);
+  //     // стартуем 5-минутный таймер поддержки
+  //     setPaymentSentAt(Date.now());
+  //     setShowSupportBlock(false);
+  //   } catch (err) {
+  //     // пользователь отменил или ошибка кошелька
+  //     console.error("❌ TonConnect payment error:", err);
+  //   }
+  // };
 
   const copy = async (text: string) => {
     try {
@@ -244,7 +244,7 @@ const EntryFeeOverlay = observer(() => {
                 {t("entry_modal.payment_instruction")}
               </p>
 
-              <div className="flex flex-col gap-2 items-center">
+              {/* <div className="flex flex-col gap-2 items-center">
                 {!wallet ? (
                   <TonConnectButton />
                 ) : (
@@ -255,7 +255,7 @@ const EntryFeeOverlay = observer(() => {
                     {t("entry_modal.pay_tonconnect")}
                   </button>
                 )}
-              </div>
+              </div> */}
 
               <div className="text-center mt-2">
                 <div className="flex items-center justify-center gap-2">

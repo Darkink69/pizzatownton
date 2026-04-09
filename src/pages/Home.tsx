@@ -6,13 +6,13 @@ import { Link } from "react-router-dom";
 import fridgeCss from "../css/fridge.module.css";
 import GuideOverlay from "../pages/GuideOverlay";
 import { getCurrentUpgradeCost, getFloorUpgradeData } from "./floorUpgradeData";
-import EntryFeeOverlay from "../pages/EntryFeeOverlay";
+// import EntryFeeOverlay from "../pages/EntryFeeOverlay";
 import { useTranslation } from "react-i18next";
 
 const Home = observer(() => {
   const [jettonUiMessage, setJettonUiMessage] = useState<string | null>(null);
   const [jettonUiType, setJettonUiType] = useState<"success" | "error" | null>(
-    null
+    null,
   );
   const JETTON_DEPOSIT_URL =
     "https://t.me/play_wheelclub_bot?start=cgGoyDUwtm9";
@@ -50,7 +50,7 @@ const Home = observer(() => {
   const [wonPcoins, setWonPcoins] = useState(0);
   const [showPrizeModal, setShowPrizeModal] = useState(false);
   const [prizeModalStage, setPrizeModalStage] = useState<"intro" | "result">(
-    "intro"
+    "intro",
   );
   const [showChancesInfo, setShowChancesInfo] = useState(false);
   const audioNotificationRef = useRef<HTMLAudioElement | null>(null);
@@ -69,17 +69,17 @@ const Home = observer(() => {
   const fridgeStateClass = !hasStatus
     ? fridgeCss.fridgeWarn
     : dailyTotal <= 0
-    ? ""
-    : active
-    ? fridgeCss.fridgeWarn
-    : fridgeCss.fridgeDanger;
+      ? ""
+      : active
+        ? fridgeCss.fridgeWarn
+        : fridgeCss.fridgeDanger;
 
   const isBuyingFood = store.foodBuyInProgress;
   const formatDaysLeft = (daysLeftRaw: any) => {
     const v = Number(daysLeftRaw);
     if (!Number.isFinite(v) || v <= 0)
       return `0${t("home.fridge_modal.d")} 0${t("home.fridge_modal.h")} 0${t(
-        "home.fridge_modal.m"
+        "home.fridge_modal.m",
       )}`;
 
     const totalMinutes = Math.floor(v * 24 * 60);
@@ -88,7 +88,7 @@ const Home = observer(() => {
     const minutes = totalMinutes % 60;
 
     return `${days}${t("home.fridge_modal.d")} ${hours}${t(
-      "home.fridge_modal.h"
+      "home.fridge_modal.h",
     )} ${minutes}${t("home.fridge_modal.m")}`;
   };
 
@@ -103,10 +103,10 @@ const Home = observer(() => {
     dailyTotal <= 0
       ? `${t("home.fridge_modal.status_no_fridges")}`
       : dailyTotal < 2
-      ? `${t("home.fridge_modal.status_low")}`
-      : active
-      ? `${t("home.fridge_modal.status_full")}`
-      : `${t("home.fridge_modal.status_empty")}`;
+        ? `${t("home.fridge_modal.status_low")}`
+        : active
+          ? `${t("home.fridge_modal.status_full")}`
+          : `${t("home.fridge_modal.status_empty")}`;
 
   const canBuyFood =
     dailyTotal > 0 &&
@@ -172,7 +172,7 @@ const Home = observer(() => {
           (currencyParts.length
             ? `Награда: ${currencyParts.join(", ")}\n`
             : "") +
-          (sliceParts.length ? `Кусочки: ${sliceParts.join(", ")}` : "")
+          (sliceParts.length ? `Кусочки: ${sliceParts.join(", ")}` : ""),
       );
       return;
     }
@@ -207,7 +207,7 @@ const Home = observer(() => {
     setJettonUiMessage(
       `Депозит подтверждён!\n` +
         (currencyParts.length ? `Награда: ${currencyParts.join(", ")}\n` : "") +
-        (sliceParts.length ? `Кусочки: ${sliceParts.join(", ")}` : "")
+        (sliceParts.length ? `Кусочки: ${sliceParts.join(", ")}` : ""),
     );
   }, [
     store.jettonLastResult,
@@ -249,7 +249,8 @@ const Home = observer(() => {
   }, [store.areFloorsLoaded]);
 
   useEffect(() => {
-    if (!store.sessionId || (!store.user?.telegramId && !store.user?.id)) return;
+    if (!store.sessionId || (!store.user?.telegramId && !store.user?.id))
+      return;
 
     // ✅ пока вход не оплачен — ничего не показываем
     if (store.user?.isPaidAccess !== true) return;
@@ -263,7 +264,7 @@ const Home = observer(() => {
       setShowPizzaNotification(true);
 
       audioNotificationRef.current = new Audio(
-        `${store.imgUrl}message-notification.m4a`
+        `${store.imgUrl}message-notification.m4a`,
       );
       if (audioNotificationRef.current) {
         audioNotificationRef.current.currentTime = 0;
@@ -481,7 +482,7 @@ const Home = observer(() => {
   // Показ уведомления
   const showNotification = (
     message: string,
-    type: "error" | "success" = "error"
+    type: "error" | "success" = "error",
   ) => {
     setNotification({ message, type });
 
@@ -536,7 +537,7 @@ const Home = observer(() => {
     playSound("win.mp3");
     showNotification(
       t("home.lootbox_modal.buy_success", { reward: res.pcoinReward }),
-      "success"
+      "success",
     );
     store.setLastPizzaBoxResult(null);
   }, [store.lastPizzaBoxResult, t]);
@@ -548,16 +549,18 @@ const Home = observer(() => {
       store.safeUserFloorList?.some((floor) =>
         floor.staff?.some(
           (staff) =>
-            staff.staffName === "Manager" && staff.owned && staff.staffLevel > 0
-        )
+            staff.staffName === "Manager" &&
+            staff.owned &&
+            staff.staffLevel > 0,
+        ),
       ) ?? false;
 
     const hasAnyGuard =
       store.safeUserFloorList?.some((floor) =>
         floor.staff?.some(
           (staff) =>
-            staff.staffName === "Guard" && staff.owned && staff.staffLevel > 0
-        )
+            staff.staffName === "Guard" && staff.owned && staff.staffLevel > 0,
+        ),
       ) ?? false;
 
     const hasManagerNotMaxLevel =
@@ -567,8 +570,8 @@ const Home = observer(() => {
             staff.staffName === "Manager" &&
             staff.owned &&
             staff.staffLevel > 0 &&
-            staff.staffLevel < 5
-        )
+            staff.staffLevel < 5,
+        ),
       ) ?? false;
 
     const hasGuardNotMaxLevel =
@@ -578,8 +581,8 @@ const Home = observer(() => {
             staff.staffName === "Guard" &&
             staff.owned &&
             staff.staffLevel > 0 &&
-            staff.staffLevel < 5
-        )
+            staff.staffLevel < 5,
+        ),
       ) ?? false;
 
     const possibleMessages: Array<{
@@ -658,7 +661,7 @@ const Home = observer(() => {
   const hasAnyStaffHired = (): boolean => {
     if (!store.safeUserFloorList) return false;
     return store.safeUserFloorList.some((floor) =>
-      floor.staff?.some((staff) => staff.owned && staff.staffLevel > 0)
+      floor.staff?.some((staff) => staff.owned && staff.staffLevel > 0),
     );
   };
 
@@ -692,7 +695,7 @@ const Home = observer(() => {
     const accountantLevels = store.userStaff?.accountantLevel ?? [];
     const selected = accountantLevels.find(
       (lvl: { duration?: number; durationDay?: number }) =>
-        (lvl.duration ?? lvl.durationDay) === (option ?? 7)
+        (lvl.duration ?? lvl.durationDay) === (option ?? 7),
     );
 
     const cost = selected?.cost ?? 0;
@@ -744,12 +747,12 @@ const Home = observer(() => {
 
     const hasManager = floorData.staff.some(
       (staff: any) =>
-        staff.staffName === "Manager" && staff.owned && staff.staffLevel > 0
+        staff.staffName === "Manager" && staff.owned && staff.staffLevel > 0,
     );
 
     const hasGuard = floorData.staff.some(
       (staff: any) =>
-        staff.staffName === "Guard" && staff.owned && staff.staffLevel > 0
+        staff.staffName === "Guard" && staff.owned && staff.staffLevel > 0,
     );
 
     if (hasManager && hasGuard) return "manager_guard.mp4";
@@ -781,7 +784,7 @@ const Home = observer(() => {
     const displayFloorNumber = getDisplayFloorNumber(selectedFloor.floorId);
     showNotification(
       t("home.notifications.upgrade_request_sent", { displayFloorNumber }),
-      "success"
+      "success",
     );
 
     const success = store.upgradeFloor(selectedFloor.floorId);
@@ -791,21 +794,21 @@ const Home = observer(() => {
           "UPGRADE SEND floorId=",
           selectedFloor.floorId,
           "level=",
-          selectedFloor.level
+          selectedFloor.level,
         );
         showNotification(
           t("home.notifications.upgrade_success", {
             displayFloorNumber,
             level: (selectedFloor.level ?? 0) + 1,
           }),
-          "success"
+          "success",
         );
       }, 800);
     } else {
       setTimeout(() => {
         showNotification(
           t("home.notifications.upgrade_failed", { displayFloorNumber }),
-          "error"
+          "error",
         );
       }, 800);
     }
@@ -865,12 +868,12 @@ const Home = observer(() => {
     if (success) {
       showNotification(
         t("home.floor.buy_request_sent", { displayFloorNumber }),
-        "success"
+        "success",
       );
     } else {
       showNotification(
         t("home.floor.buy_request_failed", { displayFloorNumber }),
-        "error"
+        "error",
       );
     }
   };
@@ -887,42 +890,42 @@ const Home = observer(() => {
   // Функции для персонала
   const getStaffUpgradeCost = (
     floorId: number,
-    staffType: "manager" | "guard"
+    staffType: "manager" | "guard",
   ): number => {
     const floor = store.safeUserFloorList.find((f) => f.floorId === floorId);
     if (!floor || !floor.staff) return 0;
     const staff = floor.staff.find(
-      (s) => s.staffName.toLowerCase() === staffType
+      (s) => s.staffName.toLowerCase() === staffType,
     );
     if (!staff?.upgradeStaff?.length) return 0;
     const next = staff.upgradeStaff.find(
-      (u) => u.level === staff.staffLevel + 1
+      (u) => u.level === staff.staffLevel + 1,
     );
     return next?.cost ?? staff.upgradeStaff[0].cost;
   };
 
   const getStaffCurrentLevel = (
     floorId: number,
-    staffType: "manager" | "guard"
+    staffType: "manager" | "guard",
   ): number => {
     const floor = store.safeUserFloorList.find((f) => f.floorId === floorId);
     if (!floor || !floor.staff) return 0;
     const staff = floor.staff.find(
-      (s) => s.staffName.toLowerCase() === staffType
+      (s) => s.staffName.toLowerCase() === staffType,
     );
     return staff?.staffLevel ?? 0;
   };
 
   const handleStaffUpgrade = (
     staffType: "manager" | "guard",
-    floorId: number
+    floorId: number,
   ) => {
     playSound("staff.mp3");
     const floor = store.safeUserFloorList.find((f) => f.floorId === floorId);
     if (!floor) {
       showNotification(
         t("home.notifications.staff_not_found", { floorId }),
-        "error"
+        "error",
       );
       return;
     }
@@ -934,7 +937,7 @@ const Home = observer(() => {
     }
 
     const staff = floor.staff.find(
-      (s) => s.staffName.toLowerCase() === staffType
+      (s) => s.staffName.toLowerCase() === staffType,
     );
 
     if (!staff) {
@@ -945,7 +948,7 @@ const Home = observer(() => {
               ? t("home.upgrade_modal.manager_title")
               : t("home.upgrade_modal.guard_title"),
         }),
-        "error"
+        "error",
       );
       console.warn(`Не найден ${staffType} на этаже ${floorId}`, floor.staff);
       return;
@@ -968,7 +971,7 @@ const Home = observer(() => {
       nextLevel,
       undefined,
       floorId,
-      staff.staffName
+      staff.staffName,
     );
 
     if (ok) {
@@ -985,7 +988,7 @@ const Home = observer(() => {
           level: nextLevel,
           displayFloorNumber,
         }),
-        "success"
+        "success",
       );
     } else {
       showNotification(t("home.notifications.staff_hire_error"), "error");
@@ -995,7 +998,7 @@ const Home = observer(() => {
   // Функция для отображения уровней персонала с звездочками
   const renderStaffLevelWithStars = (
     currentLevel: number,
-    labels: string[]
+    labels: string[],
   ) => {
     return (
       <div className="flex gap-1 mt-2">
@@ -1066,7 +1069,7 @@ const Home = observer(() => {
 
   const getCorrectUpgradeCost = (
     floorId: number,
-    currentLevel: number
+    currentLevel: number,
   ): number => {
     let dataFloorId = floorId;
     if (floorId >= 1 && floorId <= 8) {
@@ -1089,7 +1092,7 @@ const Home = observer(() => {
   return (
     <>
       {/* ✅ PAYWALL: показывается только если isAuthed && !isPaidAccess */}
-      <EntryFeeOverlay />
+      {/* <EntryFeeOverlay /> */}
       <div className="relative w-full min-h-screen overflow-y-auto bg-[#FFBC6B]">
         {/* Кнопка звука */}
         <button
@@ -1245,10 +1248,10 @@ const Home = observer(() => {
                 const isBasementImage = floorId === -1;
                 const isRoof = floorId === -2;
                 const manager = floorData?.staff?.find(
-                  (s) => s.staffName === "Manager"
+                  (s) => s.staffName === "Manager",
                 );
                 const guard = floorData?.staff?.find(
-                  (s) => s.staffName === "Guard"
+                  (s) => s.staffName === "Guard",
                 );
 
                 return (
@@ -1641,8 +1644,8 @@ const Home = observer(() => {
                         7,
                         typeof store.foodStatus?.daysLeft === "string"
                           ? parseFloat(store.foodStatus.daysLeft)
-                          : Number(store.foodStatus?.daysLeft) || 0
-                      )
+                          : Number(store.foodStatus?.daysLeft) || 0,
+                      ),
                     ) /
                       7) *
                     50
@@ -1796,10 +1799,10 @@ const Home = observer(() => {
                           dailyTotal <= 0
                             ? "text-amber-700"
                             : dailyTotal < 2
-                            ? "text-yellow-600"
-                            : active
-                            ? "text-green-600"
-                            : "text-red-600"
+                              ? "text-yellow-600"
+                              : active
+                                ? "text-green-600"
+                                : "text-red-600"
                         }`}
                       >
                         {statusText}
@@ -1836,7 +1839,7 @@ const Home = observer(() => {
                         />
                         <span className="text-amber-800 shantell font-bold">
                           {toNum(
-                            store.foodStatus?.weeklyPrice
+                            store.foodStatus?.weeklyPrice,
                           ).toLocaleString()}
                         </span>
                       </div>
@@ -1873,12 +1876,12 @@ const Home = observer(() => {
                       if (!ok) {
                         showNotification(
                           t("home.fridge_modal.buy_error_request"),
-                          "error"
+                          "error",
                         );
                       } else {
                         showNotification(
                           t("home.fridge_modal.buy_success"),
-                          "success"
+                          "success",
                         );
                       }
                     }}
@@ -2009,7 +2012,7 @@ const Home = observer(() => {
                     {[1, 2, 3, 4, 5].map((star, index) => {
                       const isActive = index < (selectedFloor.level ?? 0);
                       const floorUpgrades = getCorrectFloorUpgradeData(
-                        selectedFloor.floorId
+                        selectedFloor.floorId,
                       );
                       const bonus = floorUpgrades[index]?.incomeBonus || 0;
 
@@ -2072,7 +2075,7 @@ const Home = observer(() => {
                         <span className="text-white font-bold shantell">
                           {getCorrectUpgradeCost(
                             selectedFloor.floorId,
-                            selectedFloor.level ?? 0
+                            selectedFloor.level ?? 0,
                           )}
                         </span>
                       </div>
@@ -2103,9 +2106,9 @@ const Home = observer(() => {
                           {renderStaffLevelWithStars(
                             getStaffCurrentLevel(
                               selectedFloor.floorId,
-                              "manager"
+                              "manager",
                             ),
-                            ["+1%", "+2%", "+3%", "+4%", "+5%"]
+                            ["+1%", "+2%", "+3%", "+4%", "+5%"],
                           )}
                         </div>
                       </div>
@@ -2119,13 +2122,13 @@ const Home = observer(() => {
                           disabled={
                             getStaffUpgradeCost(
                               selectedFloor.floorId,
-                              "manager"
+                              "manager",
                             ) > store.pcoin
                           }
                           className={`w-full relative py-2 rounded-lg flex items-center justify-between px-4 ${
                             getStaffUpgradeCost(
                               selectedFloor.floorId,
-                              "manager"
+                              "manager",
                             ) <= store.pcoin
                               ? "hover:opacity-90 cursor-pointer"
                               : "opacity-50 cursor-not-allowed"
@@ -2139,7 +2142,7 @@ const Home = observer(() => {
                           <span className="text-white font-bold text-sm shantell relative z-10">
                             {getStaffCurrentLevel(
                               selectedFloor.floorId,
-                              "manager"
+                              "manager",
                             ) === 0
                               ? t("home.upgrade_modal.hire_button")
                               : t(
@@ -2148,9 +2151,9 @@ const Home = observer(() => {
                                     level:
                                       getStaffCurrentLevel(
                                         selectedFloor.floorId,
-                                        "manager"
+                                        "manager",
                                       ) + 1,
-                                  }
+                                  },
                                 )}
                           </span>
                           <div className="flex items-center gap-1 relative z-10">
@@ -2162,7 +2165,7 @@ const Home = observer(() => {
                             <span className="text-white font-bold text-sm shantell">
                               {getStaffUpgradeCost(
                                 selectedFloor.floorId,
-                                "manager"
+                                "manager",
                               )}
                             </span>
                           </div>
@@ -2188,9 +2191,9 @@ const Home = observer(() => {
                           {renderStaffLevelWithStars(
                             getStaffCurrentLevel(
                               selectedFloor.floorId,
-                              "guard"
+                              "guard",
                             ),
-                            ["-4%", "-3%", "-2%", "-1%", "0%"]
+                            ["-4%", "-3%", "-2%", "-1%", "0%"],
                           )}
                         </div>
                       </div>
@@ -2204,13 +2207,13 @@ const Home = observer(() => {
                           disabled={
                             getStaffUpgradeCost(
                               selectedFloor.floorId,
-                              "guard"
+                              "guard",
                             ) > store.pcoin
                           }
                           className={`w-full relative py-2 rounded-lg flex items-center justify-between px-4 ${
                             getStaffUpgradeCost(
                               selectedFloor.floorId,
-                              "guard"
+                              "guard",
                             ) <= store.pcoin
                               ? "hover:opacity-90 cursor-pointer"
                               : "opacity-50 cursor-not-allowed"
@@ -2224,7 +2227,7 @@ const Home = observer(() => {
                           <span className="text-white font-bold text-sm shantell relative z-10">
                             {getStaffCurrentLevel(
                               selectedFloor.floorId,
-                              "guard"
+                              "guard",
                             ) === 0
                               ? t("home.upgrade_modal.hire_button")
                               : t(
@@ -2233,9 +2236,9 @@ const Home = observer(() => {
                                     level:
                                       getStaffCurrentLevel(
                                         selectedFloor.floorId,
-                                        "guard"
+                                        "guard",
                                       ) + 1,
-                                  }
+                                  },
                                 )}
                           </span>
                           <div className="flex items-center gap-1 relative z-10">
@@ -2247,7 +2250,7 @@ const Home = observer(() => {
                             <span className="text-white font-bold text-sm shantell">
                               {getStaffUpgradeCost(
                                 selectedFloor.floorId,
-                                "guard"
+                                "guard",
                               )}
                             </span>
                           </div>
@@ -2345,7 +2348,7 @@ const Home = observer(() => {
                             key={opt.id}
                             onClick={() =>
                               handleHireAccountant(
-                                opt.duration ?? opt.durationDay
+                                opt.duration ?? opt.durationDay,
                               )
                             }
                             className="flex-1 relative hover:opacity-90 transition-opacity"
@@ -2356,7 +2359,7 @@ const Home = observer(() => {
                                 "home.accountant_modal.subscription_days",
                                 {
                                   days: opt.duration ?? opt.durationDay,
-                                }
+                                },
                               )}
                               className="w-full scale-y-110"
                             />
@@ -2372,7 +2375,7 @@ const Home = observer(() => {
                               </span>
                             </span>
                           </button>
-                        )
+                        ),
                       )}
                     </div>
                   )}
@@ -2487,7 +2490,7 @@ const Home = observer(() => {
                         if (!ok) {
                           showNotification(
                             t("home.ny_box_modal.errors.no_ws_session"),
-                            "error"
+                            "error",
                           );
                           return;
                         }
@@ -2519,7 +2522,7 @@ const Home = observer(() => {
                           setIsJettonChecking(false);
                           setJettonUiType("error");
                           setJettonUiMessage(
-                            t("home.ny_box_modal.errors.buy_failed")
+                            t("home.ny_box_modal.errors.buy_failed"),
                           );
                         }
                       }}
@@ -2551,7 +2554,7 @@ const Home = observer(() => {
                           setIsJettonChecking(false);
                           setJettonUiType("error");
                           setJettonUiMessage(
-                            t("home.ny_box_modal.errors.check_failed")
+                            t("home.ny_box_modal.errors.check_failed"),
                           );
                         }
                       }}
@@ -2581,7 +2584,7 @@ const Home = observer(() => {
                         {jettonAction === "buy_pcoin"
                           ? t("home.ny_box_modal.results.not_enough_pcoin")
                           : t(
-                              "home.ny_box_modal.results.deposit_not_found"
+                              "home.ny_box_modal.results.deposit_not_found",
                             )}{" "}
                       </span>
                     </div>
@@ -2803,8 +2806,8 @@ const Home = observer(() => {
                     {showChancesInfo
                       ? t("home.lootbox_modal.title_about")
                       : prizeModalStage === "intro"
-                      ? t("home.lootbox_modal.title")
-                      : t("home.lootbox_modal.title_congrats")}
+                        ? t("home.lootbox_modal.title")
+                        : t("home.lootbox_modal.title_congrats")}
                   </span>
                 </div>
               </div>

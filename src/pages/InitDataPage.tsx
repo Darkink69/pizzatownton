@@ -1,92 +1,43 @@
-import { type FC, useMemo } from "react";
-import {
-  initDataRaw as _initDataRaw,
-  initDataState as _initDataState,
-  type User,
-  useSignal,
-} from "@telegram-apps/sdk-react";
-import { List, Placeholder } from "@telegram-apps/telegram-ui";
-
+import { type FC } from "react";
 import { Page } from "../components/Page";
-import {
-  DisplayData,
-  type DisplayDataRow,
-} from "../components/DisplayData/DisplayData";
-
-function getUserRows(user: User): DisplayDataRow[] {
-  return Object.entries(user).map(([title, value]) => ({ title, value }));
-}
+import { List, Placeholder } from "@telegram-apps/telegram-ui"; // Заменить на обычные компоненты
+import { DisplayData } from "../components/DisplayData/DisplayData";
 
 export const InitDataPage: FC = () => {
-  const initDataRaw = useSignal(_initDataRaw);
-  const initDataState = useSignal(_initDataState);
+  // Демо-данные вместо реальных из Telegram
+  const demoInitData = {
+    raw: "demo_init_data",
+    auth_date: new Date().toISOString(),
+    hash: "demo_hash",
+    query_id: "demo_query_id",
+  };
 
-  const initDataRows = useMemo<DisplayDataRow[] | undefined>(() => {
-    if (!initDataState || !initDataRaw) {
-      return;
-    }
-    return [
-      { title: "raw", value: initDataRaw },
-      ...Object.entries(initDataState).reduce<DisplayDataRow[]>(
-        (acc, [title, value]) => {
-          if (value instanceof Date) {
-            acc.push({ title, value: value.toISOString() });
-          } else if (!value || typeof value !== "object") {
-            acc.push({ title, value });
-          }
-          return acc;
-        },
-        []
-      ),
-    ];
-  }, [initDataState, initDataRaw]);
+  const demoUser = {
+    id: 123456789,
+    first_name: "Demo",
+    last_name: "User",
+    username: "demouser",
+    language_code: "en",
+  };
 
-  const userRows = useMemo<DisplayDataRow[] | undefined>(() => {
-    return initDataState && initDataState.user
-      ? getUserRows(initDataState.user)
-      : undefined;
-  }, [initDataState]);
+  const demoRows = Object.entries(demoInitData).map(([title, value]) => ({
+    title,
+    value: String(value),
+  }));
 
-  const receiverRows = useMemo<DisplayDataRow[] | undefined>(() => {
-    return initDataState && initDataState.receiver
-      ? getUserRows(initDataState.receiver)
-      : undefined;
-  }, [initDataState]);
+  const userRows = Object.entries(demoUser).map(([title, value]) => ({
+    title,
+    value: String(value),
+  }));
 
-  const chatRows = useMemo<DisplayDataRow[] | undefined>(() => {
-    return !initDataState?.chat
-      ? undefined
-      : Object.entries(initDataState.chat).map(([title, value]) => ({
-          title,
-          value,
-        }));
-  }, [initDataState]);
-
-  if (!initDataRows) {
-    return (
-      <Page>
-        <Placeholder
-          header="Oops"
-          description="Application was launched with missing init data"
-        >
-          <img
-            alt="Telegram sticker"
-            src="https://xelene.me/telegram.gif"
-            style={{ display: "block", width: "144px", height: "144px" }}
-          />
-        </Placeholder>
-      </Page>
-    );
-  }
   return (
     <Page>
       <List>
-        <DisplayData header={"Init Data"} rows={initDataRows} />
-        {userRows && <DisplayData header={"User"} rows={userRows} />}
-        {receiverRows && (
-          <DisplayData header={"Receiver"} rows={receiverRows} />
-        )}
-        {chatRows && <DisplayData header={"Chat"} rows={chatRows} />}
+        <DisplayData header="Init Data (Demo)" rows={demoRows} />
+        <DisplayData header="User (Demo)" rows={userRows} />
+        <Placeholder description="Это демо-режим, данные сгенерированы для примера">
+          🎮
+        </Placeholder>
       </List>
     </Page>
   );

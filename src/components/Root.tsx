@@ -1,8 +1,8 @@
-import { TonConnectUIProvider } from "@tonconnect/ui-react";
+// import { TonConnectUIProvider } from "@tonconnect/ui-react"; // можно оставить если нужен TON
 import { BrowserRouter } from "react-router-dom";
 import { App } from "../components/App.tsx";
 import { ErrorBoundary } from "../components/ErrorBoundary.tsx";
-import { publicUrl } from "../helpers/publicUrl.ts";
+// import { publicUrl } from "../helpers/publicUrl.ts"; // если не нужен TON
 
 function ErrorBoundaryError({ error }: { error: unknown }) {
   return (
@@ -13,8 +13,8 @@ function ErrorBoundaryError({ error }: { error: unknown }) {
           {error instanceof Error
             ? error.message
             : typeof error === "string"
-            ? error
-            : JSON.stringify(error)}
+              ? error
+              : JSON.stringify(error)}
         </code>
       </blockquote>
     </div>
@@ -24,11 +24,10 @@ function ErrorBoundaryError({ error }: { error: unknown }) {
 export function Root() {
   return (
     <ErrorBoundary fallback={ErrorBoundaryError}>
-      <TonConnectUIProvider manifestUrl={publicUrl("tonconnect-manifest.json")}>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </TonConnectUIProvider>
+      {/* Убрать TonConnectUIProvider или оставить с мок-конфигом */}
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
     </ErrorBoundary>
   );
 }

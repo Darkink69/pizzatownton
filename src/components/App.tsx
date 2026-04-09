@@ -1,13 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import {
-  retrieveLaunchParams,
-  initDataRaw as _initDataRaw,
-  isMiniAppDark,
-  miniApp,
-  useSignal,
-} from "@telegram-apps/sdk-react";
-import { AppRoot, Placeholder } from "@telegram-apps/telegram-ui";
 import { observer } from "mobx-react-lite";
 import WebSocketComponent from "../components/websocket";
 import { routes } from "../navigation/routes";
@@ -15,150 +7,62 @@ import store from "../store/store";
 import Preloader from "./Preloader";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
-function getStartParamFromUrlLike(): string | null {
-  try {
-    const url = new URL(window.location.href);
-    const s1 =
-      url.searchParams.get("tgWebAppStartParam") ||
-      url.searchParams.get("startapp") ||
-      url.searchParams.get("start");
-    if (s1) return s1;
-
-    if (url.hash?.includes("?")) {
-      const hashQuery = url.hash.substring(url.hash.indexOf("?") + 1);
-      const hsp = new URLSearchParams(hashQuery);
-      const s2 =
-        hsp.get("tgWebAppStartParam") ||
-        hsp.get("startapp") ||
-        hsp.get("start");
-      if (s2) return s2;
-    }
-  } catch {}
-  return null;
-}
-
-function extractStartParam(
-  rawInitData: unknown,
-  lpStartParam?: unknown,
-): string | null {
-  const raw = typeof rawInitData === "string" ? rawInitData : null;
-  const lp = typeof lpStartParam === "string" ? lpStartParam : null;
-
-  if (raw) {
-    try {
-      const sp = new URLSearchParams(raw);
-      const p = sp.get("start_param");
-      if (p) return p;
-    } catch {}
-  }
-  const tg = (window as any)?.Telegram?.WebApp;
-  const p2 = tg?.initDataUnsafe?.start_param;
-  if (typeof p2 === "string") return p2;
-
-  const p3 = getStartParamFromUrlLike();
-  if (p3) return p3;
-
-  return lp ?? null;
-}
-
 export const App = observer(() => {
-  const lp = useMemo(() => retrieveLaunchParams(), []);
-  const rawInitData = useSignal(_initDataRaw);
-  const isDark = !!useSignal(isMiniAppDark);
-  const startedRef = useRef(false);
-  const startParam = useMemo(
-    () => extractStartParam(rawInitData, lp.startParam),
-    [rawInitData, lp.startParam],
-  );
-  const [debugInfo] = useState<string | null>(null);
-  const [showLoading, setShowLoading] = useState(false);
+  const [showLoading, setShowLoading] = useState(true);
+  const [isTelegramEnv, setIsTelegramEnv] = useState(false);
 
   useEffect(() => {
-    miniApp.ready();
+    // Проверяем окружение
+    const hasTelegram = !!(window as any).Telegram?.WebApp?.initDataUnsafe;
+    setIsTelegramEnv(hasTelegram);
 
-    if (startedRef.current || typeof rawInitData !== "string") return;
-    startedRef.current = true;
+    if (!hasTelegram) {
+      console.log("🎮 Демо-режим");
 
-    const referrerId =
-      typeof startParam === "string" && startParam.startsWith("ref_")
-        ? startParam.slice(4)
-        : null;
+      // Создаем мокового пользователя
+      const mockUser = {
+        id: Date.now(),
+        telegramId: Date.now(),
+        first_name: "Demo",
+        last_name: "User",
+        username: "demouser",
+        language_code: "en",
+        is_premium: true,
+      };
 
-    store.setReferralContext(startParam, referrerId);
+      store.setUser(mockUser);
+      store.setInitDataRaw(`demo_init_data_${Date.now()}`);
+      // store.setAuthenticated(true);
 
-    if (referrerId) {
-      console.log(`РЕФЕРАЛ ОБНАРУЖЕН! ID родителя: ${referrerId}`);
+      // Завершаем загрузку
+      setTimeout(() => {
+        setShowLoading(false);
+      }, 1500);
     } else {
-      console.log("Пользователь зашел без реферальной ссылки.", {
-        startParam,
-        lpStartParam: lp.startParam,
-        rawInitData,
-        initDataUnsafe: (window as any)?.Telegram?.WebApp?.initDataUnsafe,
-      });
+      // Telegram режим
+      const timer = setTimeout(() => setShowLoading(false), 1000);
+      return () => clearTimeout(timer);
     }
-
-    const loadingTimer = setTimeout(() => setShowLoading(true), 3000);
-
-    store.authenticateUser(rawInitData, referrerId).catch((e: unknown) => {
-      console.error("Auth error:", e);
-      clearTimeout(loadingTimer);
-    });
-
-    return () => clearTimeout(loadingTimer);
-  }, [rawInitData, lp.startParam, startParam]);
+  }, []);
 
   if (showLoading) {
-    // Можно убрать ! чтобы запускалось локально
     return <Preloader />;
   }
 
-  if (store.authError) {
-    return (
-      <AppRoot>
-        <Placeholder header="Ошибка" description={store.authError}>
-          Пожалуйста, попробуйте перезапустить приложение.
-        </Placeholder>
-      </AppRoot>
-    );
-  }
-
+  // Убираем проверку store.authError для демо
   return (
-    <AppRoot
-      appearance={isDark ? "dark" : "light"}
-      platform={["macos", "ios"].includes(lp.tgWebAppPlatform) ? "ios" : "base"}
-    >
-      {debugInfo && (
-        <div
-          style={{
-            position: "fixed",
-            top: "10px",
-            left: "10px",
-            backgroundColor: "rgba(0, 0, 0, 0.7)",
-            color: "lime",
-            padding: "10px",
-            borderRadius: "5px",
-            zIndex: 9999,
-            fontSize: "12px",
-            border: "1px solid lime",
-          }}
-        >
-          <strong>DEBUG:</strong> {debugInfo}
-        </div>
-      )}
-
+    <div className={!isTelegramEnv ? "light" : undefined}>
       <LanguageSwitcher />
 
-      {typeof rawInitData === "string" && rawInitData.length > 0 && (
-        <WebSocketComponent />
-      )}
+      {/* WebSocketComponent сам определит режим работы */}
+      <WebSocketComponent />
 
-      {/* Маршруты. BrowserRouter оборачивает App в Root.tsx */}
       <Routes>
         {routes.map(({ path, Component }) => (
           <Route key={path} path={path} element={<Component />} />
         ))}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </AppRoot>
+    </div>
   );
 });

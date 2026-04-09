@@ -13,7 +13,8 @@ import type {
   UserState,
   WsRequest,
   JettonResponse,
-  UserFoodStatusDto, AdminWithdrawDetailData,
+  UserFoodStatusDto,
+  AdminWithdrawDetailData,
 } from "../types/ws";
 import type { ChestKeys, PizzaPieces, Rarity, Reward } from "../types/chests";
 import { bankStore } from "./BankStore";
@@ -118,8 +119,6 @@ class Store {
   clearLastRewards = () => {
     this.lastRewards = [];
   };
-
-
 
   /**
    * Очищает данные о последнем результате крафта.
@@ -313,8 +312,8 @@ class Store {
       requestId: `admindetail_${genId()}`,
       session: this.sessionId,
       adminDetailRq: {
-        id: withdrawId,          // id заявки manual_withdraws
-        telegramId: targetTgId,  // tg пользователя, который выводит
+        id: withdrawId, // id заявки manual_withdraws
+        telegramId: targetTgId, // tg пользователя, который выводит
       } as any,
     };
 
@@ -520,7 +519,7 @@ class Store {
    * @returns {boolean} - true, если запрос был отправлен.
    */
   craftPizza = (
-    rarity: "common" | "uncommon" | "rare" | "mystical"
+    rarity: "common" | "uncommon" | "rare" | "mystical",
   ): boolean => {
     if (!this.wsSend || !this.sessionId || !this.user?.telegramId) return false;
 
@@ -556,7 +555,7 @@ class Store {
     level?: number,
     subscription?: number,
     floorId?: number,
-    staffName?: string
+    staffName?: string,
   ): boolean {
     if (!this.wsSend || !this.sessionId || !this.user?.telegramId) return false;
 
@@ -592,7 +591,7 @@ class Store {
   getNextStaffId(
     floorId: number,
     staffName: string,
-    nextLevel: number
+    nextLevel: number,
   ): number | undefined {
     const floor = this.getFloorById(floorId);
     if (!floor || !Array.isArray(floor.staff)) return undefined;
@@ -811,7 +810,7 @@ class Store {
   linkWallet(tonAddress: string): boolean {
     if (!this.wsSend || !this.sessionId || !this.user?.telegramId) {
       console.warn(
-        "⚠️ Не удалось отправить BANK_LINK_WALLET — нет сессии или ws"
+        "⚠️ Не удалось отправить BANK_LINK_WALLET — нет сессии или ws",
       );
       return false;
     }
@@ -920,7 +919,7 @@ class Store {
   requestManualWithdrawHistory(): boolean {
     if (!this.wsSend || !this.sessionId) {
       console.warn(
-        "⚠️ Не удалось отправить BANK_MANUAL_WITHDRAW_HISTORY — нет сессии или ws"
+        "⚠️ Не удалось отправить BANK_MANUAL_WITHDRAW_HISTORY — нет сессии или ws",
       );
       return false;
     }
@@ -943,7 +942,7 @@ class Store {
 
     console.log(
       "📨 BANK_MANUAL_WITHDRAW_HISTORY отправлен:",
-      JSON.stringify(rq, null, 2)
+      JSON.stringify(rq, null, 2),
     );
 
     // Устанавливаем состояние загрузки
@@ -987,7 +986,7 @@ class Store {
   }
 
   setLastPizzaBoxResult(
-    result: { pizzaSpent: number; pcoinReward: number } | null
+    result: { pizzaSpent: number; pcoinReward: number } | null,
   ) {
     runInAction(() => {
       this.lastPizzaBoxResult = result;
@@ -1034,7 +1033,7 @@ class Store {
           this.accountantEndTime = data.accountant.endDate ?? null;
           localStorage.setItem(
             "accountantData",
-            JSON.stringify(data.accountant)
+            JSON.stringify(data.accountant),
           );
         }
 
@@ -1043,7 +1042,7 @@ class Store {
           this.pdollar = Number(data.user.pdollar ?? this.pdollar);
           this.pizza = Number(
             // берём сначала pizzaAmount, потом user.pizza, потом текущее
-            data.pizzaAmount ?? data.user.pizza ?? this.pizza
+            data.pizzaAmount ?? data.user.pizza ?? this.pizza,
           );
         } else if (
           data.pizzaAmount !== undefined &&
@@ -1072,18 +1071,18 @@ class Store {
                 purchaseCost: null,
                 upgradeCurrency: "stars",
               }
-            : f
+            : f,
         );
 
         const merged = normalized.map((floor) => {
           const existing = this.safeUserFloorList.find(
-            (x) => x.floorId === floor.floorId
+            (x) => x.floorId === floor.floorId,
           );
 
           // если сервер прислал staff → используем его
           const preservedStaff = Array.isArray(floor.staff)
             ? floor.staff
-            : existing?.staff ?? [];
+            : (existing?.staff ?? []);
 
           const preservedBalance = existing?.balance ?? floor.balance ?? 0;
 
@@ -1118,7 +1117,7 @@ class Store {
         console.log(
           `id=${f.floorId} | owned=${f.owned} | staff=${
             Array.isArray(f.staff) ? f.staff.length : "—"
-          }`
+          }`,
         );
       });
       console.groupEnd();
@@ -1141,7 +1140,7 @@ class Store {
     setTimeout(() => {
       runInAction(() => {
         this.claimAnimations = this.claimAnimations.filter(
-          (a) => a.floorId !== floorId
+          (a) => a.floorId !== floorId,
         );
       });
     }, 2000);
@@ -1274,7 +1273,7 @@ class Store {
   completeInvite3Task() {
     if (!this.wsSend || !this.sessionId || !this.user?.telegramId) {
       console.warn(
-        "⚠️ Не удалось отправить TASKS_COMPLETE — нет сессии или ws"
+        "⚠️ Не удалось отправить TASKS_COMPLETE — нет сессии или ws",
       );
       return;
     }
@@ -1425,7 +1424,7 @@ class Store {
     if (!floor || !floor.owned || !floor.upgradeAmount) return false;
     return this.hasEnoughCurrency(
       floor.upgradeAmount,
-      floor.upgradeCurrency ?? "pcoin"
+      floor.upgradeCurrency ?? "pcoin",
     );
   }
 
@@ -1452,18 +1451,78 @@ class Store {
   // -------------------------------------------------------------------------
   async authenticateUser(
     initDataRaw: string,
-    referralCode: string | null
+    referralCode: string | null,
   ): Promise<void> {
+    // Проверяем, запущено ли в Telegram
+    const isTelegramWebApp = !!(window as any).Telegram?.WebApp?.initDataUnsafe;
+
+    if (!isTelegramWebApp) {
+      // Демо-режим
+      console.log("🎮 Демо-режим: пропускаем реальную аутентификацию");
+      return this.authenticateUserDemo();
+    }
+
+    // Оригинальная логика (если нужно сохранить для Telegram)
     this.authError = null;
     this.isAuthenticating = true;
     this.initDataRaw = initDataRaw;
     try {
       console.log("authenticateUser called", { initDataRaw, referralCode });
+      // ... остальная логика
     } catch (err: any) {
       console.warn("authenticateUser error:", err);
       this.authError = "Ошибка при авторизации";
     } finally {
       runInAction(() => (this.isAuthenticating = false));
+    }
+  }
+
+  async authenticateUserDemo(): Promise<void> {
+    this.authError = null;
+    this.isAuthenticating = true;
+
+    try {
+      // Создаем мокового пользователя
+      const mockUser = {
+        id: Date.now(),
+        telegramId: Date.now(),
+        first_name: "Demo",
+        last_name: "User",
+        username: "demouser",
+        language_code: "en",
+        is_premium: true,
+      };
+
+      // Моковая сессия
+      const mockSessionId = `demo_session_${Date.now()}`;
+
+      runInAction(() => {
+        this.user = mockUser;
+        this.sessionId = mockSessionId;
+        this.isAuthed = true;
+        this.isAuthenticating = false;
+
+        // Моковые начальные балансы
+        this.pcoin = 5000;
+        this.pdollar = 1000;
+        this.pizza = 50000;
+
+        // Моковые ключи и кусочки для демо
+        this.keys = { task: 3, referral: 2, deposit: 1 };
+        this.pieces = { common: 10, uncommon: 5, rare: 2, mystical: 1 };
+      });
+
+      // Сохраняем в localStorage
+      localStorage.setItem("user", JSON.stringify(mockUser));
+      localStorage.setItem("demo_mode", "true");
+
+      console.log("✅ Демо-аутентификация успешна");
+    } catch (err: any) {
+      console.warn("Demo auth error:", err);
+      runInAction(() => {
+        this.authError = "Ошибка при загрузке демо-данных";
+        this.isAuthenticating = false;
+      });
     }
   }
 
@@ -1480,18 +1539,18 @@ class Store {
         this.userStaff = userStaff; // сохраняем отдельно
         this.accountantEndTime = userStaff.endDate;
         console.log(
-          `💼 Accountant обновлён: длительность ${userStaff.durationDay} дн., до ${userStaff.endDate}`
+          `💼 Accountant обновлён: длительность ${userStaff.durationDay} дн., до ${userStaff.endDate}`,
         );
         //  Выходим из метода, бухгалтер не принадлежит этажу
         return;
       }
       // ищем нужный этаж
       const floor = this.safeUserFloorList.find(
-        (f) => f.floorId === userStaff.floorId
+        (f) => f.floorId === userStaff.floorId,
       );
       if (!floor) {
         console.warn(
-          `⚠️ Этаж ${userStaff.floorId} не найден для обновления staff`
+          `⚠️ Этаж ${userStaff.floorId} не найден для обновления staff`,
         );
         return;
       }
@@ -1551,7 +1610,7 @@ class Store {
       }
 
       console.log(
-        `🧍 ${userStaff.staffName} обновлён/добавлен: lvl=${userStaff.staffLevel}, floor=${userStaff.floorId}`
+        `🧍 ${userStaff.staffName} обновлён/добавлен: lvl=${userStaff.staffLevel}, floor=${userStaff.floorId}`,
       );
     });
   }
