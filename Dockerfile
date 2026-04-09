@@ -1,19 +1,23 @@
 # --- Этап 1: Сборка статических файлов ---
-FROM node:18-alpine AS build
+FROM node:20-bullseye AS build
 
 WORKDIR /app
 
 # Кэшируем зависимости
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm install --verbose
 
 # Копируем исходники и собираем проект
 COPY . .
 
+# Важно! Чтобы PostCSS/Vite не падал на hash
+ENV NODE_OPTIONS=--openssl-legacy-provider
+
 # --- Собираем с плейсхолдерами ---
 RUN VITE_API_URL="__VITE_API_URL__" \
-    VITE_TIME="__VITE_TIME__" \
+    VITE_WS_URL="__VITE_WS_URL__" \
     npm run build
+
 
 # --- Этап 2: Запуск на Nginx ---
 FROM nginx:1.25-alpine
@@ -34,5 +38,5 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
 
-# ✅ ИСПРАВЛЕНО: убрана лишняя буква "a"
+
 ENTRYPOINT ["/entrypoint.sh"]

@@ -1,67 +1,1628 @@
-import { makeAutoObservable } from "mobx";
+import { makeAutoObservable, runInAction } from "mobx";
+import {
+  normalizeChestKeys,
+  normalizePizzaPieces,
+} from "../utils/chestsNormalize";
+import type {
+  ChestGetStatePayload,
+  ChestOpenPayload,
+  AdminWithdrawalData,
+  ManualWithdrawHistoryItem,
+  TgUser,
+  UserFloor,
+  UserState,
+  WsRequest,
+  JettonResponse,
+  UserFoodStatusDto, AdminWithdrawDetailData,
+} from "../types/ws";
+import type { ChestKeys, PizzaPieces, Rarity, Reward } from "../types/chests";
+import { bankStore } from "./BankStore";
+import translations, { type Language } from "../components/translations";
+import type { ReferralLevelInfoData } from "../types/ws";
 
 class Store {
+  private foodGetDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
   imgUrl =
     "https://s3.twcstorage.ru/c6bae09a-a5938890-9b68-453c-9c54-76c439a70d3e/Pizzatownton/";
 
-  user = {
-  "floorList": [
-    {
-      "floorId": 1,
-      "level": 5,
-      "costCurrency": "PCoin",
-      "costAmount": 1000,
-      "yieldPerHour": 50,
-      "yieldCurrency": "Pizza",
-      "floorName": "Basement"
-    },
-    {
-      "floorId": 2,
-      "level": 3,
-      "costCurrency": "GOLD",
-      "costAmount": 750,
-      "yieldPerHour": 30,
-      "yieldCurrency": "SILVER",
-      "floorName": "1 floor"
-    },
-    {
-      "floorId": 3,
-      "level": 1,
-      "costCurrency": "GOLD",
-      "costAmount": 500,
-      "yieldPerHour": 15,
-      "yieldCurrency": "SILVER",
-      "floorName": "regular"
-    }
-  ],
-  "userFloorList": [
-    {
-      "floorId": 1,
-      "level": 5,
-      "yieldPerHour": 50,
-      "yieldCurrency": "Pizza",
-      "floorName": "regular",
-      "floorType": "Basement"
-    },
-    {
-      "floorId": 3,
-      "level": 1,
-      "yieldPerHour": 15,
-      "yieldCurrency": "SILVER",
-      "floorName": "regular",
-      "floorType": "RESOURCE"
-    }
-  ]
-}
+  initDataRaw = "";
+  referrerId: string | null = null;
+  startParam: string | null = null;
+  private wsSend: ((rq: WsRequest) => boolean) | null = null;
+  private lastChestsStateAt = 0;
+  sessionId: string | null = null;
+  isAuthenticating = false;
+  authError: string | null = null;
 
+  user: TgUser = {};
+  userState: UserState = {};
+
+  get myTgId(): number | null {
+    const tgId = this.user?.telegramId ?? this.user?.id;
+    return tgId ? Number(tgId) : null;
+  }
+
+  adminData: AdminWithdrawalData[] = [];
+  isAdmin = false;
+  adminDetail: AdminWithdrawDetailData | null = null;
+  adminDetailLoading = false;
+  adminDetailError: string | null = null;
+  tonBalance: string = "0";
+  adrss: string = "Подключите кошелек чтобы увидеть адрес";
+
+  pcoin = 0;
+  pdollar = 0;
+  pizza = 20000;
+
+  isAuthed = false;
+  setAuthState(state: boolean) {
+    runInAction(() => {
+      this.isAuthed = state;
+    });
+  }
+
+  claimProgress = 0;
+
+  floorsLoaded = false;
+
+  referral = {
+    totalReferrals: 0,
+    earnedPcoin: 0,
+    earnedPdollar: 0,
+    link: "",
+    levels: [] as ReferralLevelInfoData[],
+  };
+
+  language: Language = "ru";
+  translations = translations;
+  jettonBoxReceived = false;
+
+  //  РЕЗУЛЬТАТ КОРОБКИ ПИЦЦЫ
+  lastPizzaBoxResult: { pizzaSpent: number; pcoinReward: number } | null = null;
+
+  // =========================================================================
+  // CHESTS & CRAFTING
+  // =========================================================================
+
+  keys: ChestKeys = { task: 0, referral: 0, deposit: 0 };
+  pieces: PizzaPieces = { common: 0, uncommon: 0, rare: 0, mystical: 0 };
+
+  // награды последнего открытия сундука (для модалки)
+  lastRewards: Reward[] = [];
+
+  // результат крафта
+  lastCraftResult: {
+    piecesRarity: Rarity;
+    piecesLeft: number;
+    nftPrizeId: number;
+    nftPrizeName?: string;
+    received: boolean;
+  } | null = null;
+
+  gifts: Array<{
+    id: number;
+    code: string;
+    name: string;
+    rarity: Rarity;
+    createdAt: string;
+    withdrawStatus: string;
+  }> = [];
+
+  giftsLoading = false;
+  giftsError: string | null = null;
+
+  /**
+   * Очищает данные о последних полученных наградах.
+   */
+  clearLastRewards = () => {
+    this.lastRewards = [];
+  };
+
+
+
+  /**
+   * Очищает данные о последнем результате крафта.
+   */
+  clearLastCraftResult = () => {
+    this.lastCraftResult = null;
+  };
+
+  /**
+   * Обработчик обновлений состояния от WebSocket.
+   * @param {ChestGetStatePayload | ChestOpenPayload} payload - Данные из ответа CHEST_GET_STATE или CHEST_OPEN.
+   */
+  updateChestsState = (payload: ChestGetStatePayload | ChestOpenPayload) => {
+    runInAction(() => {
+      if ("keys" in payload) {
+        this.keys = normalizeChestKeys(payload.keys);
+      }
+
+      if ("pieces" in payload) {
+        this.pieces = normalizePizzaPieces(payload.pieces);
+      }
+
+      if ("user" in payload && payload.user) {
+        this.updateUserData(payload.user);
+      }
+
+      if ("rewards" in payload) {
+        this.lastRewards = Array.isArray((payload as any).rewards)
+          ? ((payload as any).rewards as Reward[])
+          : [];
+      }
+    });
+  };
+
+  setJettonBoxReceived(r: boolean) {
+    this.jettonBoxReceived = r;
+  }
+
+  buyJettonBoxForPcoin(): boolean {
+    const tgId = this.user?.telegramId ?? this.user?.id;
+    if (!this.wsSend || !this.sessionId || !tgId) return false;
+
+    return this.send({
+      type: "JETTON_BOX_BUY",
+      requestId: genId(),
+      session: this.sessionId,
+      jettonRq: { telegramId: Number(tgId) },
+    });
+  }
+
+  requestFoodStatusDebounced(delayMs = 400): boolean {
+    const tgId = this.user?.telegramId ?? this.user?.id;
+    if (!this.wsSend || !this.sessionId || !tgId) return false;
+
+    // отменяем предыдущий хвост
+    if (this.foodGetDebounceTimer) {
+      clearTimeout(this.foodGetDebounceTimer);
+      this.foodGetDebounceTimer = null;
+    }
+
+    this.foodGetDebounceTimer = setTimeout(() => {
+      this.foodGetDebounceTimer = null;
+
+      // важно: к моменту срабатывания сессия могла уже сброситься
+      const tgId2 = this.user?.telegramId ?? this.user?.id;
+      if (!this.wsSend || !this.sessionId || !tgId2) return;
+
+      this.requestFoodStatus();
+    }, delayMs);
+
+    return true;
+  }
+
+  /**
+   * Запрашивает начальное состояние сундуков и ключей.
+   * @returns {boolean} - true, если запрос был отправлен.
+   */
+  getChestsState = (): boolean => {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) return false;
+
+    const now = Date.now();
+    if (now - this.lastChestsStateAt < 500) return false;
+    this.lastChestsStateAt = now;
+
+    const rq: WsRequest = {
+      type: "CHEST_GET_STATE",
+      requestId: genId(),
+      session: this.sessionId,
+      chestGetStateRq: { telegramId: this.user.telegramId },
+    };
+
+    this.send(rq);
+    return true;
+  };
+
+  handleJettonSuccess(res: JettonResponse) {
+    runInAction(() => {
+      this.jettonLastResult = res;
+      this.jettonLastError = null;
+    });
+
+    this.getChestsState();
+  }
+
+  foodStatus: UserFoodStatusDto | null = null;
+
+  lastFoodGetResult: UserFoodStatusDto | null = null;
+  lastFoodGetError: string | null = null;
+
+  setFoodStatus(status: UserFoodStatusDto | null) {
+    runInAction(() => {
+      this.foodStatus = status;
+    });
+  }
+
+  setLastFoodGetResult(res: UserFoodStatusDto | null) {
+    runInAction(() => {
+      this.lastFoodGetResult = res;
+      this.lastFoodGetError = null;
+      this.foodStatus = res; // главное: обновляем глобальный статус
+    });
+  }
+
+  setLastFoodGetError(err: string | null) {
+    runInAction(() => {
+      this.lastFoodGetError = err;
+      this.lastFoodGetResult = null;
+    });
+  }
+
+  requestFoodStatus(): boolean {
+    const tgId = this.user?.telegramId ?? this.user?.id;
+    if (!this.wsSend || !this.sessionId || !tgId) return false;
+
+    const rq: WsRequest = {
+      type: "FOOD_GET",
+      requestId: genId(),
+      session: this.sessionId,
+      foodGetRq: {
+        telegramId: Number(tgId),
+        floorId: null,
+      } as any,
+    };
+
+    console.log("📨 FOOD_GET отправлен:", rq);
+    return this.send(rq);
+  }
+
+  buyFoodWeekly(): boolean {
+    const tgId = this.user?.telegramId ?? this.user?.id;
+    if (!this.wsSend || !this.sessionId || !tgId) return false;
+
+    const rq: WsRequest = {
+      type: "FOOD_BUY",
+      requestId: genId(),
+      session: this.sessionId,
+      foodBuyRq: {
+        telegramId: Number(tgId),
+        floorId: null, // игнорируется бэком
+      } as any,
+    };
+
+    console.log("✅ FOOD_BUY отправлен:", JSON.stringify(rq, null, 2));
+    return this.send(rq);
+  }
+
+  revalidateFoodAfterFloorsChange() {
+    this.requestFoodStatusDebounced(400);
+  }
+
+  requestAdminWithdrawDetail(withdrawId: number, targetTgId: number): boolean {
+    if (!this.wsSend || !this.sessionId) {
+      console.warn("⚠️ Не удалось отправить ADMIN_DETAIL — нет сессии или ws");
+      return false;
+    }
+
+    const adminTgId = this.myTgId;
+    if (!adminTgId) {
+      console.warn("⚠️ Не удалось отправить ADMIN_DETAIL — нет telegramId/id");
+      return false;
+    }
+
+    runInAction(() => {
+      this.adminDetailLoading = true;
+      this.adminDetailError = null;
+      this.adminDetail = null;
+    });
+
+    const rq: WsRequest = {
+      type: "ADMIN_DETAIL",
+      requestId: `admindetail_${genId()}`,
+      session: this.sessionId,
+      adminDetailRq: {
+        id: withdrawId,          // id заявки manual_withdraws
+        telegramId: targetTgId,  // tg пользователя, который выводит
+      } as any,
+    };
+
+    console.log("📨 ADMIN_DETAIL отправлен:", rq);
+    return this.send(rq);
+  }
+
+  setAdminDetail(data: AdminWithdrawDetailData | null) {
+    runInAction(() => {
+      this.adminDetail = data;
+      this.adminDetailLoading = false;
+      this.adminDetailError = null;
+    });
+  }
+
+  setAdminDetailError(message: string) {
+    runInAction(() => {
+      this.adminDetailLoading = false;
+      this.adminDetailError = message;
+    });
+  }
+
+  // =========================================================================
+  // GIFTS (Jetton Box ITEMS)
+  // =========================================================================
+
+  jettonLastResult: JettonResponse | null = null;
+  jettonLastError: string | null = null;
+
+  setJettonLastResult(res: JettonResponse | null) {
+    runInAction(() => {
+      this.jettonLastResult = res;
+    });
+  }
+
+  setJettonLastError(err: string | null) {
+    runInAction(() => {
+      this.jettonLastError = err;
+    });
+  }
+
+  fixClickJetton(): boolean {
+    const tgId = this.user?.telegramId ?? this.user?.id;
+    if (!this.wsSend || !this.sessionId || !tgId) return false;
+
+    return this.send({
+      type: "FIX_CLICK_JETTON_LINK",
+      requestId: genId(),
+      session: this.sessionId,
+      jettonRq: { telegramId: Number(tgId) },
+    });
+  }
+
+  jettonCheckRequestId: string | null = null;
+
+  checkJettonPayment(): boolean {
+    const tgId = this.user?.telegramId ?? this.user?.id;
+    if (!this.wsSend || !this.sessionId || !tgId) return false;
+
+    const requestId = genId();
+    runInAction(() => {
+      this.jettonCheckRequestId = requestId;
+    });
+
+    return this.send({
+      type: "CHECK_JETTON_PAYMENT",
+      requestId,
+      session: this.sessionId,
+      jettonRq: { telegramId: Number(tgId) },
+    });
+  }
+
+  setPiecesFromAny(payload: unknown) {
+    runInAction(() => {
+      this.pieces = normalizePizzaPieces(payload);
+    });
+  }
+
+  applyJettonReward(res: JettonResponse) {
+    runInAction(() => {
+      this.pieces = {
+        ...this.pieces,
+        common: (this.pieces.common ?? 0) + Number(res.commonSlice ?? 0),
+        uncommon: (this.pieces.uncommon ?? 0) + Number(res.unCommonSlice ?? 0),
+        rare: (this.pieces.rare ?? 0) + Number(res.rareSlice ?? 0),
+        mystical: (this.pieces.mystical ?? 0) + Number(res.mystikalSlice ?? 0),
+      };
+    });
+  }
+
+  // =========================================================================
+  // GIFTS (CRAFTED NFT ITEMS)
+  // =========================================================================
+
+  getGiftsList = (): boolean => {
+    const telegramId = this.user?.telegramId ?? this.user?.id;
+    if (!this.wsSend || !this.sessionId || !telegramId) return false;
+
+    runInAction(() => {
+      this.giftsLoading = true;
+      this.giftsError = null;
+    });
+
+    const rq: WsRequest = {
+      type: "NFT_GIFTS_GET_LIST",
+      requestId: genId(),
+      session: this.sessionId,
+      nftGiftsGetListRq: { telegramId: Number(telegramId) },
+    };
+
+    this.send(rq);
+    console.log("✅ NFT_GIFTS_GET_LIST отправлен:", rq);
+    return true;
+  };
+
+  requestGiftWithdraw = (itemId: number): boolean => {
+    const telegramId = this.user?.telegramId ?? this.user?.id;
+    if (!this.wsSend || !this.sessionId || !telegramId) return false;
+
+    const rq: WsRequest = {
+      type: "NFT_GIFTS_WITHDRAW_REQUEST",
+      requestId: genId(),
+      session: this.sessionId,
+      nftGiftsWithdrawRequestRq: { telegramId: Number(telegramId), itemId },
+    };
+
+    this.send(rq);
+    console.log("✅ NFT_GIFTS_WITHDRAW_REQUEST отправлен:", rq);
+    return true;
+  };
+
+  setGiftsList = (items: Array<any>) => {
+    runInAction(() => {
+      const normalized = (items || []).map((it) => ({
+        id: Number(it.id),
+        code: String(it.code),
+        name: String(it.name),
+        rarity: String(it.rarity).toLowerCase() as Rarity,
+        createdAt: String(it.createdAt),
+        withdrawStatus: String(it.withdrawStatus || "AVAILABLE"),
+      }));
+
+      // по твоему требованию: "после на вывод исчезал" — показываем только AVAILABLE
+      this.gifts = normalized.filter((g) => g.withdrawStatus === "AVAILABLE");
+      this.giftsLoading = false;
+      this.giftsError = null;
+    });
+  };
+
+  setGiftsError = (message: string) => {
+    runInAction(() => {
+      this.giftsLoading = false;
+      this.giftsError = message;
+    });
+  };
+
+  markGiftRequested = (itemId: number) => {
+    runInAction(() => {
+      this.gifts = this.gifts.filter((g) => g.id !== itemId);
+    });
+  };
+
+  foodBuyInProgress = false;
+
+  startFoodBuy(): boolean {
+    if (this.foodBuyInProgress) return false;
+    this.foodBuyInProgress = true;
+
+    const ok = this.buyFoodWeekly();
+    if (!ok) this.foodBuyInProgress = false;
+    return ok;
+  }
+
+  finishFoodBuy() {
+    this.foodBuyInProgress = false;
+  }
+
+  /**
+   * Отправляет запрос на открытие сундука.
+   * @param {'task' | 'referral' | 'deposit'} chestType - Тип сундука.
+   * @returns {boolean} - true, если запрос был отправлен.
+   */
+  openChest = (chestType: "task" | "referral" | "deposit"): boolean => {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) return false;
+
+    const rq: WsRequest = {
+      type: "CHEST_OPEN",
+      requestId: genId(),
+      session: this.sessionId,
+      chestOpenRq: {
+        telegramId: this.user.telegramId,
+        chestType,
+      },
+    };
+    this.send(rq);
+    console.log("✅ CHEST_OPEN отправлен:", rq);
+    return true;
+  };
+
+  /**
+   * Отправляет запрос на крафт NFT-бокса.
+   * @param {'common' | 'uncommon' | 'rare' | 'mystical'} rarity - Редкость создаваемого бокса.
+   * @returns {boolean} - true, если запрос был отправлен.
+   */
+  craftPizza = (
+    rarity: "common" | "uncommon" | "rare" | "mystical"
+  ): boolean => {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) return false;
+
+    const rq: WsRequest = {
+      type: "PIZZA_CRAFT_BOX",
+      requestId: genId(),
+      session: this.sessionId,
+      pizzaCraftBoxRq: {
+        telegramId: this.user.telegramId,
+        rarity,
+      },
+    };
+    this.send(rq);
+    console.log("✅ PIZZA_CRAFT_BOX отправлен:", rq);
+    return true;
+  };
+
+  // =========================================================================
+  // CHESTS & CRAFTING END
+  // =========================================================================
+
+  // ---------------- TASK: INVITE_3_FRIENDS ----------------
+  taskInvite3Status: "idle" | "checking" | "verified" | "rewarded" | "error" =
+    "idle";
+  taskInvite3Error: string | null = null;
+
+  staffData: any = null;
+  userStaff: any = null;
+  accountantEndTime: any;
+
+  sendHireStaff(
+    staffId: number,
+    level?: number,
+    subscription?: number,
+    floorId?: number,
+    staffName?: string
+  ): boolean {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) return false;
+
+    //  для бухгалтера (floorId = 0)
+    if (floorId === 0) {
+      // подставляем правильные staffId из Redis/БД
+      if (subscription === 7) staffId = 81;
+      if (subscription === 14) staffId = 82;
+      if (subscription === 30) staffId = 83;
+    } else if (floorId && staffName && level) {
+      // обычный случай Guard / Manager
+      const nextId = this.getNextStaffId(floorId, staffName, level);
+      if (nextId) staffId = nextId;
+    }
+
+    const rq = {
+      type: "PERSON_BUY",
+      requestId: genId(),
+      session: this.sessionId,
+      buyPersonRq: {
+        telegramId: this.user.telegramId,
+        staffId,
+        level,
+        subscription,
+        floorId,
+      },
+    };
+    this.send(rq);
+    console.log("✅ PERSON_BUY отправлен:", JSON.stringify(rq, null, 2));
+    return true;
+  }
+
+  getNextStaffId(
+    floorId: number,
+    staffName: string,
+    nextLevel: number
+  ): number | undefined {
+    const floor = this.getFloorById(floorId);
+    if (!floor || !Array.isArray(floor.staff)) return undefined;
+
+    const current = floor.staff.find((s) => s.staffName === staffName);
+    if (!current || !Array.isArray(current.upgradeStaff)) return undefined;
+
+    const next = current.upgradeStaff.find((up) => up.level === nextLevel);
+
+    console.group(`🔍 getNextStaffId debug`);
+    console.log("floorId:", floorId);
+    console.log("staffName:", staffName);
+    console.log("nextLevel:", nextLevel);
+    console.log("upgradeStaff:", current.upgradeStaff);
+    console.log("nextFound:", next);
+    console.groupEnd();
+
+    if (next?.staff_id) return next.staff_id;
+
+    return current.staffId;
+  }
+
+  updateClaimProgress(percent: string | number) {
+    runInAction(() => {
+      this.claimProgress = Number(percent) || 0;
+    });
+  }
+
+  setReferralData(data: {
+    totalReferrals?: number;
+    earnedPcoin?: number;
+    earnedPdollar?: number;
+    link?: string;
+    levels?: ReferralLevelInfoData[];
+  }) {
+    runInAction(() => {
+      this.referral.totalReferrals = Number(data.totalReferrals ?? 0);
+      this.referral.earnedPcoin = Number(data.earnedPcoin ?? 0);
+      this.referral.earnedPdollar = Number(data.earnedPdollar ?? 0);
+      this.referral.link = data.link ?? "";
+      this.referral.levels = Array.isArray(data.levels) ? data.levels : [];
+    });
+  }
+
+  requestReferralInfo() {
+    if (this.wsSend && this.sessionId && this.user?.telegramId) {
+      const rq: WsRequest = {
+        type: "REFERRAL_GET",
+        requestId: genId(),
+        session: this.sessionId,
+        referralGetRq: { telegramId: this.user.telegramId },
+      };
+      this.send(rq);
+      console.log("📨 REFERRAL_GET запрос отправлен:", rq);
+      return true;
+    }
+    console.warn("⚠️ Не удалось отправить REFERRAL_GET");
+    return false;
+  }
+
+  userFloors = {
+    success: false,
+    message: "",
+    type: "FLOORS_GET" as const,
+    requestId: "",
+    data: {
+      userFloorList: [] as UserFloor[],
+      pdollarAmount: 0,
+      pizzaAmount: 0,
+      user: {} as TgUser,
+    },
+  };
+
+  bank = bankStore;
 
   constructor() {
     makeAutoObservable(this);
+
+    //  Восстанавливаем данные при старте
+    const savedUser = localStorage.getItem("user");
+    const savedStaff = localStorage.getItem("staffData");
+    const savedFloors = localStorage.getItem("userFloors");
+    const savedAdrss = localStorage.getItem("tonWalletAddress");
+
+    if (savedUser) this.user = JSON.parse(savedUser);
+    if (savedStaff) this.staffData = JSON.parse(savedStaff);
+    if (savedFloors) this.userFloors = JSON.parse(savedFloors);
+    if (savedAdrss) this.adrss = savedAdrss;
+
+    const savedAccountant = localStorage.getItem("accountantData");
+    if (savedAccountant) {
+      try {
+        this.userStaff = JSON.parse(savedAccountant);
+        this.accountantEndTime = this.userStaff?.endDate ?? null;
+      } catch (e) {
+        console.warn("Ошибка чтения accountantData:", e);
+      }
+    }
+
+    const savedTon = localStorage.getItem("tonBalance");
+    if (savedTon) this.tonBalance = savedTon;
   }
 
-  //   setUser(user: any) {
-  //     this.user = user;
-  //   }
+  // -------------------------------------------------------------------------
+  // BASIC GETTERS
+  // -------------------------------------------------------------------------
+  get safeUserFloorList(): UserFloor[] {
+    return this.userFloors?.data?.userFloorList ?? [];
+  }
+
+  get areFloorsLoaded(): boolean {
+    return this.userFloors?.success === true;
+  }
+
+  get currentBalance(): number {
+    return this.pcoin ?? 0;
+  }
+
+  // -------------------------------------------------------------------------
+  // Languages
+  // -------------------------------------------------------------------------
+
+  // Загружаем язык из localStorage
+  loadLanguageFromStorage() {
+    if (typeof window !== "undefined") {
+      const savedLang = localStorage.getItem("app_language") as Language;
+      if (
+        savedLang &&
+        (savedLang === "ru" || savedLang === "en" || savedLang === "es")
+      ) {
+        this.language = savedLang;
+      }
+    }
+  }
+
+  // Сохраняем язык в localStorage
+  saveLanguageToStorage(lang: Language) {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("app_language", lang);
+    }
+  }
+
+  // Устанавливаем язык
+  setLanguage(lang: Language) {
+    this.language = lang;
+    this.saveLanguageToStorage(lang);
+  }
+
+  // Получаем текущие переводы
+  get currentTranslations() {
+    return this.translations[this.language];
+  }
+
+  // Получаем массив доступных языков
+  get availableLanguages(): { code: Language; name: string }[] {
+    return [
+      { code: "ru", name: "Русский" },
+      { code: "en", name: "English" },
+      { code: "es", name: "Español" },
+    ];
+  }
+
+  // -------------------------------------------------------------------------
+  // CURRENCY OPERATIONS
+  // -------------------------------------------------------------------------
+  getCurrentBalanceForCurrency(currency: string): number {
+    switch (currency) {
+      case "pcoin":
+        return this.pcoin;
+      case "pizza":
+      case "stars":
+        return this.pizza;
+      case "pdollar":
+        return this.pdollar;
+      default:
+        return 0;
+    }
+  }
+
+  hasEnoughCurrency(amount: number, currency: string): boolean {
+    return this.getCurrentBalanceForCurrency(currency) >= amount;
+  }
+
+  deductCurrency(amount: number, currency: string): void {
+    runInAction(() => {
+      switch (currency) {
+        case "pcoin":
+          this.pcoin -= amount;
+          break;
+        case "pizza":
+        case "stars":
+          this.pizza -= amount;
+          break;
+        case "pdollar":
+          this.pdollar -= amount;
+          break;
+      }
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // USER DATA
+  // -------------------------------------------------------------------------
+  updateUserData(userData: {
+    pcoin?: number;
+    pdollar?: number;
+    pizza?: number;
+  }) {
+    runInAction(() => {
+      if (userData.pcoin !== undefined) this.pcoin = userData.pcoin;
+      if (userData.pdollar !== undefined) this.pdollar = userData.pdollar;
+      if (userData.pizza !== undefined) this.pizza = userData.pizza;
+    });
+  }
+
+  linkWallet(tonAddress: string): boolean {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) {
+      console.warn(
+        "⚠️ Не удалось отправить BANK_LINK_WALLET — нет сессии или ws"
+      );
+      return false;
+    }
+
+    const rq: WsRequest = {
+      type: "BANK_LINK_WALLET",
+      requestId: genId(),
+      session: this.sessionId,
+      linkWalletRq: {
+        telegramId: this.user.telegramId,
+        tonAddress: tonAddress,
+      },
+    };
+
+    console.log("📨 BANK_LINK_WALLET отправлен:", rq);
+    this.send(rq);
+    return true;
+  }
+
+  // Проверка является ли пользователь администратором
+  checkIsAdmin(): boolean {
+    const adminIds = [813012401, 223867086, 8064944582, 1135470704];
+    const userTgId = this.user?.telegramId || this.user?.id;
+    return adminIds.includes(Number(userTgId));
+  }
+
+  // Запрос административных данных
+  requestAdminData(): boolean {
+    if (!this.wsSend || !this.sessionId) {
+      console.warn("⚠️ Не удалось отправить ADMIN_ALL — нет сессии или ws");
+      return false;
+    }
+
+    const adminTgId = this.myTgId;
+    if (!adminTgId) {
+      console.warn("⚠️ Не удалось отправить ADMIN_ALL — нет telegramId/id");
+      return false;
+    }
+
+    const rq: WsRequest = {
+      type: "ADMIN_ALL",
+      requestId: `admin_${genId()}`,
+      session: this.sessionId,
+      adminAllRq: { telegramId: adminTgId }, // tg админа
+    };
+
+    console.log("📨 ADMIN_ALL отправлен:", rq);
+    return this.send(rq); // важно вернуть результат
+  }
+
+  adminApprove(withdrawId: number): boolean {
+    if (!this.wsSend || !this.sessionId) return false;
+
+    const adminTgId = this.myTgId;
+    if (!adminTgId) return false;
+
+    const rq: WsRequest = {
+      type: "ADMIN_OPERATION",
+      requestId: `adminop_${genId()}`,
+      session: this.sessionId,
+      adminOperationRq: {
+        id: withdrawId,
+        telegramId: adminTgId, // tg админа
+        operation: "CONFIRMED",
+      },
+    };
+
+    console.log("📨 ADMIN_OPERATION CONFIRMED:", rq);
+    return this.send(rq);
+  }
+
+  adminReject(withdrawId: number): boolean {
+    if (!this.wsSend || !this.sessionId) return false;
+
+    const adminTgId = this.myTgId;
+    if (!adminTgId) return false;
+
+    const rq: WsRequest = {
+      type: "ADMIN_OPERATION",
+      requestId: `adminop_${genId()}`,
+      session: this.sessionId,
+      adminOperationRq: {
+        id: withdrawId,
+        telegramId: adminTgId, // tg админа
+        operation: "REJECTED",
+      },
+    };
+
+    console.log("📨 ADMIN_OPERATION REJECTED:", rq);
+    return this.send(rq);
+  }
+
+  // Установка административных данных
+  setAdminData(data: AdminWithdrawalData[]) {
+    runInAction(() => {
+      this.adminData = data;
+      console.log("📊 Админ данные получены:", data);
+    });
+  }
+
+  // Состояние для истории выводов
+  manualWithdrawHistory: ManualWithdrawHistoryItem[] = [];
+  isManualWithdrawHistoryLoading: boolean = false;
+
+  // Метод для запроса истории выводов (точный формат запроса)
+  requestManualWithdrawHistory(): boolean {
+    if (!this.wsSend || !this.sessionId) {
+      console.warn(
+        "⚠️ Не удалось отправить BANK_MANUAL_WITHDRAW_HISTORY — нет сессии или ws"
+      );
+      return false;
+    }
+
+    const tgId = this.user?.telegramId ?? this.user?.id;
+    if (!tgId) {
+      console.warn("⚠️ Нет telegramId/id для BANK_MANUAL_WITHDRAW_HISTORY");
+      return false;
+    }
+
+    // Точный формат запроса как в примере
+    const rq: WsRequest = {
+      type: "BANK_MANUAL_WITHDRAW_HISTORY",
+      requestId: genId(),
+      session: this.sessionId,
+      manualWithdrawHistoryRq: {
+        telegramId: Number(tgId), // Важно: именно Number
+      },
+    };
+
+    console.log(
+      "📨 BANK_MANUAL_WITHDRAW_HISTORY отправлен:",
+      JSON.stringify(rq, null, 2)
+    );
+
+    // Устанавливаем состояние загрузки
+    runInAction(() => {
+      this.isManualWithdrawHistoryLoading = true;
+    });
+
+    this.send(rq);
+    return true;
+  }
+
+  // Метод для установки истории выводов
+  setManualWithdrawHistory(items: ManualWithdrawHistoryItem[]) {
+    runInAction(() => {
+      this.manualWithdrawHistory = items || [];
+      this.isManualWithdrawHistoryLoading = false;
+    });
+  }
+
+  // Метод для сброса состояния загрузки (на случай ошибки)
+  setManualWithdrawHistoryError() {
+    runInAction(() => {
+      this.isManualWithdrawHistoryLoading = false;
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // PIZZA BOX (лутбокс за 2000 pizza)
+  // -------------------------------------------------------------------------
+
+  craftNftBox(rarity: Rarity) {
+    const telegramId = this.user?.telegramId ?? this.user?.id;
+    if (!this.wsSend || !this.sessionId || !telegramId) return false;
+
+    this.wsSend?.({
+      type: "PIZZA_CRAFT_BOX",
+      requestId: genId(),
+      session: this.sessionId,
+      pizzaCraftBoxRq: { telegramId, rarity },
+    });
+  }
+
+  setLastPizzaBoxResult(
+    result: { pizzaSpent: number; pcoinReward: number } | null
+  ) {
+    runInAction(() => {
+      this.lastPizzaBoxResult = result;
+    });
+  }
+
+  openPizzaBox(): boolean {
+    if (!this.wsSend || !this.sessionId) {
+      console.warn("⚠️ Нет ws или sessionId");
+      return false;
+    }
+    const tgId = this.user?.telegramId ?? this.user?.id;
+    if (!tgId) {
+      console.warn("⚠️ Нет telegramId/id для PIZZA_BOX_OPEN");
+      return false;
+    }
+
+    const rq: WsRequest = {
+      type: "PIZZA_BOX_OPEN",
+      requestId: genId(),
+      session: this.sessionId!,
+      pizzaBoxOpenRq: { telegramId: tgId },
+    };
+
+    console.log("📨 PIZZA_BOX_OPEN:", rq);
+    this.send(rq);
+    return true;
+  }
+
+  // -------------------------------------------------------------------------
+  // FLOORS
+  // -------------------------------------------------------------------------
+
+  setFloorsData(payload: any) {
+    try {
+      const response = payload || {};
+      const data = response.data || {};
+      const incoming = data.userFloorList ?? [];
+
+      runInAction(() => {
+        // 1. Сохраняем бухгалтера в стор и в localStorage
+        if (data.accountant !== undefined && data.accountant !== null) {
+          this.userStaff = data.accountant;
+          this.accountantEndTime = data.accountant.endDate ?? null;
+          localStorage.setItem(
+            "accountantData",
+            JSON.stringify(data.accountant)
+          );
+        }
+
+        if (data.user) {
+          this.pcoin = Number(data.user.pcoin ?? this.pcoin);
+          this.pdollar = Number(data.user.pdollar ?? this.pdollar);
+          this.pizza = Number(
+            // берём сначала pizzaAmount, потом user.pizza, потом текущее
+            data.pizzaAmount ?? data.user.pizza ?? this.pizza
+          );
+        } else if (
+          data.pizzaAmount !== undefined &&
+          data.pizzaAmount !== null
+        ) {
+          this.pizza = Number(data.pizzaAmount);
+        }
+
+        if (data.pizzaAmount !== undefined && data.pizzaAmount !== null) {
+          this.pizza = Number(data.pizzaAmount);
+        }
+
+        let normalized = Array.isArray(incoming)
+          ? incoming.map((f: any) => ({
+              ...f,
+              owned: f.owned ?? f.isOwned ?? false,
+              earned: f.earned ?? 0,
+            }))
+          : [];
+
+        normalized = normalized.map((f: any) =>
+          f.floorId === 1
+            ? {
+                ...f,
+                owned: true,
+                purchaseCost: null,
+                upgradeCurrency: "stars",
+              }
+            : f
+        );
+
+        const merged = normalized.map((floor) => {
+          const existing = this.safeUserFloorList.find(
+            (x) => x.floorId === floor.floorId
+          );
+
+          // если сервер прислал staff → используем его
+          const preservedStaff = Array.isArray(floor.staff)
+            ? floor.staff
+            : existing?.staff ?? [];
+
+          const preservedBalance = existing?.balance ?? floor.balance ?? 0;
+
+          return {
+            ...floor,
+            staff: preservedStaff,
+            balance: preservedBalance,
+          };
+        });
+
+        this.userFloors = {
+          success: !!response.success,
+          message: response.message ?? "",
+          type: response.type ?? "FLOORS_GET",
+          requestId: response.requestId ?? "",
+          data: {
+            userFloorList: merged,
+            pdollarAmount: Number(data.pdollarAmount ?? 0),
+            pizzaAmount: Number(data.pizzaAmount ?? 0),
+            user: data.user ?? {},
+            accountant: data.accountant ?? this.userStaff ?? null,
+          } as any,
+        };
+        localStorage.setItem("userFloors", JSON.stringify(this.userFloors));
+        this.floorsLoaded = true;
+      });
+
+      console.group("📊 Floors after fresh update from server");
+      console.log("💰 pcoin сейчас:", this.pcoin);
+
+      this.safeUserFloorList.forEach((f) => {
+        console.log(
+          `id=${f.floorId} | owned=${f.owned} | staff=${
+            Array.isArray(f.staff) ? f.staff.length : "—"
+          }`
+        );
+      });
+      console.groupEnd();
+    } catch (e) {
+      console.warn("setFloorsData failed:", e);
+    }
+  }
+
+  lastClaimRewards: {
+    floorId: number;
+    amount: number;
+    currency: string;
+  } | null = null;
+
+  claimAnimations: { floorId: number; amount: number; currency: string }[] = [];
+
+  addClaimAnimation(floorId: number, amount: number, currency: string) {
+    this.claimAnimations.push({ floorId, amount, currency });
+    // автоматически удалить через пару секунд
+    setTimeout(() => {
+      runInAction(() => {
+        this.claimAnimations = this.claimAnimations.filter(
+          (a) => a.floorId !== floorId
+        );
+      });
+    }, 2000);
+  }
+
+  // -------------------------------------------------------------------------
+  // WEBSOCKET / AUTH
+  // -------------------------------------------------------------------------
+  setWsSend(fn?: (rq: WsRequest) => boolean) {
+    this.wsSend = fn ?? null;
+  }
+
+  setInitDataRaw(data: string) {
+    this.initDataRaw = data;
+  }
+
+  setReferralContext(startParam: string | null, referrerId: string | null) {
+    runInAction(() => {
+      this.startParam = startParam;
+      this.referrerId = referrerId;
+    });
+  }
+
+  setUser(user?: TgUser) {
+    runInAction(() => {
+      this.user = user ?? {};
+    });
+    localStorage.setItem("user", JSON.stringify(this.user));
+  }
+
+  setUserState(userState?: UserState) {
+    if (!userState) return;
+    runInAction(() => (this.userState = { ...this.userState, ...userState }));
+  }
+
+  setSessionId(sessionId?: string | null) {
+    this.sessionId = sessionId ?? null;
+  }
+
+  setAuthError(message: string | null) {
+    this.authError = message;
+  }
+
+  setAdrss(a: string) {
+    runInAction(() => {
+      this.adrss = a;
+      localStorage.setItem("tonWalletAddress", a);
+    });
+  }
+
+  setTonBalance(b: string) {
+    runInAction(() => {
+      this.tonBalance = b;
+      localStorage.setItem("tonBalance", b);
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // SEND REQUESTS
+  // -------------------------------------------------------------------------
+  send(rq: WsRequest): boolean {
+    const sender = this.wsSend;
+    if (!sender) {
+      console.warn("WS not connected — send aborted:", rq?.type);
+      return false;
+    }
+    return sender(rq);
+  }
+
+  requestFloorsData() {
+    if (this.wsSend && this.sessionId && this.user?.telegramId) {
+      this.wsSend({
+        type: "FLOORS_GET",
+        requestId: genId(),
+        session: this.sessionId,
+        getFloorRq: { telegramId: this.user.telegramId },
+      });
+      return true;
+    }
+    return false;
+  }
+
+  sendClaimDo(floorId: number) {
+    try {
+      this.ensureWs();
+      const tgId = this.user?.telegramId ?? this.user?.id ?? 0;
+
+      this.wsSend!({
+        type: "CLAIM_DO",
+        requestId: genId(),
+        session: this.sessionId!,
+        claimDoRq: { telegramId: tgId, floorId },
+      });
+
+      return true;
+    } catch (e) {
+      console.warn("CLAIM_DO error:", e);
+      return false;
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // TASKS: INVITE_3_FRIENDS
+  // -------------------------------------------------------------------------
+  verifyInvite3Task() {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) {
+      console.warn("⚠️ Не удалось отправить TASKS_VERIFY — нет сессии или ws");
+      return;
+    }
+
+    runInAction(() => {
+      this.taskInvite3Status = "checking";
+      this.taskInvite3Error = null;
+    });
+
+    const rq: WsRequest = {
+      type: "TASKS_VERIFY",
+      requestId: genId(),
+      session: this.sessionId!,
+      taskRq: {
+        telegramId: this.user.telegramId!,
+        code: "INVITE_3_FRIENDS",
+      },
+    };
+
+    console.log("📨 TASKS_VERIFY INVITE_3_FRIENDS:", rq);
+    this.send(rq);
+  }
+
+  completeInvite3Task() {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) {
+      console.warn(
+        "⚠️ Не удалось отправить TASKS_COMPLETE — нет сессии или ws"
+      );
+      return;
+    }
+
+    if (this.taskInvite3Status !== "verified") {
+      console.warn("⚠️ TASKS_COMPLETE возможен только после verified");
+      return;
+    }
+
+    const rq: WsRequest = {
+      type: "TASKS_COMPLETE",
+      requestId: genId(),
+      session: this.sessionId!,
+      taskRq: {
+        telegramId: this.user.telegramId!,
+        code: "INVITE_3_FRIENDS",
+      },
+    };
+
+    console.log("📨 TASKS_COMPLETE INVITE_3_FRIENDS:", rq);
+    this.send(rq);
+  }
+
+  resetInvite3TaskState() {
+    runInAction(() => {
+      this.taskInvite3Status = "idle";
+      this.taskInvite3Error = null;
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // TASKS: DAILY COMBO
+  // -------------------------------------------------------------------------
+  sendComboToday(): boolean {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) {
+      console.warn("⚠️ Не удалось отправить COMBO_TODAY — нет сессии или ws");
+      return false;
+    }
+
+    const rq = {
+      type: "COMBO_TODAY" as const,
+      requestId: genId(),
+      session: this.sessionId!,
+      comboRq: {
+        telegramId: this.user.telegramId,
+      },
+    };
+
+    console.log("📨 COMBO_TODAY отправлен:", rq);
+    this.send(rq);
+    return true;
+  }
+
+  sendComboPick(index: number): boolean {
+    if (!this.wsSend || !this.sessionId || !this.user?.telegramId) {
+      console.warn("⚠️ Не удалось отправить COMBO_PICK — нет сессии или ws");
+      return false;
+    }
+
+    const rq = {
+      type: "COMBO_PICK" as const,
+      requestId: genId(),
+      session: this.sessionId!,
+      pickComboRq: {
+        telegramId: this.user.telegramId,
+        index: index, // Индекс с 1
+      },
+    };
+
+    console.log("📨 COMBO_PICK отправлен:", rq);
+    this.send(rq);
+    return true;
+  }
+
+  // -------------------------------------------------------------------------
+  // FLOORS OPERATIONS
+  // -------------------------------------------------------------------------
+  buyNewFloor(floorId: number): boolean {
+    const floor = this.getFloorById(floorId);
+
+    // ⛔ Basement не покупаем
+    if (!floor || floorId === 1 || floor.owned) return false;
+
+    const price = Number(floor.purchaseCost ?? 0);
+    const currency = floor.upgradeCurrency ?? "pcoin";
+
+    if (price <= 0) return false;
+    if (!this.hasEnoughCurrency(price, currency)) {
+      console.warn(`Недостаточно ${currency} для покупки этажа ${floorId}`);
+      return false;
+    }
+
+    try {
+      this.ensureWs();
+      const tgId = this.user?.telegramId ?? this.user?.id ?? 0;
+      this.wsSend!({
+        type: "FLOORS_BUY",
+        requestId: genId(),
+        session: this.sessionId!,
+        buyFloorRq: { telegramId: tgId, floorId },
+      });
+
+      return true;
+    } catch (e) {
+      console.warn("FLOORS_BUY failed", e);
+      return false;
+    }
+  }
+
+  upgradeFloor(floorId: number): boolean {
+    const floor = this.safeUserFloorList.find((f) => f.floorId === floorId);
+    if (!floor || !floor.owned || !floor.upgradeAmount) return false;
+
+    const cost = floor.upgradeAmount;
+    const currency = floor.upgradeCurrency ?? "pcoin";
+
+    if (!this.hasEnoughCurrency(cost, currency)) {
+      console.warn(`Недостаточно ${currency} для апгрейда этажа ${floorId}`);
+      return false;
+    }
+
+    try {
+      this.ensureWs();
+      const tgId = this.user?.telegramId ?? this.user?.id ?? 0;
+      this.wsSend!({
+        type: "FLOORS_UPGRADE",
+        requestId: genId(),
+        session: this.sessionId!,
+        updateFloorRq: { telegramId: tgId, floorId },
+      });
+
+      return true;
+    } catch (e) {
+      console.warn("FLOORS_UPGRADE failed", e);
+      return false;
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // GETTERS / CHECKERS
+  // -------------------------------------------------------------------------
+  getFloorById(floorId: number): UserFloor | undefined {
+    return this.safeUserFloorList.find((f) => f.floorId === floorId);
+  }
+
+  canUpgradeFloor(floorId: number): boolean {
+    const floor = this.getFloorById(floorId);
+    if (!floor || !floor.owned || !floor.upgradeAmount) return false;
+    return this.hasEnoughCurrency(
+      floor.upgradeAmount,
+      floor.upgradeCurrency ?? "pcoin"
+    );
+  }
+
+  getFloorCost(floorId: number): number {
+    return this.getFloorById(floorId)?.purchaseCost ?? 0;
+  }
+
+  getUpgradeCost(floorId: number): number {
+    return this.getFloorById(floorId)?.upgradeAmount ?? 0;
+  }
+
+  canBuyFloor(floorId: number): boolean {
+    const floor = this.getFloorById(floorId);
+    if (!floor || floorId === 1 || floor.owned) return false;
+
+    const price = Number(floor.purchaseCost ?? 0);
+    const currency = floor.upgradeCurrency ?? "pcoin";
+
+    return price > 0 && this.hasEnoughCurrency(price, currency);
+  }
+
+  // -------------------------------------------------------------------------
+  // AUTHENTICATION STUB
+  // -------------------------------------------------------------------------
+  async authenticateUser(
+    initDataRaw: string,
+    referralCode: string | null
+  ): Promise<void> {
+    this.authError = null;
+    this.isAuthenticating = true;
+    this.initDataRaw = initDataRaw;
+    try {
+      console.log("authenticateUser called", { initDataRaw, referralCode });
+    } catch (err: any) {
+      console.warn("authenticateUser error:", err);
+      this.authError = "Ошибка при авторизации";
+    } finally {
+      runInAction(() => (this.isAuthenticating = false));
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // STAFF UPDATE
+  // -------------------------------------------------------------------------
+  updateAfterStaffBuy(data: any) {
+    if (!data?.userStaff) return;
+    const { userStaff, user } = data;
+
+    runInAction(() => {
+      // 🔹 Специальная ветка: бухгалтер (floorId = 0)
+      if (userStaff.floorId === 0 && userStaff.staffName === "Accountant") {
+        this.userStaff = userStaff; // сохраняем отдельно
+        this.accountantEndTime = userStaff.endDate;
+        console.log(
+          `💼 Accountant обновлён: длительность ${userStaff.durationDay} дн., до ${userStaff.endDate}`
+        );
+        //  Выходим из метода, бухгалтер не принадлежит этажу
+        return;
+      }
+      // ищем нужный этаж
+      const floor = this.safeUserFloorList.find(
+        (f) => f.floorId === userStaff.floorId
+      );
+      if (!floor) {
+        console.warn(
+          `⚠️ Этаж ${userStaff.floorId} не найден для обновления staff`
+        );
+        return;
+      }
+
+      // гарантируем, что floor.staff — массив
+      if (!Array.isArray(floor.staff)) {
+        floor.staff = [];
+      }
+
+      // Находим или создаём персонажа по имени
+      let staff = floor.staff.find((s) => s.staffName === userStaff.staffName);
+      if (!staff) {
+        staff = {
+          staffId: userStaff.staffId,
+          staffName: userStaff.staffName,
+          staffLevel: userStaff.staffLevel ?? 1,
+          startDate: userStaff.startDate,
+          endDate: userStaff.endDate,
+          durationDay: userStaff.durationDay,
+          upgradeStaff: [],
+          accountantLevel: userStaff.accountantLevel,
+          owned: true,
+        };
+        floor.staff.push(staff);
+      } else {
+        staff.staffId = userStaff.staffId;
+        staff.staffLevel = userStaff.staffLevel ?? staff.staffLevel;
+        staff.startDate = userStaff.startDate;
+        staff.endDate = userStaff.endDate;
+        staff.owned = true;
+      }
+
+      // 🧩 гарантируем наличие обеих ролей (Guard / Manager)
+      const roles = ["Guard", "Manager"];
+      const staffList = floor.staff ?? (floor.staff = []); // создаём или берём существующий массив
+      for (const role of roles) {
+        if (!staffList.find((s) => s.staffName === role)) {
+          staffList.push({
+            staffId: 0,
+            staffName: role,
+            staffLevel: 0,
+            startDate: null,
+            endDate: null,
+            durationDay: null,
+            upgradeStaff: [],
+            accountantLevel: [],
+            owned: false,
+          });
+        }
+      }
+
+      // обновляем балансы пользователя, если сервер прислал fresh‑данные
+      if (user) {
+        if (user.pcoin !== undefined) this.pcoin = user.pcoin;
+        if (user.pdollar !== undefined) this.pdollar = user.pdollar;
+        if (user.pizza !== undefined) this.pizza = user.pizza;
+      }
+
+      console.log(
+        `🧍 ${userStaff.staffName} обновлён/добавлен: lvl=${userStaff.staffLevel}, floor=${userStaff.floorId}`
+      );
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // SYSTEM & RESET
+  // -------------------------------------------------------------------------
+  private ensureWs() {
+    if (!this.wsSend) throw new Error("WS sender is not set");
+    if (!this.sessionId) throw new Error("No session id");
+  }
+
+  resetSession() {
+    runInAction(() => {
+      // очищаем все текущие данные в MobX
+      this.sessionId = null;
+      this.user = {};
+      this.userState = {};
+      this.floorsLoaded = false;
+
+      this.pcoin = 0;
+      this.pdollar = 0;
+      this.pizza = 0;
+
+      this.userFloors = {
+        success: false,
+        message: "",
+        type: "FLOORS_GET",
+        requestId: "",
+        data: {
+          userFloorList: [],
+          pdollarAmount: 0,
+          pizzaAmount: 0,
+          user: {},
+        },
+      };
+
+      this.staffData = null;
+      this.userStaff = null;
+      this.referral = {
+        totalReferrals: 0,
+        earnedPcoin: 0,
+        earnedPdollar: 0,
+        link: "",
+        levels: [],
+      };
+      this.taskInvite3Status = "idle";
+      this.taskInvite3Error = null;
+      this.claimProgress = 0;
+    });
+
+    // ✅ ВАЖНО: чистим food debounce, чтобы не улетел FOOD_GET после выхода
+    if (this.foodGetDebounceTimer) {
+      clearTimeout(this.foodGetDebounceTimer);
+      this.foodGetDebounceTimer = null;
+    }
+
+    // сбрасываем внешние стейты
+    this.bank.reset?.();
+
+    // чистим локальный кэш
+    localStorage.removeItem("user");
+    localStorage.removeItem("userFloors");
+    localStorage.removeItem("staffData");
+
+    console.log("🧹 Сессия полностью сброшена");
+  }
+}
+
+function genId(): string {
+  return Math.random().toString(36).slice(2, 10);
 }
 
 export default new Store();

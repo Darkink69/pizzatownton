@@ -19,6 +19,12 @@ const Footer = () => {
       to: "/tasks",
     },
     {
+      id: 5,
+      baseName: "b_gifts",
+      alt: "chests",
+      to: "/chests",
+    },
+    {
       id: 3,
       baseName: "b_friends",
       alt: "Friends",
@@ -52,7 +58,11 @@ const Footer = () => {
               <img
                 src={getImageSrc(button.baseName, button.to)}
                 alt={button.alt}
-                className="h-12 w-auto object-contain md:h-14 lg:h-16"
+                className={
+                  button.baseName === "b_gifts"
+                    ? "h-24 w-auto object-contain md:h-16 lg:h-18"
+                    : "h-12 w-auto object-contain md:h-14 lg:h-16"
+                }
               />
             </Link>
           ))}

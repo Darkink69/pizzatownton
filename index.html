@@ -1,16 +1,70 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pizzatownton</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Shantell+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+    <title>PizzaTowerTON</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+            href="https://fonts.googleapis.com/css2?family=Shantell+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+            rel="stylesheet"
+    />
+    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+    <script src="https://static.adsgram.ai/js/task.js"></script>
+
+
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript">
+        (function (m, e, t, r, i, k, a) {
+            m[i] =
+                m[i] ||
+                function () {
+                    (m[i].a = m[i].a || []).push(arguments);
+                };
+            m[i].l = 1 * new Date();
+            for (var j = 0; j < document.scripts.length; j++) {
+                if (document.scripts[j].src === r) return;
+            }
+            (k = e.createElement(t)),
+                (a = e.getElementsByTagName(t)[0]),
+                (k.async = 1),
+                (k.src = r),
+                a.parentNode.insertBefore(k, a);
+        })(
+            window,
+            document,
+            "script",
+            "https://mc.yandex.ru/metrika/tag.js?id=105364100",
+            "ym"
+        );
+
+        ym(105364100, "init", {
+            ssr: true,
+            webvisor: true,
+            clickmap: true,
+            ecommerce: "dataLayer",
+            accurateTrackBounce: true,
+            trackLinks: true,
+        });
+    </script>
+    <!-- /Yandex.Metrika counter -->
+</head>
+
+<body>
+<noscript>
+    <div>
+        <img
+                src="https://mc.yandex.ru/watch/105364100"
+                style="position:absolute; left:-9999px;"
+                alt=""
+        />
+    </div>
+</noscript>
+
+<div id="root"></div>
+<script type="module" src="/src/index.tsx"></script>
+</body>
 </html>

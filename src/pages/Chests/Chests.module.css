@@ -1,0 +1,203 @@
+@import "tailwindcss";
+/* Force reload */
+.pageWrapper {
+  @apply relative min-h-screen w-full overflow-hidden;
+}
+
+.backgroundContainer {
+    @apply absolute inset-0 bg-[#FFBC6B];
+}
+
+.backgroundImage {
+  @apply w-full h-full bg-cover bg-center bg-no-repeat sm:bg-auto sm:bg-center md:bg-auto md:bg-center lg:bg-contain lg:bg-center;
+}
+
+/* Стили для обертки изображения testo.png */
+.testoImageWrapper {
+  @apply absolute top-0 left-1/2 -translate-x-1/2 z-20 w-full max-w-[600px] sm:max-w-[800px] md:max-w-[1000px] lg:max-w-[2000px] xl:max-w-[1550px];
+}
+
+.testoImage {
+  @apply w-full max-w-full h-auto object-cover;
+}
+
+/* Стили для обертки изображения заголовка */
+.headerImageWrapper {
+  @apply absolute top-6 left-1/2 -translate-x-1/2 z-20;
+}
+
+.headerImage {
+    /* Если будут специфические стили для этого изображения, добавить сюда */
+}
+
+
+.scrollContainer {
+  @apply relative z-30 h-screen flex flex-col;
+}
+
+.topPadding {
+  @apply flex-shrink-0 pt-25;
+}
+
+.scrollableArea {
+  @apply flex-1 overflow-y-auto;
+}
+
+.pageContent {
+  @apply flex flex-col items-center gap-3 sm:gap-4 md:gap-5 py-4 text-white w-full max-w-[600px] mx-auto;
+}
+
+.bottomPadding {
+  @apply flex-shrink-0 pb-20;
+}
+
+
+.title {
+  @apply text-2xl font-bold text-amber-500 text-center mb-10;
+}
+
+/* Стили для секций */
+.craftSection,
+.inventorySection,
+.chestsSection {
+  @apply w-full max-w-[500px] bg-[rgba(255,255,255,0.05)] rounded-xl p-[15px] border border-[rgba(255,255,255,0.1)];
+}
+
+/* Блок 1: Крафт */
+.craftSection {
+    @apply flex gap-[15px] items-stretch;
+}
+
+.craftGrid {
+    @apply grid grid-cols-3 gap-2 flex-grow;
+}
+
+.craftCell {
+    @apply w-full aspect-square bg-[rgba(0,0,0,0.2)] border border-[rgba(255,255,255,0.1)] rounded-lg;
+}
+
+.craftCellImage {
+  @apply w-full h-full object-contain;
+}
+
+.craftControl {
+    @apply flex flex-col items-center justify-center gap-[10px] p-[10px] bg-[rgba(0,0,0,0.1)] rounded-lg;
+}
+
+.craftIcon {
+    @apply text-3xl font-bold text-[#ffc107];
+}
+
+.craftButton,
+.openButton {
+    @apply p-[10px_15px] rounded-lg border-none text-base font-bold cursor-pointer bg-[#ffc107] text-[#333] transition-all duration-200;
+}
+
+.craftButton:hover,
+.openButton:hover {
+    @apply bg-[#ffa000];
+}
+
+.craftButton:disabled,
+.openButton:disabled {
+    @apply bg-[#555] text-[#888] cursor-not-allowed opacity-70;
+}
+
+/* Блок 2: Инвентарь */
+.inventoryGrid {
+  @apply grid grid-cols-4 gap-2;
+}
+
+.pieceCard {
+  @apply flex flex-col items-center cursor-pointer rounded-lg border-2 border-transparent transition-all duration-200;
+}
+
+.pieceImageContainer {
+  @apply relative aspect-square w-full;
+}
+
+.pieceBackgroundImage {
+  @apply w-full h-full object-contain;
+}
+
+.pieceForegroundWrapper {
+  @apply absolute inset-0 flex items-center justify-center p-2;
+}
+
+.pieceForegroundImage {
+  @apply w-2/3 h-2/3 object-contain;
+}
+
+.pieceCountBadge {
+  @apply absolute top-1 right-1 rounded px-1 py-0.5;
+}
+
+.pieceCountText {
+  @apply text-xs font-bold text-[#ffc107];
+}
+
+.pieceNameContainer {
+  @apply text-center mt-1;
+}
+
+.pieceNameText {
+  @apply text-white text-xs font-bold leading-tight capitalize;
+}
+
+/* Блок 3: Сундуки */
+.chestsGrid {
+    @apply grid grid-cols-3 gap-[10px];
+}
+
+.chestCard {
+    @apply bg-[rgba(0,0,0,0.2)] p-[10px] rounded-lg text-center cursor-pointer border-2 border-transparent transition-all duration-200 flex flex-col items-center gap-[5px] justify-between;
+}
+
+.chestCard:hover {
+  @apply border-[#ffc107];
+}
+
+.chestImage {
+    @apply w-full h-auto object-contain max-w-[80px]; /* Adjust size as needed */
+}
+
+.chestName {
+    @apply text-sm font-bold;
+}
+
+.keyCount {
+    @apply text-base text-[#ffc107]; /* Highlight key count */
+}
+
+.openButtonMini {
+    @apply p-[5px_10px] rounded-lg border-none text-xs font-bold cursor-pointer bg-[#ffc107] text-[#333] transition-all duration-200;
+}
+
+.openButtonMini:hover {
+    @apply bg-[#ffa000];
+}
+
+.openButtonMini:disabled {
+    @apply bg-[#555] text-[#888] cursor-not-allowed opacity-70;
+}
+
+/* Модальное окно */
+.modalOverlay {
+    @apply fixed inset-0 bg-black/70 flex justify-center items-center z-50;
+}
+
+.modalWindow {
+    @apply bg-[#444] p-[30px] rounded-xl border border-[#ffc107] text-center max-w-[90%] w-[350px];
+}
+
+.modalContent h3 {
+    @apply mt-0 text-[#ffc107] text-xl;
+}
+
+.modalContent p {
+    @apply text-base mb-25;
+}
+
+.modalContent button {
+    @apply p-[12px_25px] rounded-lg border-none text-base font-bold cursor-pointer bg-[#ffc107] text-[#333];
+}
