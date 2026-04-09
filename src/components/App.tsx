@@ -16,7 +16,7 @@ export const App = observer(() => {
     const hasTelegram = !!(window as any).Telegram?.WebApp?.initDataUnsafe;
     setIsTelegramEnv(hasTelegram);
 
-    if (!hasTelegram) {
+    if (hasTelegram) {
       console.log("🎮 Демо-режим");
 
       // Создаем мокового пользователя
