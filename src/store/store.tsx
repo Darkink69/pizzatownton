@@ -24,8 +24,9 @@ import type { ReferralLevelInfoData } from "../types/ws";
 class Store {
   private foodGetDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-  imgUrl =
-    "https://s3.twcstorage.ru/c6bae09a-a5938890-9b68-453c-9c54-76c439a70d3e/Pizzatownton/";
+  imgUrl = "/";
+  // imgUrl =
+  //   "https://s3.twcstorage.ru/c6bae09a-a5938890-9b68-453c-9c54-76c439a70d3e/Pizzatownton/";
 
   initDataRaw = "";
   referrerId: string | null = null;
